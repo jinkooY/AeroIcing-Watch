@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AeroIcing Watch</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="sample.js"></script>
+  <script defer src="viewer.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>AeroIcing Watch</h1>
+        <p>Review cloud structure along a flight segment.</p>
+      </div>
+      <div class="actions">
+        <label for="profile-file">Open profile JSON</label>
+        <input id="profile-file" type="file" accept=".json,application/json">
+        <button id="reset" type="button">Load sample</button>
+      </div>
+    </header>
+    <p id="error" role="alert" hidden></p>
+    <section aria-labelledby="profile-title">
+      <div class="profile-header">
+        <div>
+          <h2 id="profile-title">Cloud cross-section</h2>
+          <p id="source"></p>
+        </div>
+        <span id="data-kind"></span>
+      </div>
+      <canvas id="chart" role="img" aria-label="Altitude by distance cloud cross-section. Use the sample selector below to read the values."></canvas>
+      <ul class="legend" aria-label="Chart legend">
+        <li><i class="water"></i>Liquid</li>
+        <li><i class="ice"></i>Ice</li>
+        <li><i class="unknown"></i>Unknown phase</li>
+        <li><i class="supercooled"></i>Supercooled cue</li>
+        <li><i class="missing"></i>Missing data</li>
+      </ul>
+      <label class="selector" for="sample">Inspect sample <output id="distance" for="sample"></output></label>
+      <input id="sample" type="range" min="0" max="0" value="0" step="1">
+      <dl id="readout">
+        <div><dt>Cloud top</dt><dd id="top"></dd></div>
+        <div><dt>Estimated base</dt><dd id="base"></dd></div>
+        <div><dt>Phase</dt><dd id="phase"></dd></div>
+        <div><dt>Supercooled cue</dt><dd id="cue"></dd></div>
+      </dl>
+      <p class="note">The profile shows the uppermost retrieved cloud layer. Flight-level exposure requires additional weather evidence.</p>
+    </section>
+  </main>
+</body>
+</html>
