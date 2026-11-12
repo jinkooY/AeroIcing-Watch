@@ -1,5 +1,8 @@
 # Tasks — AeroIcing Watch
 
+> **Baseline, complete.** The active plan for the Kiroween 2026 submission is
+> [`../cloud-dive/tasks.md`](../cloud-dive/tasks.md). Do not add new work here.
+
 ## Implementation Order
 
 Follow the [backend-first plan](backend-first-plan.md) for the current implementation order. Complete the observation API, route evaluation and replay before starting the separate frontend design pass. The Phase 1 checks below record the completed baseline.
