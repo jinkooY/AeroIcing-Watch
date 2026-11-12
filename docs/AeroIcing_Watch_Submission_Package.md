@@ -1,5 +1,7 @@
 # AeroIcing Watch — Kiroween submission notes
 
+[Public demo](https://jinkooy.github.io/AeroIcing-Watch/) · [Source repository](https://github.com/jinkooY/AeroIcing-Watch)
+
 ## Project description
 
 AeroIcing Watch helps a dispatcher review how forecast winds and route geometry affect estimated cruise time and fuel. The demo compares two illustrative Incheon–Haneda paths under identical cruise assumptions. Select a segment to inspect the forecast wind, ground speed, temperature, relative humidity and estimated time of passage. The app shows the forecast cycle, validity window and local bundle availability for the replay.
@@ -20,21 +22,22 @@ Weather data attribution and license are shown in the demo. The underlying publi
 
 Kiro IDE helped develop the satellite cross-section workflow. The local session history records successful writes to the requirements, design, tasks and steering files, and to the browser form and cloud-profile analysis. It also records edits to the icing API. The repository preserves the [spec and steering files](../.kiro/) and the [initial backend change](https://github.com/jinkooY/AeroIcing-Watch/commit/257f7d8). Codex developed the archived route comparison page, the public scenario exporter and the Pages workflow in a later pass.
 
-## Video outline
+## Recorded demo
+
+The 68-second capture shows the deployed app and includes English captions.
 
 | Time | Screen recording |
 |---|---|
-| 0:00–0:25 | Open the public demo and explain the two routes and fixed cruise assumptions. |
-| 0:25–0:55 | Compare the distance, time and fuel estimates, and show the archived forecast cycle. |
-| 0:55–1:40 | Select a segment, then switch routes and inspect ETA, wind, ground speed and weather values. |
-| 1:40–2:10 | Show what the screen evaluated, what satellite context is available, and how to interpret the cruise estimate. |
-| 2:10–2:40 | Show verified Kiro work with a requirement, an implementation change and its validation. |
+| 0:00–0:23 | Compare the route estimates under the same cruise assumptions. |
+| 0:23–0:42 | Select a chart point and inspect the associated segment and weather. |
+| 0:42–1:08 | Review forecast provenance, screening results, and the public demo URL. |
 
 ## Submission status
 
-- [ ] Confirm the public app URL and test it signed out.
-- [ ] Confirm the public GitHub repository, Apache-2.0 license and root `.kiro` directory.
+- [x] Confirm the public app URL and test it signed out.
+- [x] Confirm the public GitHub repository, Apache-2.0 license and root `.kiro` directory.
 - [x] Verify the described Kiro spec and implementation work against local session activity.
 - [ ] Document any pre-existing work incorporated into the entry, including WeatherPath-derived components, and confirm third-party data and asset rights.
-- [ ] Record the public demo and upload the video to YouTube.
+- [x] Record and verify the public demo video.
+- [ ] Upload the video to YouTube and add its public URL to Devpost.
 - [ ] Complete the English Devpost submission and confirm the category against the [official rules](https://kiroween.devpost.com/rules).

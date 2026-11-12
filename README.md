@@ -4,6 +4,8 @@
 
 Compare two illustrative Incheon–Haneda routes using an archived ECMWF IFS forecast and OpenAP cruise fuel estimates. Select a segment to see the weather behind its time and fuel estimate. The fixed scenario uses the same aircraft, departure time, cruise level and initial mass for both routes.
 
+[Open the public demo](https://jinkooy.github.io/AeroIcing-Watch/)
+
 From the repository root, run `python -m http.server 8080 --bind 127.0.0.1 --protocol HTTP/1.1 --directory static/route-demo` and open [localhost:8080](http://localhost:8080/). The demo needs a static HTTP server and a browser. It uses bundled results with no API key, live weather feed or Python packages required. See the [submission notes](docs/AeroIcing_Watch_Submission_Package.md) for reproduction and deployment.
 
 The rest of this README documents the FastAPI development application and its separate satellite cross-section workflow.
