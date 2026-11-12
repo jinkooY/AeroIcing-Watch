@@ -8,7 +8,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
-from src.analysis.icing_profile import build_profile
+from src.analysis.icing_profile import build_global_profile, build_profile
+from src.analysis.satellite_router import available_sources, rank_sources, sources_for_point
 from src.analysis.route_sampler import sample_route
 from src.integration.gk2a_cloud import (
     AREA, BOUNDS, SOURCE, frame_path, frame_times, iso_utc, read_frame, timestamp,
@@ -41,7 +42,7 @@ def _fallback(
         selectedAt=iso_utc(selected) if selected else None,
         ageMin=_age_minutes(now, selected) if selected else None,
         assessmentState="not_assessed",
-        icingRisk="NONE",
+        icingRisk=None,
         altitudeSuggestions=[],
         disclaimer=(
             "Dispatcher review aid only. No satellite cache available — "
@@ -90,6 +91,47 @@ def status():
     }
 
 
+def _use_global(points, at: datetime, root: Path) -> bool:
+    """Global router when no sample is inside the GK-2A domain, or when a
+    non-GK-2A source has a usable frame for some sample. Otherwise the exact-frame
+    GK-2A path (with optics) is kept."""
+    if not any("gk2a" in sources_for_point(lat, lon) for _, lat, lon in points):
+        return True
+    return any(
+        set(rank_sources(lat, lon, root, at)) - {"gk2a"} for _, lat, lon in points
+    )
+
+
+def _global_cross_section(points, alt_ft: int, requested, now: datetime, root: Path) -> dict:
+    """Route-wide profile, each sample read from its best geostationary source."""
+    at = requested or now
+    profile = build_global_profile(points, alt_ft, at, root)
+    if profile.get("dataKind") != "observation":
+        return dict(
+            _fallback(alt_ft, "missing", requested, None, now),
+            polarGap=profile.get("polarGap", False), notices=profile.get("notices", []),
+            domain="GLOBAL",
+        )
+    observed = datetime.fromisoformat(profile["observedAt"].replace("Z", "+00:00"))
+    stale = now - observed > FRESHNESS
+    if stale and profile["icingRisk"] == "NONE":
+        profile["icingRisk"] = None
+        profile["assessmentState"] = "stale_observation"
+    return dict(
+        profile,
+        cacheState="stale" if stale else "ready",
+        requestedAt=iso_utc(requested) if requested else None, selectedAt=profile["observedAt"],
+        ageMin=_age_minutes(now, observed), domain="GLOBAL", receivedAt=None,
+    )
+
+
+@router.get("/sources")
+def sources():
+    """Per-satellite cache status for the global router."""
+    now = datetime.now(timezone.utc)
+    return {"sources": available_sources(now, _cache_root()), "polar_limit_deg": 70}
+
+
 @router.get("/cross-section")
 def cross_section(
     from_lat: Annotated[float, Query(ge=-90, le=90)],
@@ -116,6 +158,9 @@ def cross_section(
         raise HTTPException(422, str(exc)) from exc
 
     root = _cache_root()
+    if _use_global(points, requested or now, root):
+        return _global_cross_section(points, alt_ft, requested, now, root)
+
     selected = requested
     if selected is None:
         times = frame_times(root, now)
@@ -131,8 +176,13 @@ def cross_section(
     if requested is None and stale:
         return _fallback(alt_ft, "stale", None, selected, now)
     optics_state, _, optics = read_frame(frame_path(root, selected, "OPTICS"), optics=True)
+    profile = build_profile(points, alt_ft, selected, field, optics or {})
+    if stale and profile["icingRisk"] == "NONE":
+        # A stale (archived) observation can never support a "no icing" statement.
+        profile["icingRisk"] = None
+        profile["assessmentState"] = "stale_observation"
     return dict(
-        build_profile(points, alt_ft, selected, field, optics or {}),
+        profile,
         cacheState="stale" if stale else "ready",
         requestedAt=iso_utc(requested) if requested else None, selectedAt=iso_utc(selected),
         ageMin=age, fieldSchemaVersion=schema, opticsCacheState=optics_state,

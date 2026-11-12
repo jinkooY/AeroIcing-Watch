@@ -124,12 +124,25 @@ def night_cloud_water_gm2(
     return value, "median"
 
 
-def apparent_latlon(lat: float, lon: float, height_km: float) -> tuple[float, float]:
-    """Where a cloud top at ``height_km`` over (lat, lon) appears to GK-2A."""
+def view_zenith_deg(lat: float, lon: float, sub_lon: float | None = None) -> float:
+    """Satellite view zenith angle at (lat, lon) for a geostationary satellite at sub_lon."""
+    lat_r = math.radians(lat)
+    dlon_r = math.radians(lon - (_GK2A_SUB_LON if sub_lon is None else sub_lon))
+    cos_c = math.cos(lat_r) * math.cos(dlon_r)
+    central = math.acos(max(-1.0, min(1.0, cos_c)))
+    beta = math.atan2(_EARTH_R_KM * math.sin(central), _ORBIT_R_KM - _EARTH_R_KM * cos_c)
+    return math.degrees(central + beta)
+
+
+def apparent_latlon(
+    lat: float, lon: float, height_km: float, sub_lon: float | None = None,
+) -> tuple[float, float]:
+    """Where a cloud top at ``height_km`` over (lat, lon) appears to a geostationary
+    satellite at ``sub_lon`` (default: GK-2A)."""
     if not _is_finite(height_km) or height_km <= 0:
         return lat, lon
     lat_r = math.radians(lat)
-    dlon_r = math.radians(lon - _GK2A_SUB_LON)
+    dlon_r = math.radians(lon - (_GK2A_SUB_LON if sub_lon is None else sub_lon))
     cos_c = math.cos(lat_r) * math.cos(dlon_r)
     central = math.acos(max(-1.0, min(1.0, cos_c)))
     beta = math.atan2(_EARTH_R_KM * math.sin(central), _ORBIT_R_KM - _EARTH_R_KM * cos_c)
