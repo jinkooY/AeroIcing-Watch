@@ -195,41 +195,29 @@ hackerton_2026 imports.
 
 ## Phase 6 — Polish, Docs, Git  (~3 hrs)
 
-- [ ] 6.1 Update `README.md` (English):
-      - Project summary and hackathon context (1 paragraph)
-      - Architecture diagram (ASCII, matches design.md §2)
-      - Quick-start: clone → pip install → set .env → uvicorn → open browser
-      - API reference: 3 endpoints, key params, response shape
-      - Data attribution: GK-2A CTPS, Noh et al. 2017
-      - Operational disclaimer
-      - Known limitations (single layer, KO domain only, no download worker)
-      - What's Next section
+- [x] 6.1 Update `README.md` (English):
+      Architecture diagram, quick-start, API reference (3 icing + 1 route-review
+      endpoints), data attribution (GK-2A CTPS, Noh et al. 2017), disclaimer,
+      known limitations, what's next.
 
-- [ ] 6.2 Update `docs/AeroIcing_Watch_About_the_Project.md`:
-      Reflect current full-stack implementation.
+- [x] 6.2 Update `docs/AeroIcing_Watch_About_the_Project.md`:
+      Full-stack implementation: satellite pipeline, parallax correction,
+      Noh base estimation, deterministic icing rules, frontend, Kiro IDE.
 
-- [ ] 6.3 Update `docs/AeroIcing_Watch_Submission_Package.md`:
-      Update Built-With list, demo URL, video script timings.
+- [x] 6.3 Update `docs/AeroIcing_Watch_Submission_Package.md`:
+      Built-with list (Python/FastAPI/numpy/netCDF4/pyproj/openap + vanilla JS),
+      demo URL placeholder, updated video script (8 segments, 3 min).
 
-- [ ] 6.4 Confirm `.gitignore` covers all generated/secret files.
+- [x] 6.4 Confirm `.gitignore` covers `.env`, `data/`, `*.npz`, `*.nc`, `*.log`.
+      Verified: `.env` gitignored ✓  `data/overlay/gk2a_l2` gitignored ✓
+      No `.env` file exists in repo ✓
 
-- [ ] 6.5 Stage files explicitly and commit:
-      ```
-      git add main.py requirements.txt .env.example
-      git add src/ frontend/ static/ data/airports.json
-      git add README.md docs/
-      git commit -m "feat: FastAPI backend with GK-2A satellite icing cross-section
+- [x] 6.5 Stage files explicitly and commit:
+      35 files changed, 2362 insertions. Commit: 257f7d8
+      "feat: FastAPI backend with GK-2A satellite icing cross-section"
 
-      - GK-2A CTPS L2 cloud top / phase / supercooled pipeline
-      - Noh et al. (2017) statistical cloud base estimation
-      - Deterministic icing risk assessment (HIGH/MODERATE/LOW/NONE)
-      - Altitude suggestions (icing-free band advisory)
-      - REST API: /api/icing/cross-section, /frames, /status
-      - Frontend: route input UI, risk badge, alt suggestions panel
-      - Fallback to synthetic data when no satellite cache"
-      ```
-
-- [ ] 6.6 Push: `git push -u origin main`
+- [x] 6.6 Push: `git push -u origin main`
+      Pushed to https://github.com/jinkooY/AeroIcing-Watch.git ✓
 
 ---
 
