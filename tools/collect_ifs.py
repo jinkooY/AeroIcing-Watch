@@ -13,6 +13,11 @@ import eccodes as ec
 import numpy as np
 import requests
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.integration.ifs_bbox import normalize_bbox, route_bbox  # noqa: E402
+
 # Index selection and scan-direction-aware cropping adapted from WeatherPath
 # ecmwf_highres.py and tools/ecmwf_highres/archive.py at b9caa0f1.
 ROOTS = {
@@ -22,7 +27,8 @@ ROOTS = {
 }
 FIELDS = ("gh", "t", "r", "u", "v")
 LEVELS = (850, 500, 300, 250)
-BOUNDS = (30, 46, 118, 143)
+BOUNDS = (30, 46, 118, 143)  # default (south, north, west, east); see --bbox / --route
+BBOX_MAX_CELLS_DEG2 = 12000   # sanity cap on bbox area (deg^2); keeps bundles small
 LIMIT = 64 * 1024 * 1024
 PROJECT = Path(__file__).resolve().parents[1]
 
@@ -77,7 +83,7 @@ def select(url, run, step):
     return matches
 
 
-def decode(data, run, step, field, level, resolution):
+def decode(data, run, step, field, level, resolution, bounds=None):
     if not data.startswith(b"GRIB") or not data.endswith(b"7777"):
         raise ValueError("Invalid GRIB envelope")
     handle = ec.codes_new_from_message(data)
@@ -101,9 +107,16 @@ def decode(data, run, step, field, level, resolution):
                (-1 if get("iScansNegatively") else 1)) % 360
         lat = (get("latitudeOfFirstGridPointInDegrees") + np.arange(nj) * dy *
                (1 if get("jScansPositively") else -1))
-        south, north, west, east = BOUNDS
+        south, north, west, east = bounds or BOUNDS
+        # Longitudes are measured eastward from ``west`` so a box across 180 deg
+        # stays contiguous; the stored axis is unwrapped (west .. east, east may exceed 180).
+        rel = (lon - west) % 360
+        span = east - west
+        if span >= 360:
+            rel = (lon - west) % 360
         iy = np.flatnonzero((lat >= south - 1e-6) & (lat <= north + 1e-6))
-        ix = np.flatnonzero((lon >= west - 1e-6) & (lon <= east + 1e-6))
+        ix = np.flatnonzero(rel <= span + 1e-6)
+        lon = west + rel
         iy, ix = iy[np.argsort(lat[iy])], ix[np.argsort(lon[ix])]
         values = ec.codes_get_values(handle).reshape(nj, ni)[np.ix_(iy, ix)]
         if get("bitmapPresent"):
@@ -113,7 +126,8 @@ def decode(data, run, step, field, level, resolution):
         ec.codes_release(handle)
 
 
-def collect(root, run, steps, source, product):
+def collect(root, run, steps, source, product, bounds=None):
+    bounds = bounds or BOUNDS
     resolution = {"0p25": 0.25, "0p1": 0.1}[product]
     suffix = "-pl" if product == "0p1" else ""
     jobs = []
@@ -141,7 +155,7 @@ def collect(root, run, steps, source, product):
     units = {}
     messages = []
     for step, field, level, data, url, offset, length, received in downloads:
-        y, x, values, unit = decode(data, run, step, field, level, resolution)
+        y, x, values, unit = decode(data, run, step, field, level, resolution, bounds)
         if lat is None:
             lat, lon = y, x
         if not (np.array_equal(y, lat) and np.array_equal(x, lon)):
@@ -156,7 +170,7 @@ def collect(root, run, steps, source, product):
                 resolution_deg=resolution, initialized_at=run.isoformat(),
                 received_at=received.isoformat(), steps=steps,
                 valid_times=[(run + timedelta(hours=s)).isoformat() for s in steps],
-                pressure_levels_hpa=LEVELS, bbox=BOUNDS, units=units,
+                pressure_levels_hpa=LEVELS, bbox=list(bounds), units=units,
                 urls=urls, messages=messages, downloaded_bytes=size)
     root.mkdir(parents=True, exist_ok=True)
     path = root / f"{product}-{run:%Y%m%d%H}-{received:%Y%m%dT%H%M%S%f}.npz"
@@ -183,6 +197,12 @@ def main():
     parser.add_argument("--source", choices=ROOTS, default="google")
     parser.add_argument("--product", choices=("0p25", "0p1"), default="0p25")
     parser.add_argument("--root", type=Path, default=PROJECT / "data" / "ifs")
+    box = parser.add_mutually_exclusive_group()
+    box.add_argument("--bbox", nargs=4, type=float, metavar=("S", "N", "W", "E"),
+                     help="crop box; E may be < W or > 180 to cross the antimeridian")
+    box.add_argument("--route", nargs=4, type=float, metavar=("LAT1", "LON1", "LAT2", "LON2"),
+                     help="derive the box from the great circle between two points")
+    parser.add_argument("--margin", type=float, default=5.0, help="degrees added around --route")
     args = parser.parse_args()
     run = datetime.strptime(args.run, "%Y%m%d%H").replace(tzinfo=timezone.utc)
     steps = sorted(set(args.steps))
@@ -190,7 +210,18 @@ def main():
         parser.error("run must be a past standard UTC cycle")
     if len(steps) < 2 or any(s < 0 or s > 144 or s % 3 for s in steps):
         parser.error("supply at least two forecast steps from 0 to 144 in increments of 3")
-    print(collect(args.root, run, steps, args.source, args.product))
+    bounds = None
+    try:
+        if args.bbox:
+            bounds = normalize_bbox(*args.bbox)
+        elif args.route:
+            bounds = route_bbox(*args.route, margin_deg=args.margin)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if bounds and (bounds[1] - bounds[0]) * (bounds[3] - bounds[2]) > BBOX_MAX_CELLS_DEG2:
+        parser.error("bbox area too large for a route bundle")
+    print("bbox (S N W E):", bounds or BOUNDS)
+    print(collect(args.root, run, steps, args.source, args.product, bounds))
 
 
 if __name__ == "__main__":
