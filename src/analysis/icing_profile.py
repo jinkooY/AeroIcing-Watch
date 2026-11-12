@@ -121,8 +121,12 @@ def _assess_icing(
 
 def _find_altitude_suggestions(samples: list[dict], max_fl: int = 600) -> list[dict]:
     suggestions = []
-    tops  = [s["topFt"] for s in samples if s.get("topFt") is not None]
-    bases = [s["baseFt"] for s in samples if s.get("baseFt") is not None]
+    # Never suggest an altitude through a part of the route that was not assessed.
+    if any(s.get("icingLevel") is None for s in samples):
+        return suggestions
+    cloud_only = [s for s in samples if s.get("retrievalState") == "observed"]
+    tops  = [s["topFt"] for s in cloud_only if s.get("topFt") is not None]
+    bases = [s["baseFt"] for s in cloud_only if s.get("baseFt") is not None]
     if not tops:
         return suggestions
     max_top = max(tops)
@@ -165,7 +169,7 @@ def _sample(
         longitude=round(lon, 5),
         topFt=None, baseFt=None,
         phase=None, supercooled=None,
-        icingExposure=False, icingLevel="NONE",
+        icingExposure=False, icingLevel=None,  # None = unassessed, never "NONE"
         cloudTopTemperatureC=None,
         cloudBaseMethod=None, cloudBaseState=None,
         satelliteSource=source,
@@ -185,12 +189,14 @@ def _sample(
     # Quality gate (GK-2A only)
     if source == "gk2a":
         if top is None:
-            return dict(base_sample, retrievalState="clear" if quality == 2 else "no_retrieval")
+            if quality == 2:
+                return dict(base_sample, retrievalState="clear", icingLevel="NONE")
+            return dict(base_sample, retrievalState="no_retrieval")
         if quality != 0 or not 0 <= top <= 25 * _KM_TO_FT:
             return dict(base_sample, retrievalState="quality_rejected")
     else:
         if top is None or not (0 <= top <= 25 * _KM_TO_FT):
-            return dict(base_sample, retrievalState="clear")
+            return dict(base_sample, retrievalState="clear", icingLevel="NONE")
 
     phase = _value(field, "phase", rc)
     if phase == 0:
@@ -232,6 +238,12 @@ def _sample(
 
 _RISK_ORDER = {"HIGH": 3, "MODERATE": 2, "LOW": 1, "NONE": 0}
 
+def _route_risk(samples: list[dict]) -> str | None:
+    """Highest assessed level; None when no sample could be assessed."""
+    levels = [s["icingLevel"] for s in samples if s.get("icingLevel") is not None]
+    return max(levels, key=lambda lvl: _RISK_ORDER.get(lvl, 0)) if levels else None
+
+
 _SOURCE_LABEL = {
     "gk2a": "KMA/NMSC GK-2A CTPS L2 (KO)",
     "G16":  "NOAA GOES-16 ABI L2 ACHA",
@@ -261,13 +273,8 @@ def build_profile(
     grid = _grid_for_source(source, field)
     samples = [_sample(p, source, field, optics, grid, daytime, altitude) for p in points]
 
-    risk = max(
-        (s.get("icingLevel", "NONE") for s in samples),
-        key=lambda lvl: _RISK_ORDER.get(lvl, 0),
-        default="NONE",
-    )
-    cloud_samples = [s for s in samples if s.get("retrievalState") == "observed"]
-    alt_suggestions = _find_altitude_suggestions(cloud_samples, max_fl=600)
+    risk = _route_risk(samples)
+    alt_suggestions = _find_altitude_suggestions(samples, max_fl=600)
 
     source_label = _SOURCE_LABEL.get(source, source)
     obs_time = frame_time or at
@@ -320,7 +327,7 @@ def build_global_profile(
                 "longitude": round(lon, 5),
                 "topFt": None, "baseFt": None,
                 "phase": None, "supercooled": None,
-                "icingExposure": False, "icingLevel": "NONE",
+                "icingExposure": False, "icingLevel": None,
                 "cloudTopTemperatureC": None,
                 "cloudBaseMethod": None, "cloudBaseState": None,
                 "satelliteSource": None,
@@ -341,13 +348,8 @@ def build_global_profile(
     if not used_sources:
         return _fallback_profile(altitude)
 
-    risk = max(
-        (s.get("icingLevel", "NONE") for s in samples),
-        key=lambda lvl: _RISK_ORDER.get(lvl, 0),
-        default="NONE",
-    )
-    cloud_samples = [s for s in samples if s.get("retrievalState") == "observed"]
-    alt_suggestions = _find_altitude_suggestions(cloud_samples, max_fl=600)
+    risk = _route_risk(samples)
+    alt_suggestions = _find_altitude_suggestions(samples, max_fl=600)
     source_labels = " + ".join(_SOURCE_LABEL.get(s, s) for s in sorted(used_sources))
 
     return {
@@ -377,7 +379,7 @@ def _fallback_profile(altitude: int) -> dict:
         source="Illustrative sample · No satellite cache available",
         flightAlt_ft=altitude,
         assessmentState="not_assessed",
-        icingRisk="NONE",
+        icingRisk=None,
         altitudeSuggestions=[],
         satelliteSource=None,
         disclaimer=DISCLAIMER,
