@@ -6,6 +6,8 @@ inclusion: always
 
 ## Overview
 
+Follow the [backend-first plan](../specs/aeroicing-watch/backend-first-plan.md) for the expanded route comparison and archived replay. Complete and validate the backend before starting frontend design.
+
 Kiro Hackathon 2026 entry. Uses GK-2A geostationary satellite Level-2 CTPS data
 to deliver a vertical icing-risk cross-section along any A–B flight segment
 to airline dispatchers and pilots.
@@ -57,7 +59,7 @@ aeroicing-watch/
 
 1. Never commit `.env`. API keys live in environment variables only.
 2. Never commit `data/`. Satellite cache stays local.
-3. **No LLM in icing decisions.** The server computes deterministic values only.
+3. **No LLM in icing decisions.** The assessment engine computes deterministic values. An optional explanation layer reads completed assessments and evidence.
 4. The `viewer.js` JSON contract (profile schema) must not change. The backend
    converts satellite data into that exact shape.
 5. Frontend must run without a build step (vanilla JS).

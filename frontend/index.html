@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AeroIcing Watch</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .app-layout {
+      display: grid;
+      grid-template-columns: 22rem 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .app-layout { grid-template-columns: 1fr; }
+    }
+    .input-panel {
+      background: #131f30;
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: clamp(.85rem, 3vw, 1.4rem);
+    }
+    .input-panel h2 { font-size: 1rem; margin-bottom: 1rem; }
+    .field-group { margin-bottom: .9rem; }
+    .field-group label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: .3rem; }
+    .field-group input, .field-group select {
+      width: 100%;
+      padding: .5rem .65rem;
+      background: #0c1828;
+      border: 1px solid var(--border);
+      border-radius: .4rem;
+      color: #e9f1fa;
+      font: inherit;
+      font-size: .9rem;
+    }
+    .field-group input:focus, .field-group select:focus {
+      outline: 2px solid #87d9ff;
+      outline-offset: 2px;
+    }
+    #submit-btn {
+      width: 100%;
+      margin-top: .4rem;
+      min-height: 2.6rem;
+      font-size: .95rem;
+      font-weight: 600;
+      background: #1b4a6b;
+      border-color: #2e7ab5;
+    }
+    #submit-btn:hover { background: #245c82; }
+    #submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Risk badge */
+    .risk-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-bottom: .6rem;
+    }
+    #risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .3rem .75rem;
+      border-radius: .35rem;
+      font-weight: 700;
+      font-size: .9rem;
+      border: 1px solid transparent;
+      min-width: 7rem;
+      justify-content: center;
+    }
+    #risk-badge[data-level="HIGH"]     { background: rgba(255,107,107,.18); color: #ff8080; border-color: #ff6b6b55; }
+    #risk-badge[data-level="MODERATE"] { background: rgba(255,169,77,.15); color: #ffb84d; border-color: #ffa94d44; }
+    #risk-badge[data-level="LOW"]      { background: rgba(105,219,124,.12); color: #69db7c; border-color: #69db7c33; }
+    #risk-badge[data-level="NONE"]     { background: rgba(169,189,209,.1); color: var(--muted); border-color: var(--border); }
+    #risk-badge[data-level="SIM"]      { background: rgba(255,211,148,.12); color: #ffd394; border-color: #ffd39444; }
+
+    /* Altitude suggestions */
+    #alt-suggestions { margin-top: .9rem; display: flex; flex-direction: column; gap: .5rem; }
+    .suggestion-card {
+      padding: .55rem .75rem;
+      background: #0c1828;
+      border-radius: .4rem;
+      font-size: .82rem;
+      border-left: 3px solid var(--border);
+    }
+    .suggestion-card.above { border-left-color: #69db7c; }
+    .suggestion-card.below { border-left-color: #61b7f0; }
+    .suggestion-card strong { display: block; margin-bottom: .2rem; color: #e9f1fa; }
+    .suggestion-card span { color: var(--muted); }
+
+    /* Loading and notice */
+    #loading { display: none; color: var(--muted); font-size: .85rem; margin-top: .5rem; }
+    #loading.visible { display: block; }
+    #error-msg { margin-top: .6rem; color: #ffb6a5; font-size: .85rem; display: none; }
+    #error-msg.visible { display: block; }
+    #offline-notice {
+      display: none;
+      margin-top: .6rem;
+      padding: .5rem .7rem;
+      background: rgba(255,211,148,.1);
+      border: 1px solid #ffd39433;
+      border-radius: .4rem;
+      font-size: .82rem;
+      color: #ffd394;
+    }
+    #offline-notice.visible { display: block; }
+
+    /* IFS route review section */
+    .review-link {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    .review-link a { color: #8cdbff; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>AeroIcing Watch</h1>
+        <p>Satellite-based icing risk along a flight segment.</p>
+      </div>
+      <div class="actions">
+        <a href="/static/viewer-standalone.html" style="display:inline-flex;align-items:center;min-height:2.75rem;padding:.55rem .8rem;border:1px solid var(--border);border-radius:.5rem;background:#1b3046;color:inherit;text-decoration:none;font:inherit;font-size:.9rem;">Standalone viewer</a>
+        <a href="/docs" style="display:inline-flex;align-items:center;min-height:2.75rem;padding:.55rem .8rem;border:1px solid var(--border);border-radius:.5rem;background:#1b3046;color:inherit;text-decoration:none;font:inherit;font-size:.9rem;">API docs</a>
+      </div>
+    </header>
+
+    <div class="app-layout" style="margin-top:1.5rem;">
+
+      <!-- Left: Route Input Panel -->
+      <aside class="input-panel" aria-label="Route input">
+        <h2>Route</h2>
+
+        <div class="field-group">
+          <label for="from-input">From (ICAO or lat, lon)</label>
+          <input id="from-input" type="text" value="RKSI" placeholder="e.g. RKSI or 37.46, 126.44" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="field-group">
+          <label for="to-input">To (ICAO or lat, lon)</label>
+          <input id="to-input" type="text" value="RJTT" placeholder="e.g. RJTT or 35.55, 139.78" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="field-group">
+          <label for="alt-input">Planned altitude (FL or ft)</label>
+          <input id="alt-input" type="text" value="FL350" placeholder="e.g. FL350 or 35000" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label for="time-select">Observation time</label>
+          <select id="time-select">
+            <option value="">Latest available</option>
+          </select>
+        </div>
+
+        <button id="submit-btn" type="button">Show cross-section</button>
+        <div id="loading" role="status">Loading satellite data…</div>
+        <div id="error-msg" role="alert"></div>
+        <div id="offline-notice">
+          No satellite cache found. Showing illustrative sample data.
+        </div>
+
+        <div class="review-link">
+          Need forecast-based route evaluation?
+          <a href="/docs#/route-review/route_review_api_route_review_evaluate_post">IFS Route Review API →</a>
+        </div>
+      </aside>
+
+      <!-- Right: Cross-Section Viewer -->
+      <section aria-labelledby="profile-title">
+        <div class="profile-header">
+          <div>
+            <h2 id="profile-title">Cloud cross-section</h2>
+            <p id="source"></p>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+            <span id="data-kind"></span>
+            <div class="risk-row">
+              <span id="risk-badge" role="status" aria-live="polite" data-level="NONE">—</span>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="chart" role="img" aria-label="Altitude by distance cloud cross-section. Use the sample selector below to read the values."></canvas>
+
+        <!-- Altitude suggestions -->
+        <div id="alt-suggestions" aria-label="Altitude suggestions"></div>
+
+        <ul class="legend" aria-label="Chart legend">
+          <li><i class="water"></i>Liquid</li>
+          <li><i class="ice"></i>Ice</li>
+          <li><i class="unknown"></i>Unknown phase</li>
+          <li><i class="supercooled"></i>Supercooled cue</li>
+          <li><i class="missing"></i>Missing data</li>
+          <li><i style="background:#8cdbff;width:.65rem;height:2px;border-radius:0;display:inline-block;"></i>Planned altitude</li>
+        </ul>
+
+        <label class="selector" for="sample">Inspect sample <output id="distance" for="sample"></output></label>
+        <input id="sample" type="range" min="0" max="0" value="0" step="1">
+
+        <dl id="readout">
+          <div><dt>Cloud top</dt><dd id="top"></dd></div>
+          <div><dt>Estimated base</dt><dd id="base"></dd></div>
+          <div><dt>Phase</dt><dd id="phase"></dd></div>
+          <div><dt>Supercooled cue</dt><dd id="cue"></dd></div>
+          <div><dt>Top temperature</dt><dd id="top-temp">—</dd></div>
+          <div><dt>Icing exposure</dt><dd id="icing-exposure">—</dd></div>
+        </dl>
+
+        <p class="note">
+          Dispatcher review aid only. The satellite observes the topmost cloud layer.
+          Always consult AIRMETs, SIGMETs, and NOTAMs through official channels before flight.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script defer src="/static/sample.js"></script>
+  <script defer src="/static/viewer.js"></script>
+  <script defer src="/frontend/app.js"></script>
+</body>
+</html>
