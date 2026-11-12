@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare two illustrative flight routes using an archived ECMWF forecast.">
+  <title>AeroIcing Watch | Route comparison</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <p class="brand">AeroIcing Watch</p>
+      <div class="heading-row">
+        <h1>Route comparison</h1>
+        <span class="source-label">Archived forecast replay</span>
+      </div>
+      <p id="intro">Compare two illustrative routes from Seoul Incheon (RKSI) to Tokyo Haneda (RJTT).</p>
+    </header>
+    <p id="load-status" role="status">Loading the archived scenario…</p>
+    <div id="demo" hidden>
+      <section class="summary" aria-labelledby="comparison-title">
+        <h2 id="comparison-title">Select a candidate route</h2>
+        <p id="assumptions" class="assumptions"></p>
+        <div id="routes" class="routes" role="group" aria-label="Select a route to inspect"></div>
+        <p id="difference" class="difference"></p>
+        <p id="cue-note" class="note"></p>
+      </section>
+      <section aria-labelledby="inspect-title">
+        <h2 id="inspect-title">Inspect the route</h2>
+        <div class="plots">
+          <figure class="panel">
+            <figcaption>Route geometry <span>Latitude / longitude</span></figcaption>
+            <svg id="map" viewBox="0 0 600 282" role="img" aria-label="Schematic of both candidate routes and the selected segment"></svg>
+          </figure>
+          <figure class="panel">
+            <figcaption>Forecast groundspeed <span>Wind-adjusted · kt</span></figcaption>
+            <svg id="chart" viewBox="0 0 600 282" role="img" aria-label="Groundspeed by distance, with a marker for the selected segment"></svg>
+          </figure>
+        </div>
+        <div class="panel detail-panel">
+          <div class="segment-controls">
+            <button type="button" id="previous" aria-label="Previous segment">←</button>
+            <label for="segment">Segment <select id="segment"></select></label>
+            <button type="button" id="next" aria-label="Next segment">→</button>
+          </div>
+          <p id="segment-summary" class="note" aria-live="polite"></p>
+          <dl id="segment-detail" class="data-grid"></dl>
+        </div>
+      </section>
+      <section class="panel provenance" aria-labelledby="provenance-title">
+        <h2 id="provenance-title">Forecast provenance</h2>
+        <dl id="forecast" class="data-grid"></dl>
+        <p id="source-credit" class="note"></p>
+        <p id="observation" class="note"></p>
+        <p class="note">Times are UTC. Fuel estimates cover level cruise under the stated assumptions. Routing is illustrative and icing accuracy is unevaluated.</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

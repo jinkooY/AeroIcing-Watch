@@ -1,5 +1,13 @@
 # AeroIcing Watch
 
+## Kiroween route comparison demo
+
+Compare two illustrative Incheon–Haneda routes using an archived ECMWF IFS forecast and OpenAP cruise fuel estimates. Select a segment to see the weather behind its time and fuel estimate. The fixed scenario uses the same aircraft, departure time, cruise level and initial mass for both routes.
+
+From the repository root, run `python -m http.server 8080 --bind 127.0.0.1 --protocol HTTP/1.1 --directory static/route-demo` and open [localhost:8080](http://localhost:8080/). The demo needs a static HTTP server and a browser. It uses bundled results with no API key, live weather feed or Python packages required. See the [submission notes](docs/AeroIcing_Watch_Submission_Package.md) for reproduction and deployment.
+
+The rest of this README documents the FastAPI development application and its separate satellite cross-section workflow.
+
 **Kiro Hackathon 2026** — Satellite-based icing risk cross-section for airline dispatchers and flight crews.
 
 AeroIcing Watch uses **GK-2A geostationary satellite Level-2 CTPS observations** to show the cloud vertical structure — top height, estimated base, phase, and supercooled flag — along any A–B flight segment, with a deterministic icing risk rating per sample.
