@@ -221,6 +221,35 @@ hackerton_2026 imports.
 
 ---
 
+## Phase G — Global Satellite Extension
+
+Source of truth for evidence: `docs/Global_Satellite_Status.md`.
+Design: `global-satellite-design.md` (GOES-16 and a temperature-derived phase
+guess in that design were superseded; see the status doc).
+
+- [x] G1 OurAirports snapshot (4,965 airports) -> `airports.json`, `tools/build_airports.py`
+- [x] G2 GOES-18 / GOES-19 ACHA + ACHT + ACTP reader (verified with real S3 data, 2026-11-12)
+- [x] G3 `satellite_router.py` source selection, unit-tested (`tests/test_global_satellite.py`)
+- [ ] G4 Meteosat CTTH — code present, **unverified** (needs EUMETSAT credentials)
+- [x] G5 Frontend per-sample satellite source label, partial-route badge
+- [x] G6 Polar gap (>70 deg N/S) reported as `outside_domain`
+- [x] G7 Himawari-9 AHI CHGT + CPHS (verified, closes the US-Japan Pacific gap)
+- [x] G8 Unassessed samples report `icingLevel: null`; route risk and altitude
+      suggestions are withheld when any sample is unassessed (never "no icing")
+- [ ] G9 GK-2A wider area (EA/FD) — fixture-tested only, KMA delivery unverified
+- [ ] G10 Gap between Meteosat (<=80E) and GK-2A KO (>=122E) — no source integrated
+
+Merged into `main` from `claude/global-satellite-fab94b`: 38 tests pass.
+
+## Parallel Tracks (other branches, not merged here)
+
+- [x] Kiroween 2D archived route comparison demo (`static/route-demo/`, on `main`)
+- [ ] 3D route replay (CesiumJS) — `origin/claude/aeroicing-watch-3d-review-340178`
+- [ ] Research direction review, science guardrails, submission drafts —
+      `origin/claude/kiro-research-direction-review-b971c3`
+
+---
+
 ## Acceptance Checklist
 
 - [x] Uvicorn starts cleanly (verified on port 18080)
