@@ -4,11 +4,11 @@
     {
       "name": "Task Progress Tracker",
       "trigger": "PostFileSave",
-      "description": "Parses tasks.md on every save and reports phase-by-phase progress with next action",
+      "description": "On any tasks.md save, reports progress for the active cloud-dive plan",
       "matcher": "tasks\\.md$",
       "action": {
         "type": "agent",
-        "prompt": "The file `.kiro/specs/aeroicing-watch/tasks.md` was just saved. Parse the task checklist and report progress.\n\n**Instructions:**\n1. Count all tasks marked `[x]` (done) and `[ ]` (pending) across all phases.\n2. Identify which phase is currently active (the first phase that has any `[ ]` tasks remaining).\n3. Identify the next concrete task to work on (first `[ ]` in the active phase).\n4. Check if any `[x]` tasks were added since the last state (new completions).\n5. Report in this format:\n\n---\n## 📊 AeroIcing Watch — Task Progress\n\n**Overall:** X / Y tasks complete (N%)\n\n| Phase | Status | Done / Total |\n|---|---|---|\n| Phase 1 — Project Scaffold | ✅ Complete | 7 / 7 |\n| Phase 2 — GK-2A Integration | 🔄 In Progress | 0 / 5 |\n| Phase 3 — Route Sampler + Engine | ⏳ Pending | 0 / 4 |\n| Phase 4 — API Router | ⏳ Pending | 0 / 3 |\n| Phase 5 — Frontend | ⏳ Pending | 0 / 5 |\n| Phase 6 — Polish + Git | ⏳ Pending | 0 / 6 |\n\n**Active phase:** Phase 2 — GK-2A Integration Layer\n**Next task:** 2.1 Port gk2a_cloud.py and inline overlay_fetcher dependencies\n\n**Acceptance checklist:** X / Y items checked\n\n---\n\nIf the active phase just had a task newly checked off, also add:\n> ✅ **Just completed:** [task description] — [brief note on what this unblocks]\n\nIf the entire project is done (all tasks checked):\n> 🎉 All tasks complete. Ready for hackathon submission.\n"
+        "prompt": "A `tasks.md` file was just saved. Report progress for the active plan `.kiro/specs/cloud-dive/tasks.md` (read it even if a different tasks.md was saved; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline and only needs a one-line count).\n\n1. Count `[x]` and `[ ]` per section: P0 Eligibility, P1 Scored product and video, P2 Kiro depth, P3 Bonuses, Submission.\n2. Active section = first section with an open task. Next task = first open task in it.\n3. Note tasks newly checked since the previous report, if known.\n4. Remind: every completed task needs a row in `docs/kiro-usage-log.md`.\n\nFormat:\n## 📊 Cloud Dive — Task Progress\n**Overall:** X / Y (N%) · **Days to deadline (2026-12-04):** D\n| Section | Status | Done / Total |\n**Active section:** ... **Next task:** ...\n**Baseline (aeroicing-watch):** X / Y\n> ✅ **Just completed:** ... (only if something was newly checked)\nKeep it short. Do not invent completions."
       }
     }
   ]

@@ -4,10 +4,10 @@
     {
       "name": "Session Start — Project Status",
       "trigger": "SessionStart",
-      "description": "Reads tasks.md at session start and prints a concise progress summary",
+      "description": "Reads the active cloud-dive tasks.md at session start and prints a short status",
       "action": {
         "type": "agent",
-        "prompt": "At the start of this session, read `.kiro/specs/aeroicing-watch/tasks.md` and produce a brief project status report so the agent knows exactly where work left off.\n\nParse all `[x]` and `[ ]` items. Output:\n\n---\n## AeroIcing Watch — Session Start Status\n\n**Progress:** X / Y tasks (N%)\n**Active phase:** Phase N — [name]\n**Last completed task:** [task id and short description, or \"none yet\"]\n**Next task to implement:** [task id and short description]\n\n**Blockers / notes from tasks.md:** [any inline notes near unchecked tasks, or \"none\"]\n---\n\nKeep it under 15 lines. This is an orientation summary, not a full report.\n"
+        "prompt": "At the start of this session, read `.kiro/specs/cloud-dive/tasks.md` (the active plan; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline) and produce a brief status so the agent knows where work left off.\n\nCount `[x]` and `[ ]` per priority section (P0, P1, P2, P3, Submission). Output, under 15 lines:\n\n## Cloud Dive — Session Start Status\n**Progress:** X / Y tasks (N%)\n**Days to deadline:** days from today (UTC) to 2026-12-04\n**Active section:** first section with an open task\n**Next task:** first open task id and short description\n**Open decisions:** any of D1–D5 in `.kiro/specs/cloud-dive/requirements.md` §5 still marked Open\n**Usage log:** number of rows in `docs/kiro-usage-log.md` (or \"missing\")"
       }
     }
   ]

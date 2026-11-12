@@ -4,13 +4,22 @@ inclusion: always
 
 # AeroIcing Watch — Project Steering
 
+## Active plan
+
+The active spec is [`cloud-dive`](../specs/cloud-dive/requirements.md)
+(Kiroween 2026, deadline 2026-12-04). Work its `tasks.md` in priority order
+P0 → P1 → P2 → P3. The `aeroicing-watch` spec is the completed baseline; do not
+add work to it. After each task, add a row to `docs/kiro-usage-log.md`.
+
 ## Overview
 
-Follow the [backend-first plan](../specs/aeroicing-watch/backend-first-plan.md) for the expanded route comparison and archived replay. Complete and validate the backend before starting frontend design.
+Kiroween 2026 entry. **Cloud Dive — "Who gets iced the most?"**: anyone can fly
+a small aircraft through a real geostationary-satellite cross-section of
+today's clouds (GK-2A, GOES-18/19, Himawari-9). The same evidence engine also
+serves the existing dispatcher cross-section view and API.
 
-Kiro Hackathon 2026 entry. Uses GK-2A geostationary satellite Level-2 CTPS data
-to deliver a vertical icing-risk cross-section along any A–B flight segment
-to airline dispatchers and pilots.
+Evidence wording and levels follow the science guardrails (see
+`cloud-dive/design.md` §3 until `science-guardrails.md` is on `main`).
 
 ## Tech Stack
 
