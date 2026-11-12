@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from src.analysis.cloud_base import apparent_latlon, is_gk2a_daytime, estimate_base
+from src.analysis.cloud_base import apparent_latlon, is_gk2a_daytime, estimate_base, view_zenith_deg
 from src.analysis.satellite_router import (
     SUB_LON, is_polar, load_best_field, sources_for_point,
 )
@@ -25,16 +25,27 @@ _PHASE = {1: "liquid", 2: "ice", 6: "unknown"}
 _GRID_CACHE: dict[str, tuple] = {}
 
 
+def _gk2a_key():
+    from src.integration import gk2a_cloud
+    (a, b), (c, d) = gk2a_cloud.BOUNDS
+    return (a, c, b, d)
+
+
+def goes_cloud_sats():
+    from src.integration.goes_cloud import SATELLITES
+    return SATELLITES
+
+
 def _grid_for_source(source: str, field: dict | None = None) -> tuple:
     """Return (lat_min, lat_max, lon_min, lon_max, shape, mercator_rows) for source."""
-    if source in _GRID_CACHE:
+    if source in _GRID_CACHE and (source != "gk2a" or _GRID_CACHE[source][:4] == _gk2a_key()):
         return _GRID_CACHE[source]
 
     if source == "gk2a":
         from src.integration.gk2a_cloud import BOUNDS, SHAPE
         (lat_min, lon_min), (lat_max, lon_max) = BOUNDS
         shape = SHAPE
-    elif source in ("G16", "G18", "G19"):
+    elif source in goes_cloud_sats():
         from src.integration.goes_cloud import SATELLITES, _GRID_SHAPE
         (lat_min, lon_min), (lat_max, lon_max) = SATELLITES[source]["bounds"]
         shape = _GRID_SHAPE
@@ -161,6 +172,7 @@ def _sample(
         satelliteSource=source,
         ctpsQualityFlag=None,
         retrievalState=None,
+        **_view_geometry(source, lat, lon),
     )
     rc = _pixel_for(source, field, grid, lat, lon)
     if rc is None:
@@ -239,6 +251,7 @@ _SOURCE_LABEL = {
     "G16":  "NOAA GOES-16 ABI L2 ACHA",
     "G18":  "NOAA GOES-18 ABI L2 ACHA",
     "G19":  "NOAA GOES-19 ABI L2 ACHA",
+    "H09":  "NOAA/JMA Himawari-9 AHI L2 Clouds",
     "msg":  "EUMETSAT Meteosat MSG CTTH",
 }
 
@@ -288,11 +301,21 @@ def build_profile(
     }
 
 
-def _domain_edge(source: str, lon: float) -> bool:
-    """True within ~15 deg of the nominal limb (parallax/limb quality degrades)."""
-    if source == "gk2a":
-        return False
-    return abs((lon - SUB_LON[source] + 180) % 360 - 180) > 65.0
+VIEW_EDGE_DEG = 60.0   # beyond this view zenith angle parallax/limb effects dominate
+
+
+def _view_geometry(source: str, lat: float, lon: float) -> dict:
+    """Additive view-geometry quality fields for a sample seen by ``source``."""
+    vza = view_zenith_deg(lat, lon, SUB_LON.get(source))
+    edge = vza >= VIEW_EDGE_DEG
+    return {
+        "viewZenithDeg": round(vza, 1),
+        "domainEdge": bool(edge),
+        "qualityNote": (
+            f"Large satellite view angle ({vza:.0f} deg): cloud-top position and height "
+            "are less reliable here." if edge else None
+        ),
+    }
 
 
 def _unassessed_sample(point: tuple, state: str) -> dict:
@@ -345,7 +368,6 @@ def build_global_profile(
         grid = _grid_for_source(source, field)
         s = _sample(point, source, field, {}, grid, daytime_gk2a and source == "gk2a", altitude)
         s["satelliteSource"] = source
-        s["domainEdge"] = _domain_edge(source, lon)
         if frame_time:
             s["observedAt"] = iso_utc(frame_time)
         samples.append(s)

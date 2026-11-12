@@ -70,6 +70,9 @@ def _weights(axis, coordinate):
 
 def sample(bundle, lat: float, lon: float, pressure_hpa: float, at: datetime):
     _, axes, data = bundle
+    lon_axis = axes[3]
+    # Bundles may be unwrapped across the antimeridian (e.g. 140 .. 240 deg E).
+    lon = float(lon_axis[0] + (lon - lon_axis[0]) % 360.0)
     coords = (at.timestamp(), np.log(pressure_hpa), lat, lon)
     weights = [_weights(axis, coordinate) for axis, coordinate in zip(axes, coords)]
     for weight, reason in zip(weights, ("outside_time", "outside_level", "outside_domain", "outside_domain")):
