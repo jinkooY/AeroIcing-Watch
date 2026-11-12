@@ -20,3 +20,23 @@
 - Meteosat download + decode (no credentials).
 - Gap between Meteosat (≤80°E) and GK-2A KO (≥122°E) — no source (Himawari/INSAT not integrated).
 - Only nearest-neighbour projection at ~25–30 km grid resolution (500×620 per source); GK-2A optics are not used on mixed routes.
+
+## Pacific gap follow-up (US–Japan routes)
+
+Before: KSFO–RJTT / KLAX–RJAA / KSEA–RJAA had a 26–32 % gap (≈140–165E).
+
+**Himawari-9 (real data, verified 2026-11-12 13:20 UTC).** `noaa-himawari9/AHI-L2-FLDK-Clouds/YYYY/MM/DD/HHMM/` holds `AHI-CHGT` (`CldTopHght` m, `CldTopTemp` K, `Latitude`, `Longitude`), `AHI-CMSK`, `AHI-CPHS` (`CloudPhase`, valid_range 0–5). Files are 5500×5500 (2 km): ~800 MB + ~85 MB for the two we need. Phase codes are not listed in the file metadata; mapping follows the NOAA CCF/ACTP convention and is consistent with the data (mean cloud-top temperature: code1 284 K, code2 264 K, code3 253 K, code4 231 K). `CloudHgtQF` semantics are undocumented and unused. `h5py` is broken in this env (DLL), so partial/remote reads were not possible; whole files are read with netCDF4.
+
+**GK-2A wider area: unverified.** No KMA key in this environment. `GK2A_CLOUD_AREA` (KO default, EA, FD) plus `GK2A_CLOUD_BOUNDS`/`_SHAPE` select the projected cache grid and register it in the router; EA/FD grid values are our planned cache grids, not confirmed APIHub deliveries. Tested with fixtures only.
+
+**API results with real G18 + G19 + H09 frames (alt 35 000 ft, 50 km spacing):**
+
+| Route | G18 | H09 | no source | observed | clear | no_retrieval | domainEdge |
+|---|---|---|---|---|---|---|---|
+| KSFO–RJTT (167 samples) | 55.1 % | 44.9 % | 0 % | 90.4 % | 6.0 % | 3.6 % | 27.5 % |
+| KLAX–RJAA (176) | 58.5 % | 41.5 % | 0 % | 94.3 % | 4.5 % | 1.1 % | 23.9 % |
+| KSEA–RJAA (154) | 51.3 % | 48.7 % | 0 % | 89.0 % | 9.1 % | 1.9 % | 50.6 % |
+
+Remaining gap is 0 % of samples; 1–4 % are `no_retrieval` (unassessed), and altitude suggestions are therefore withheld on these routes.
+
+**IFS across the dateline (real ECMWF Open Data, run 2026-11-12 00Z, 0p25).** Route-derived bbox KSEA–RJAA 30.8–59.3N, 135.4–242.7E, steps 12/18/24/30: 36.4 MB of GRIB ranges downloaded, 4.5 MB `.npz`. `POST /api/route-review/evaluate` (B789, 230 t, FL300, 470 kt) completed all segments for KSEA–RJAA (307), KSFO–RJTT (333) and KLAX–RJAA (351) with the longitude wrapping through 180. IFS shows `criterion_not_met` everywhere at FL300 (too cold), so no icing environment was found. ecCodes needed `ecmwflibs` in this env (now in requirements). The route-review CTPS observation block still reads the GK-2A cache only.
