@@ -1,0 +1,51 @@
+/* 3D replay page. Functional styling only; reuses tokens from styles.css. */
+.replay-page { min-height: 100vh; background: var(--bg); }
+.replay-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.replay-header h1 { font-size: 1.5rem; letter-spacing: -.02em; line-height: 1.1; }
+.replay-header .brand { font-size: .85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.chips li { border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; color: var(--muted); font-size: .8rem; }
+.link-2d { font-weight: 600; }
+.replay-status { padding: 8px 16px; color: var(--muted); }
+.replay-status:empty { display: none; }
+.replay-status.error { color: var(--amber); }
+
+.replay-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: calc(100vh - 74px); }
+.globe-wrap { position: relative; min-height: 320px; }
+.globe { position: absolute; inset: 0; }
+.fallback { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; padding: 16px; text-align: center; background: var(--panel); }
+.fallback p { color: var(--amber); max-width: 40ch; line-height: 1.5; }
+.side { overflow-y: auto; border-left: 1px solid var(--line); padding: 0 16px 16px; }
+.block { margin: 0; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.block h2 { font-size: 1rem; margin-bottom: 8px; }
+.block h3 { font-size: .9rem; margin: 12px 0 0; color: var(--muted); }
+
+.replay-cards { display: grid; gap: 8px; }
+.replay-cards .route { padding: 10px 12px; width: 100%; }
+.replay-cards .route-heading { margin-bottom: 4px; }
+.replay-cards .route small { color: var(--muted); display: block; font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 6px; }
+.controls label { display: flex; align-items: center; gap: 6px; }
+.controls button, .controls select { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 5px 10px; }
+.controls button[aria-pressed="true"] { border-color: var(--teal); color: var(--teal); }
+.controls button:disabled { opacity: .5; cursor: default; }
+.controls select#seg-select { max-width: 160px; }
+.timeline-label { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--muted); font-size: .9rem; }
+.timeline-label output { color: var(--text); font-variant-numeric: tabular-nums; }
+#timeline { width: 100%; margin: 6px 0 2px; accent-color: var(--teal); }
+.timeline-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.stopped-note { margin-top: 6px; color: var(--amber); font-size: .88rem; }
+
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin-top: 8px; font-size: .9rem; }
+.kv dt { color: var(--muted); }
+.kv dd { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.notes .note { font-size: .82rem; }
+
+.cesium-viewer-bottom { font-size: 11px; }
+
+@media (max-width: 760px) {
+  .replay-layout { grid-template-columns: 1fr; height: auto; }
+  .globe-wrap { height: 52vh; }
+  .side { border-left: 0; overflow: visible; }
+}

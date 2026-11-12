@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="3D replay of two illustrative cruise routes using an archived ECMWF forecast.">
+  <title>AeroIcing Watch | 3D route replay</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Widgets/widgets.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="replay.css">
+  <script>window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/";</script>
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.120.0/Build/Cesium/Cesium.js" defer></script>
+  <script src="replay.js" defer></script>
+</head>
+<body class="replay-page">
+  <header class="replay-header">
+    <div>
+      <p class="brand">AeroIcing Watch</p>
+      <h1>3D route replay</h1>
+    </div>
+    <ul class="chips" aria-label="Replay labels">
+      <li>Archived forecast</li>
+      <li>All times UTC</li>
+      <li>Cruise-only replay</li>
+      <li id="speed-chip">Playback 60×</li>
+    </ul>
+    <a id="link-2d" class="link-2d" href="index.html">2D comparison</a>
+  </header>
+  <p id="status" class="replay-status" role="status">Loading the archived scenario…</p>
+
+  <div id="layout" class="replay-layout" hidden>
+    <div class="globe-wrap">
+      <div id="globe" class="globe" aria-label="3D globe showing both candidate routes. Click a route line to select it."></div>
+      <div id="fallback" class="fallback" hidden>
+        <p id="fallback-message"></p>
+        <a id="fallback-link" href="index.html">Open the 2D comparison</a>
+      </div>
+    </div>
+
+    <aside class="side" aria-label="Replay controls and segment details">
+      <section class="block" aria-labelledby="routes-title">
+        <h2 id="routes-title">Candidate route</h2>
+        <div id="cards" class="replay-cards" role="group" aria-label="Select a route to replay"></div>
+      </section>
+
+      <section class="block" aria-labelledby="playback-title">
+        <h2 id="playback-title">Playback</h2>
+        <div class="controls">
+          <button id="play" type="button">Play</button>
+          <button id="restart" type="button">Restart</button>
+          <label>Speed
+            <select id="speed">
+              <option value="30">30×</option>
+              <option value="60" selected>60×</option>
+              <option value="120">120×</option>
+            </select>
+          </label>
+        </div>
+        <label class="timeline-label" for="timeline">Timeline <output id="clock" for="timeline"></output></label>
+        <input id="timeline" type="range" min="0" max="0" step="1" value="0">
+        <div class="timeline-ends"><span id="t-start"></span><span id="t-end"></span></div>
+        <p id="stopped-note" class="stopped-note" hidden></p>
+        <div class="controls">
+          <button id="overview" type="button">Overview</button>
+          <button id="follow" type="button" aria-pressed="false">Follow aircraft</button>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="segment-title">
+        <h2 id="segment-title">Segment at current time</h2>
+        <div class="controls">
+          <button id="seg-prev" type="button" aria-label="Previous segment">Prev</button>
+          <label>Segment <select id="seg-select"></select></label>
+          <button id="seg-next" type="button" aria-label="Next segment">Next</button>
+        </div>
+        <dl id="seg-detail" class="kv"></dl>
+        <h3>Route totals</h3>
+        <dl id="route-totals" class="kv"></dl>
+      </section>
+
+      <section class="block notes" aria-labelledby="notes-title">
+        <h2 id="notes-title">About this replay</h2>
+        <dl id="labels" class="kv"></dl>
+        <p id="height-note" class="note"></p>
+        <p id="attribution" class="note"></p>
+      </section>
+    </aside>
+  </div>
+</body>
+</html>
