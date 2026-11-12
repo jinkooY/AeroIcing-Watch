@@ -75,6 +75,7 @@
     #risk-badge[data-level="LOW"]      { background: rgba(105,219,124,.12); color: #69db7c; border-color: #69db7c33; }
     #risk-badge[data-level="NONE"]     { background: rgba(169,189,209,.1); color: var(--muted); border-color: var(--border); }
     #risk-badge[data-level="SIM"]      { background: rgba(255,211,148,.12); color: #ffd394; border-color: #ffd39444; }
+    #risk-badge[data-level="NA"]       { background: rgba(120,170,255,.12); color: #b9d2ff; border-color: #78aaff55; }
 
     /* Altitude suggestions */
     #alt-suggestions { margin-top: .9rem; display: flex; flex-direction: column; gap: .5rem; }
@@ -106,6 +107,13 @@
       color: #ffd394;
     }
     #offline-notice.visible { display: block; }
+    #polar-notice {
+      display: none; margin-top: .6rem; padding: .5rem .7rem;
+      border: 1px solid rgba(120,170,255,.45); border-radius: 6px;
+      background: rgba(60,100,180,.15); color: #b9d2ff; font-size: .85rem;
+    }
+    #polar-notice.visible { display: block; }
+    #source-list { margin-top: .5rem; color: var(--muted); font-size: .8rem; }
 
     /* IFS route review section */
     .review-link {
@@ -162,6 +170,11 @@
         <button id="submit-btn" type="button">Show cross-section</button>
         <div id="loading" role="status">Loading satellite data…</div>
         <div id="error-msg" role="alert"></div>
+        <div id="polar-notice" role="note">
+          Polar gap: geostationary satellites provide no cloud retrievals above 70°N/S.
+          Those parts of the route are <strong>not assessed</strong> (not "no icing").
+        </div>
+        <div id="source-list"></div>
         <div id="offline-notice">
           No satellite cache found. Showing illustrative sample data.
         </div>
@@ -211,6 +224,8 @@
           <div><dt>Supercooled cue</dt><dd id="cue"></dd></div>
           <div><dt>Top temperature</dt><dd id="top-temp">—</dd></div>
           <div><dt>Icing exposure</dt><dd id="icing-exposure">—</dd></div>
+          <div><dt>Satellite source</dt><dd id="sample-source">—</dd></div>
+          <div><dt>Retrieval</dt><dd id="sample-state">—</dd></div>
         </dl>
 
         <p class="note">
