@@ -137,6 +137,29 @@ function drawChart() {
   ctx.lineTo(selected, bottom);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Planned flight altitude line (additive — drawn only when profile carries flightAlt_ft)
+  if (current.flightAlt_ft != null && Number.isFinite(current.flightAlt_ft)) {
+    const altY = y(current.flightAlt_ft);
+    if (altY >= top && altY <= bottom) {
+      ctx.strokeStyle = "#8cdbff";
+      ctx.globalAlpha = 0.55;
+      ctx.setLineDash([6, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(left, altY);
+      ctx.lineTo(right, altY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#8cdbff";
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "right";
+      ctx.fillText("FL" + String(Math.round(current.flightAlt_ft / 100)).padStart(3, "0"), right, altY - 2);
+    }
+  }
+
   ctx.fillStyle = "#a9bdd1";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";

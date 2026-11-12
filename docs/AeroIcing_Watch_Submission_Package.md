@@ -2,65 +2,58 @@
 
 ## Elevator Pitch
 
-AeroIcing Watch helps airline dispatchers explore cloud heights, phase, and potential icing cues along a selected flight segment in a vertical profile.
+AeroIcing Watch turns GK-2A geostationary satellite Level-2 cloud observations into an interactive vertical icing-risk cross-section along any flight segment — giving airline dispatchers a satellite-grounded answer to "where is the icing, at what altitude, and can I fly above or below it?"
 
 ## Sample Image Caption
 
-Satellite-derived cloud tops, estimated cloud bases, and cloud phase along a selected 455 km transect.
-
-The illustrative image depicts a different case from the viewer's bundled synthetic example. Confirm the image's redistribution rights before attaching it publicly.
+GK-2A CTPS satellite-derived cloud tops, Noh et al. (2017) estimated bases, cloud phase, and supercooled cues along a selected flight segment. Icing risk badge (HIGH/MODERATE/LOW/NONE) derived from deterministic satellite rules — no NWP, no LLM.
 
 ## Key Features
 
-- Interactive A–B cloud cross-section with a keyboard-accessible sample selector.
-- Supplied cloud tops, estimated bases, phase, and optional supercooling cues.
-- Explicit coverage gaps, source time, and simulated-data labeling.
-- Local JSON import.
+- **Satellite-only icing pipeline** — GK-2A CTPS L2: cloud top height, temperature, phase, supercooled flag; cloud base from Noh et al. (2017) regression
+- **Deterministic risk rating** — HIGH/MODERATE/LOW/NONE, computed server-side from direct satellite retrievals
+- **Altitude suggestions** — icing-free bands above and below the observed cloud layer
+- **Interactive cross-section** — keyboard-accessible Canvas chart; planned altitude line overlay
+- **ICAO airport lookup** — 32 airports across Korea, Japan, China, Southeast Asia
+- **REST API** — `/api/icing/cross-section` for dispatch system integration
+- **IFS route evaluation** — `POST /api/route-review/evaluate` for ECMWF-based per-segment weather + fuel estimate (OpenAP)
+- **Offline / fallback** — illustrative sample data when no satellite cache; standalone HTML viewer
 
 ## Built With
 
-HTML, CSS, JavaScript, Canvas API.
+Python, FastAPI, uvicorn, numpy, netCDF4, pyproj, requests, python-dotenv, openap  
+HTML, CSS, JavaScript, Canvas API  
+GK-2A CTPS Level-2 (KMA/NMSC)  
+ECMWF IFS Open Data (route review)  
+Kiro IDE (AI-assisted development)
 
-## Demo Video
+## Demo Video Script
 
 | Time | Footage |
 |---|---|
-| 0:00–0:20 | Introduce the airline dispatcher and the need to view cloud height along a segment. |
-| 0:20–1:05 | Open the app and inspect the labeled simulated transect. |
-| 1:05–1:45 | Move through a flagged sample, a missing base, and a coverage gap. |
-| 1:45–2:15 | Import a sample JSON profile and show its source metadata. |
-| 2:15–2:45 | Explain the plans for live weather data, waypoint alignment, and validation. |
+| 0:00–0:20 | Introduce the dispatcher problem: "Where is the icing, at what altitude?" |
+| 0:20–0:50 | Open the app. Enter ICN → RJTT at FL350. Submit. |
+| 0:50–1:30 | Show the cross-section chart: cloud top/base layers, planned altitude line, risk badge. |
+| 1:30–2:00 | Click through samples — show supercooled cue, cloud top temperature, icing exposure. |
+| 2:00–2:20 | Show altitude suggestions: "No icing above FL400 / below FL80." |
+| 2:20–2:45 | Show simulated-data fallback (offline mode). Open standalone viewer. |
+| 2:45–3:00 | Show API response (`/api/icing/cross-section`) in browser dev tools. |
+| 3:00–3:30 | Explain what's next: download worker, multi-waypoint, NWP overlay. |
 
 ## Submission Checks
 
-Confirm the public demo URL, video, actual Kiro development evidence, and competition eligibility before submission.
+- [ ] Public demo URL confirmed
+- [ ] Demo video uploaded (≤ 3 min)
+- [ ] Kiro development evidence included (session logs / `.kiro/` directory in repo)
+- [ ] All source files in English
+- [ ] No API keys in git history
+- [ ] Competition eligibility confirmed
 
-## About the Project
+## Data Attribution
 
-### Inspiration
+- **GK-2A CTPS L2** — Korea Meteorological Administration (KMA) National Meteorological Satellite Center (NMSC)
+- **Cloud base estimation** — Noh, Y.-J., et al. (2017). *J. Atmos. Ocean. Technol.* **34**, 585–598. https://doi.org/10.1175/JTECH-D-16-0066.1
 
-For an airline dispatcher reviewing possible icing, a satellite map answers where clouds are. The next question is where those clouds sit vertically along the proposed segment. AeroIcing Watch explores how a cross-section could make cloud height, phase, and uncertainty easier to interpret during a dispatch review.
+## Operational Disclaimer
 
-### What It Does
-
-AeroIcing Watch is a standalone prototype for reviewing cloud profiles along an A–B segment. The viewer plots distance against altitude, identifies estimated cloud bases, and shows phase and optional supercooling cues. Users can click the chart or use the keyboard-accessible sample selector to inspect individual values. It opens with a labeled simulated profile and can also read a profile JSON file locally in the browser.
-
-### How We Built It
-
-The app uses HTML, CSS, JavaScript, and Canvas. A small JSON contract records source, UTC observation time, distance, altitude above mean sea level, cloud phase, and optional supercooling flags. The viewer validates the file before displaying it. The app can run from local files and processes imported profiles in the browser. The supplied example is synthetic. Live collection and weather-data conversion are future integrations.
-
-### Challenges We Faced
-
-A missing cloud base and a missing observation need different visual treatments. A sample with a known cloud top and an unknown base is drawn as a top marker. A sample with no top is drawn as a coverage gap. Simulated and observation profiles are identified in the interface, and the supercooling indicator preserves a separate unavailable state.
-
-### Accomplishments
-
-We built a self-contained cross-section viewer, a labeled sample dataset, and a documented import format. The chart and the readout preserve the distinction between the supplied cloud top, the estimated base, and any accompanying phase or supercooling cue.
-
-### What We Learned
-
-A supercooling cue near cloud top can point to an area worth reviewing. Estimating potential exposure at a specific flight level also requires planned time and altitude, additional weather evidence, and independent validation.
-
-### What's Next
-
-We plan to add geostationary satellite and numerical forecast inputs, import waypoint times and planned altitudes, and evaluate the resulting cues against pilot reports and authoritative icing products. The intended benefits are earlier recognition of areas that warrant review, better-informed routing and altitude comparisons, and less time spent on weather-related dispatch reviews.
+This product is a dispatcher review aid. It does not replace AIRMETs, SIGMETs, PIREPs, NOTAMs, or flight dispatch authority. The satellite observes the topmost cloud layer only.

@@ -1,5 +1,7 @@
 # AeroIcing Watch — Implementation Scope & Delivery Plan
 
+The [backend-first plan](backend-first-plan.md) is the current delivery plan. This document describes the original A–B viewer scope. Its route optimization exclusions, UI sequence, and estimates apply to that baseline. The backend-first plan adds comparison of an allowlist of route and altitude candidates and archived replay before frontend design.
+
 ## 1. What This Document Is
 
 This document defines:

@@ -1,0 +1,8 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+numpy>=1.26,<2
+netCDF4
+pyproj>=3.6
+requests>=2.32
+python-dotenv
+openap==2.4
