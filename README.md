@@ -72,7 +72,7 @@ Returns a viewer.js-compatible cloud profile with icing risk assessment.
 | `to_lat` | float | ✓ | Destination latitude |
 | `to_lon` | float | ✓ | Destination longitude |
 | `alt_ft` | int | ✓ | Planned cruise altitude ft (0–60 000) |
-| `at` | ISO UTC string | — | Specific observation frame; defaults to latest |
+| `at` | ISO UTC string | — | Specific observation frame (GK-2A KO routes) or reference time (global routes); defaults to latest |
 | `spacing_km` | float | — | Sample interval km (5–100, default 15) |
 
 **Response fields (additive on top of viewer.js profile contract):**
@@ -109,7 +109,22 @@ Returns a viewer.js-compatible cloud profile with icing risk assessment.
 | `HIGH` | `supercooled == true` AND planned altitude within `[baseFt, topFt]` |
 | `MODERATE` | `phase == "liquid"` AND cloud top temp < 273.15 K AND within layer |
 | `LOW` | Planned altitude within cloud layer, no supercooled conditions |
-| `NONE` | No cloud, or altitude outside layer |
+| `NONE` | Verified clear sky, or altitude outside the observed layer |
+| `null` | Not assessed (outside coverage, no retrieval, rejected, source unavailable) |
+
+---
+
+**Global routes.** If any sample lies in a non-GK-2A domain, each sample is read from the best usable source (closest to its sub-satellite point among sources with a frame < 1 h old). Additive fields: `satelliteSources` (array), `polarGap`, `notices`, `domain: "GLOBAL"`, and per sample `satelliteSource` (`gk2a`/`G18`/`G19`/`G16`/`msg`/`null`), `domainEdge`, `observedAt`. `retrievalState` is one of `observed`, `clear`, `no_retrieval`, `quality_rejected`, `inconsistent_retrieval`, `outside_domain`, `source_unavailable`. Unassessed samples have `icingLevel: null`; the route `icingRisk` is the maximum over assessed samples (`null` if none) and altitude suggestions are withheld whenever any sample is unassessed. With an empty cache the illustrative sample is returned (`dataKind: "simulated"`).
+
+---
+
+### `GET /api/icing/sources`
+
+Per-satellite cache status used by the router.
+
+```json
+{"sources": [{"source": "G18", "has_cache": true, "age_min": 14.0, "stale": false, "sub_lon": -137.0}], "polar_limit_deg": 70}
+```
 
 ---
 
@@ -158,8 +173,14 @@ This product is a dispatcher review aid based on satellite observations. It does
 ## Known Limitations
 
 - **Single cloud layer** — passive imager physical constraint; layers below optically thick cloud are not visible.
-- **KO domain only** — coverage limited to Lat 32–44.5°N, Lon 122–134.5°E. Segments outside the domain return `retrievalState: "outside_domain"` per sample.
-- **No real-time download worker** — the satellite cache is populated by an external collector process (from the WeatherPath project). The app is read-only.
+- **Coverage = GK-2A (KO) + GOES-West/East + Meteosat, when their caches are populated.** GK-2A covers only Lat 32–44.5°N, Lon 122–134.5°E. GOES-18 (West) and GOES-19 (East) cover the Americas and Pacific. There is **no source for South/Central Asia** (≈80–122°E) and none for Meteosat unless credentials are configured. Samples with no covering source return `retrievalState: "outside_domain"`; covered samples without a fresh frame return `"source_unavailable"`. Both have `icingLevel: null` ("not assessed", never "no icing").
+- **Polar gap** — nothing above 70°N/S is assessed (`outside_domain`, response `polarGap: true`, `notices: ["polar_gap"]`).
+- **GOES-16 is archive-only** — NOAA's `noaa-goes16` bucket stops in April 2025; GOES-19 is the current GOES-East.
+- **Meteosat needs EUMETSAT credentials and is unverified** — set `EUMETSAT_CLIENT_ID` / `EUMETSAT_CLIENT_SECRET` (and optionally `EUMETSAT_CTTH_COLLECTION`). Without them the source is skipped gracefully. The download/decode path has not been run against the live Data Store.
+- **Cache collectors** — GK-2A frames come from an external collector. GOES frames: `python tools/collect_goes.py G18 G19` (anonymous S3, needs `s3fs`). Cross-section requests never download.
+- **Limb/seam quality** — GOES/Meteosat samples more than 65° of longitude from the sub-satellite point carry `domainEdge: true`; parallax and retrieval quality degrade there.
+- **GOES lacks GK-2A extras** — no optical-quality/DCOEW data and no emissivity, so cloud base uses the night-path estimate (Noh et al. 2017, derived from East Asian cases; provisional elsewhere).
+- **A stale (archived) observation never yields "NONE"** — the route `icingRisk` is `null` with `assessmentState: "stale_observation"`.
 - **Cloud base is estimated** — `baseFt` is derived from Noh et al. (2017) statistics, not directly observed.
 - **Stale cache fallback** — frames older than 30 minutes fall back to illustrative sample data for the default (no `at=`) query.
 
