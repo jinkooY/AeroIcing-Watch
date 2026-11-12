@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query
 
 from src.analysis.icing_profile import build_global_profile, build_profile
-from src.analysis.satellite_router import available_sources, sources_for_point
+from src.analysis.satellite_router import available_sources, rank_sources, sources_for_point
 from src.analysis.route_sampler import sample_route
 from src.integration.gk2a_cloud import (
     AREA, BOUNDS, SOURCE, frame_path, frame_times, iso_utc, read_frame, timestamp,
@@ -91,6 +91,17 @@ def status():
     }
 
 
+def _use_global(points, at: datetime, root: Path) -> bool:
+    """Global router when no sample is inside the GK-2A domain, or when a
+    non-GK-2A source has a usable frame for some sample. Otherwise the exact-frame
+    GK-2A path (with optics) is kept."""
+    if not any("gk2a" in sources_for_point(lat, lon) for _, lat, lon in points):
+        return True
+    return any(
+        set(rank_sources(lat, lon, root, at)) - {"gk2a"} for _, lat, lon in points
+    )
+
+
 def _global_cross_section(points, alt_ft: int, requested, now: datetime, root: Path) -> dict:
     """Route-wide profile, each sample read from its best geostationary source."""
     at = requested or now
@@ -147,7 +158,7 @@ def cross_section(
         raise HTTPException(422, str(exc)) from exc
 
     root = _cache_root()
-    if any(set(sources_for_point(lat, lon)) - {"gk2a"} for _, lat, lon in points):
+    if _use_global(points, requested or now, root):
         return _global_cross_section(points, alt_ft, requested, now, root)
 
     selected = requested
