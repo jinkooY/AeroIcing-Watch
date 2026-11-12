@@ -150,136 +150,108 @@ def _eumetsat_token() -> str | None:
     return None
 
 
-def _project_msg_to_grid(
-    src_lat: np.ndarray,
-    src_lon: np.ndarray,
-    src_cth_m: np.ndarray,
-    src_ctt_k: np.ndarray,
-    src_phase_raw: np.ndarray,
-) -> dict:
-    """Resample MSG arrays to the shared lat/lon grid."""
-    (lat_min, lon_min), (lat_max, lon_max) = BOUNDS
-    h, w = _GRID_SHAPE
-
-    out_cth = np.full((h, w), np.nan, dtype=np.float32)
-    out_ctt = np.full((h, w), np.nan, dtype=np.float32)
-    out_ph, out_sc = (np.full((h, w), np.nan, dtype=np.float32) for _ in range(2))
+def _project_msg_to_grid(src_lat, src_lon, src_cth_m, src_ctt_k, src_phase_raw) -> dict:
+    """Bin MSG arrays (with per-pixel lat/lon) onto the shared Mercator-row grid."""
+    from src.integration.geogrid import bin_latlon
 
     ph, sc = _map_phase(src_phase_raw)
-    cth_ft = (src_cth_m * 3.28084).astype(np.float32)
-
-    flat_lat = src_lat.ravel()
-    flat_lon = src_lon.ravel()
-    valid = (
-        np.isfinite(flat_lat) & np.isfinite(flat_lon) &
-        (flat_lat >= lat_min) & (flat_lat <= lat_max) &
-        (flat_lon >= lon_min) & (flat_lon <= lon_max)
+    cth_ft = (src_cth_m * np.float32(3.28084)).astype(np.float32)
+    out = bin_latlon(
+        src_lat, src_lon,
+        {"cth_ft": cth_ft, "ctt_k": src_ctt_k, "phase": ph, "supercooled": sc},
+        BOUNDS, _GRID_SHAPE,
     )
-    if not valid.any():
-        return {"cth_ft": out_cth, "ctt_k": out_ctt, "phase": out_ph, "supercooled": out_sc}
+    cloudy = np.isfinite(out["cth_ft"])
+    for k in ("phase", "supercooled"):
+        out[k][~cloudy] = np.nan
+    return out
 
-    vlat = flat_lat[valid]
-    vlon = flat_lon[valid]
-    ri = np.round((lat_max - vlat) / (lat_max - lat_min) * (h - 1)).astype(int)
-    ci = np.round((vlon - lon_min) / (lon_max - lon_min) * (w - 1)).astype(int)
-    mask = (ri >= 0) & (ri < h) & (ci >= 0) & (ci < w)
-    ri, ci = ri[mask], ci[mask]
 
-    out_cth[ri, ci] = cth_ft.ravel()[valid][mask]
-    out_ctt[ri, ci] = src_ctt_k.ravel()[valid][mask]
-    out_ph[ri, ci]  = ph.ravel()[valid][mask]
-    out_sc[ri, ci]  = sc.ravel()[valid][mask]
-    return {"cth_ft": out_cth, "ctt_k": out_ctt, "phase": out_ph, "supercooled": out_sc}
+def _collection() -> str:
+    # The CTTH collection id is configurable because it could not be verified
+    # without EUMETSAT credentials (see docs/Global_Satellite_Status.md).
+    return os.getenv("EUMETSAT_CTTH_COLLECTION", PRODUCT_ID).strip()
 
 
 def _download_msg_frame(dt: datetime, cache_root: Path) -> dict | None:
-    """Download one MSG CTTH granule and project to shared grid."""
+    """Download one MSG CTTH granule and project it. UNVERIFIED against live API.
+
+    Returns None (graceful "source unavailable") without credentials or on any
+    network/decode problem.
+    """
     token = _eumetsat_token()
     if token is None:
         log.debug("MSG download skipped: no EUMETSAT credentials")
         return None
-
-    try:
-        import requests
-    except ImportError:
-        return None
+    import requests
+    from urllib.parse import quote
 
     utc = dt.astimezone(timezone.utc)
-    # Data Store search endpoint
-    start = (utc - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    end   = utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    search_url = "https://api.eumetsat.int/data/browse/collections/EO:EUM:DAT:MSG:CTTH/products"
-    params = {
-        "format": "json",
-        "pi": PRODUCT_ID,
-        "si": 0,
-        "c": 1,
-        "dtstart": start,
-        "dtend": end,
-        "sort": "start,desc",
-    }
+    headers = {"Authorization": f"Bearer {token}"}
+    collection = _collection()
     try:
         resp = requests.get(
-            search_url, params=params,
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=(5, 20),
+            "https://api.eumetsat.int/data/search-products/1.0.0/os",
+            params={
+                "format": "json", "pi": collection, "c": 1,
+                "dtstart": (utc - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "dtend": utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            },
+            headers=headers, timeout=(5, 20),
         )
         resp.raise_for_status()
-        products = resp.json().get("products", {}).get("product", [])
-        if not products:
-            log.debug("MSG CTTH: no products in [%s, %s]", start, end)
+        feats = resp.json().get("features", [])
+        if not feats:
             return None
-        product_id = products[0]["id"]
-    except Exception as exc:
-        log.warning("MSG CTTH search failed: %s", exc)
-        return None
-
-    # Download the product
-    download_url = f"https://api.eumetsat.int/data/download/{product_id}"
-    try:
+        product_id = feats[0]["id"]
         raw_resp = requests.get(
-            download_url,
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=(5, 120),
-            stream=True,
+            f"https://api.eumetsat.int/data/download/1.0.0/collections/"
+            f"{quote(collection, safe='')}/products/{quote(product_id, safe='')}",
+            headers=headers, timeout=(5, 120),
         )
         raw_resp.raise_for_status()
         raw = raw_resp.content
     except Exception as exc:
-        log.warning("MSG CTTH download failed %s: %s", product_id, exc)
+        log.warning("MSG CTTH search/download failed: %s", exc)
         return None
 
-    # Decode HDF5 / NetCDF4
     try:
         import netCDF4 as nc4
+        import zipfile
+        from io import BytesIO as _B
+        if raw[:2] == b"PK":  # Data Store delivers a zip of product files
+            with zipfile.ZipFile(_B(raw)) as zf:
+                name = next(n for n in zf.namelist() if n.endswith((".nc", ".h5")))
+                raw = zf.read(name)
         with nc4.Dataset("inmemory", memory=raw) as ds:
-            lat_var  = ds.variables.get("lat") or ds.variables.get("latitude")
-            lon_var  = ds.variables.get("lon") or ds.variables.get("longitude")
-            cth_var  = ds.variables.get("CTH") or ds.variables.get("cloud_top_height")
-            ctt_var  = ds.variables.get("CTT") or ds.variables.get("cloud_top_temperature")
-            phase_var = ds.variables.get("PHASE") or ds.variables.get("cloud_phase")
-            if None in (lat_var, lon_var, cth_var):
-                log.warning("MSG CTTH: missing required variables in product %s", product_id)
+            def pick(*names):
+                for n in names:
+                    if n in ds.variables:
+                        return np.ma.asarray(ds.variables[n][:]).squeeze()
                 return None
-            src_lat   = np.ma.asarray(lat_var[:]).squeeze().astype(np.float32).filled(np.nan)
-            src_lon   = np.ma.asarray(lon_var[:]).squeeze().astype(np.float32).filled(np.nan)
-            src_cth_m = np.ma.asarray(cth_var[:]).squeeze().astype(np.float32).filled(np.nan)
-            src_ctt_k = np.ma.asarray(ctt_var[:]).squeeze().astype(np.float32).filled(np.nan) if ctt_var else np.full_like(src_cth_m, np.nan)
-            raw_phase = np.ma.asarray(phase_var[:]).squeeze().filled(0).astype(np.int16) if phase_var else np.zeros_like(src_cth_m, dtype=np.int16)
+            lat = pick("lat", "latitude"); lon = pick("lon", "longitude")
+            cth = pick("CTH", "cth", "cloud_top_height")
+            ctt = pick("CTT", "ctt", "cloud_top_temperature")
+            phs = pick("PHASE", "phase", "cloud_phase")
+            if lat is None or lon is None or cth is None or phs is None:
+                log.warning("MSG CTTH: required variables missing; product layout unverified")
+                return None
+            f32 = lambda a: a.astype(np.float32).filled(np.nan)
+            cth_m = f32(cth)
+            ctt_k = f32(ctt) if ctt is not None else np.full_like(cth_m, np.nan)
+            raw_phase = phs.filled(0).astype(np.int16)
+            arrays = _project_msg_to_grid(f32(lat), f32(lon), cth_m, ctt_k, raw_phase)
     except Exception as exc:
         log.warning("MSG CTTH decode failed: %s", exc)
         return None
 
-    arrays = _project_msg_to_grid(src_lat, src_lon, src_cth_m, src_ctt_k, raw_phase)
-    path = frame_path(cache_root, dt)
     buf = BytesIO()
     np.savez_compressed(
-        buf,
-        schema_version=np.int16(_CACHE_SCHEMA),
-        **{k: v.astype(np.float32) for k, v in arrays.items()},
+        buf, schema_version=np.int16(_CACHE_SCHEMA),
+        **{k: arrays[k].astype(np.float32) for k in REQUIRED_FIELDS},
     )
+    path = frame_path(cache_root, dt.replace(second=0, microsecond=0))
     _atomic_write(path, buf.getvalue())
-    log.info("MSG CTTH cached %s (%d bytes)", path.name, path.stat().st_size)
     return arrays
 
 

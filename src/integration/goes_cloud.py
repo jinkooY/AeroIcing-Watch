@@ -10,7 +10,11 @@ Shared field schema (matches gk2a_cloud.py):
     ctt_k        float32  cloud top temperature K
     phase        float32  1=liquid 2=ice 6=unknown  (NaN = clear)
     supercooled  float32  1=yes 0=no               (NaN = unknown)
-    emis11       float32  not available from ABI; always NaN
+    clear        float32  1 = ACTP positively reports clear sky (GOES only)
+    (emis11 is not available from ABI and is not stored)
+
+Products (anonymous S3): ABI-L2-ACHAF (HT), ABI-L2-ACHTF (TEMP), ABI-L2-ACTPF (Phase).
+ACHAF has no phase and no temperature; phase comes from ACTPF, never inferred.
 
 GOES ABI ACTP/ACHA phase codes → shared schema:
     0 clear         → NaN (no cloud)
@@ -37,6 +41,13 @@ log = logging.getLogger(__name__)
 
 # Two satellites; each is registered as a separate "source".
 SATELLITES = {
+    # GOES-19 replaced GOES-16 as GOES-East in April 2025; G16 is archive-only.
+    "G19": {
+        "bucket": "noaa-goes19",
+        "sub_lon": -75.2,
+        "label": "GOES-19",
+        "bounds": ((-81.0, -155.0), (81.0, -15.0)),
+    },
     "G16": {
         "bucket": "noaa-goes16",
         "sub_lon": -75.2,
@@ -55,9 +66,9 @@ SATELLITES = {
 # Standard projected grid shared with gk2a_cloud.py cache format.
 # Each satellite uses its own AREA subdirectory.
 _GRID_SHAPE = (500, 620)   # height × width — same as GK-2A KO for consistency
-_CACHE_SCHEMA = 10          # version tag for GOES npz files
+_CACHE_SCHEMA = 11          # version tag for GOES npz files
 
-REQUIRED_FIELDS = ("cth_ft", "ctt_k", "phase", "supercooled")
+REQUIRED_FIELDS = ("cth_ft", "ctt_k", "phase", "supercooled", "clear")
 FRESHNESS = timedelta(minutes=20)   # ABI Full Disk scans every 10 min
 
 
@@ -144,223 +155,154 @@ def read_frame(path: Path) -> tuple[str, int | None, dict | None]:
         return "corrupt", None, None
 
 
-# ── Projection helpers ───────────────────────────────────────────────────────
+# ── S3 download + projection ─────────────────────────────────────────────────
 
-def _goes_latlon(satellite: str, height: int, width: int) -> tuple[np.ndarray, np.ndarray]:
-    """Project GOES ABI fixed grid to lat/lon using pyproj."""
-    from pyproj import CRS, Transformer
-
-    sat = SATELLITES[satellite]
-    # GOES-R ABI fixed-grid CRS (CGMS Doc. 416)
-    crs_goes = CRS.from_proj4(
-        f"+proj=geos +lon_0={sat['sub_lon']} +h=35786023 "
-        "+sweep=x +a=6378137 +b=6356752.3142 +no_defs"
-    )
-    crs_wgs84 = CRS.from_epsg(4326)
-    t = Transformer.from_crs(crs_goes, crs_wgs84, always_xy=True)
-
-    # Build grid in CGMS fixed-grid units (radians scaled by satellite height)
-    # Full Disk extent: ±0.151844 rad
-    extent = 0.151844
-    h = 35786023.0
-    x = np.linspace(-extent * h, extent * h, width, dtype=np.float64)
-    y = np.linspace(extent * h, -extent * h, height, dtype=np.float64)
-    xx, yy = np.meshgrid(x, y)
-    lon, lat = t.transform(xx, yy)
-    lat = np.where(np.abs(lat) <= 90, lat, np.nan).astype(np.float32)
-    lon = np.where(np.isfinite(lon), lon, np.nan).astype(np.float32)
-    return lat, lon
+_PRODUCTS = {"cth": "ABI-L2-ACHAF", "ctt": "ABI-L2-ACHTF", "phase": "ABI-L2-ACTPF"}
 
 
-def _project_to_grid(
-    src_lat: np.ndarray,
-    src_lon: np.ndarray,
-    src_cth_m: np.ndarray,
-    src_ctt_k: np.ndarray,
-    src_phase_raw: np.ndarray,
-    bounds: tuple,
-    satellite: str,
-) -> dict:
-    """Resample ABI arrays to the shared lat/lon grid."""
-    (lat_min, lon_min), (lat_max, lon_max) = bounds
-    h, w = _GRID_SHAPE
-    # Handle G18 wrap-around (lon_min > lon_max means crosses 180°)
-    wraps = lon_min > lon_max
-
-    out_cth  = np.full((h, w), np.nan, dtype=np.float32)
-    out_ctt  = np.full((h, w), np.nan, dtype=np.float32)
-    out_ph, out_sc = (np.full((h, w), np.nan, dtype=np.float32) for _ in range(2))
-
-    src_phase, src_sc = _map_phase(src_phase_raw)
-    src_cth_ft = (src_cth_m * 3.28084).astype(np.float32)
-
-    # Nearest-neighbour onto output grid
-    out_lats = np.linspace(lat_max, lat_min, h)
-    out_lons = np.linspace(lon_min, lon_max, w) if not wraps else np.concatenate([
-        np.linspace(lon_min, 180.0, w // 2),
-        np.linspace(-180.0, lon_max, w - w // 2),
-    ])
-
-    # Vectorised bilinear-equivalent: bin source pixels into output cells
-    flat_lat  = src_lat.ravel()
-    flat_lon  = src_lon.ravel()
-    valid = (
-        np.isfinite(flat_lat) & np.isfinite(flat_lon) &
-        (flat_lat >= lat_min) & (flat_lat <= lat_max)
-    )
-    if wraps:
-        valid &= (flat_lon >= lon_min) | (flat_lon <= lon_max)
-    else:
-        valid &= (flat_lon >= lon_min) & (flat_lon <= lon_max)
-
-    if not valid.any():
-        log.warning("GOES %s: no valid pixels in domain after masking", satellite)
-        return {"cth_ft": out_cth, "ctt_k": out_ctt,
-                "phase": out_ph, "supercooled": out_sc}
-
-    vlat = flat_lat[valid]
-    vlon = flat_lon[valid]
-    vcth = src_cth_ft.ravel()[valid]
-    vctt = src_ctt_k.ravel()[valid] if np.isfinite(src_ctt_k).any() else np.full(valid.sum(), np.nan, dtype=np.float32)
-    vph  = src_phase.ravel()[valid]
-    vsc  = src_sc.ravel()[valid]
-
-    row_idx = np.round((lat_max - vlat) / (lat_max - lat_min) * (h - 1)).astype(int)
-    if wraps:
-        # Map [lon_min..180] to [0..w//2-1], [-180..lon_max] to [w//2..w-1]
-        col_idx = np.where(
-            vlon >= 0,
-            np.round((vlon - lon_min) / (360.0 + lon_max - lon_min) * (w - 1)).astype(int),
-            np.round((vlon - lon_min + 360.0) / (360.0 + lon_max - lon_min) * (w - 1)).astype(int),
-        )
-    else:
-        col_idx = np.round((vlon - lon_min) / (lon_max - lon_min) * (w - 1)).astype(int)
-
-    mask = (row_idx >= 0) & (row_idx < h) & (col_idx >= 0) & (col_idx < w)
-    ri, ci = row_idx[mask], col_idx[mask]
-
-    # Last-write wins (acceptable for 10-min cadence nearest-neighbour)
-    out_cth[ri, ci]  = vcth[mask]
-    out_ctt[ri, ci]  = vctt[mask]
-    out_ph[ri, ci]   = vph[mask]
-    out_sc[ri, ci]   = vsc[mask]
-
-    return {"cth_ft": out_cth, "ctt_k": out_ctt,
-            "phase": out_ph, "supercooled": out_sc}
+def _scan_start(key: str) -> datetime | None:
+    """Parse the scan start (sYYYYJJJHHMMSSt) from an ABI file name."""
+    for part in key.split("/")[-1].split("_"):
+        if part.startswith("s") and len(part) == 15 and part[1:].isdigit():
+            try:
+                return datetime.strptime(part[1:14], "%Y%j%H%M%S").replace(tzinfo=timezone.utc)
+            except ValueError:
+                return None
+    return None
 
 
-# ── S3 download ──────────────────────────────────────────────────────────────
-
-def _latest_s3_key(bucket: str, dt: datetime) -> str | None:
-    """Find the most recent ABI-L2-ACHA Full Disk key on S3 near ``dt``."""
-    try:
-        import s3fs
-    except ImportError:
-        log.debug("s3fs not installed; GOES S3 download unavailable")
-        return None
-
-    fs = s3fs.S3FileSystem(anon=True)
-    utc = dt.astimezone(timezone.utc)
-    doy = utc.timetuple().tm_yday
-
-    # Search the hour directory, then ±1 hour
-    for delta_h in (0, -1, 1):
-        t = utc + timedelta(hours=delta_h)
-        prefix = f"{bucket}/ABI-L2-ACHAF/{t.year}/{t.timetuple().tm_yday:03d}/{t.hour:02d}/"
+def _list_scans(fs, bucket: str, product: str, dt: datetime) -> dict[datetime, str]:
+    """Map scan start -> key for the hour of ``dt`` and the previous hour."""
+    found: dict[datetime, str] = {}
+    for delta_h in (0, -1):
+        t = dt + timedelta(hours=delta_h)
+        prefix = f"{bucket}/{product}/{t.year}/{t.timetuple().tm_yday:03d}/{t.hour:02d}/"
         try:
             keys = fs.ls(prefix, detail=False)
         except FileNotFoundError:
             continue
-        if keys:
-            # Pick the key whose start time is closest to dt
-            def _start(key: str) -> datetime | None:
-                stem = key.split("/")[-1]
-                parts = stem.split("_")
-                for p in parts:
-                    if p.startswith("s") and len(p) == 16:
-                        try:
-                            return datetime.strptime(p[1:14], "%Y%j%H%M%S").replace(tzinfo=timezone.utc)
-                        except ValueError:
-                            pass
-                return None
-
-            closest = min(
-                keys,
-                key=lambda k: abs((_start(k) or datetime.min.replace(tzinfo=timezone.utc)) - utc).total_seconds(),
-            )
-            return closest
-    return None
+        for key in keys:
+            start = _scan_start(key)
+            if start is not None:
+                found[start] = key
+    return found
 
 
-def _download_goes_frame(
-    satellite: str,
-    dt: datetime,
-    cache_root: Path,
-) -> dict | None:
-    """Download one GOES ABI-L2-ACHA frame and project to shared grid."""
+def project_abi(ds_vars: dict, satellite: str) -> dict:
+    """Inverse-sample ABI arrays (scan-angle grid) onto the shared grid.
+
+    ``ds_vars`` maps name -> (x, y, 2-D array in physical units, NaN = missing).
+    """
+    from src.integration.geogrid import sample_geos
+
     sat = SATELLITES[satellite]
-    key = _latest_s3_key(sat["bucket"], dt)
-    if key is None:
-        return None
+    out: dict = {}
+    for name, (x, y, arr) in ds_vars.items():
+        out.update(sample_geos(x, y, sat["sub_lon"], sat["bounds"], _GRID_SHAPE, {name: arr}))
+    return out
 
-    try:
-        import s3fs
-        import netCDF4 as nc4
-    except ImportError:
-        return None
 
-    log.info("GOES %s: downloading %s", satellite, key)
-    fs = s3fs.S3FileSystem(anon=True)
-    try:
-        raw = fs.open(key, "rb").read()
-    except Exception as exc:
-        log.warning("GOES S3 download failed %s: %s", key, exc)
-        return None
+def _read_abi(raw: bytes, var: str, max_dqf: int | None = None):
+    import netCDF4 as nc4
+    with nc4.Dataset("inmemory", memory=raw) as ds:
+        arr = np.ma.asarray(ds.variables[var][:]).astype(np.float32).filled(np.nan)
+        if max_dqf is not None and "DQF" in ds.variables:
+            dqf = np.ma.asarray(ds.variables["DQF"][:]).filled(255)
+            arr = np.where(dqf <= max_dqf, arr, np.nan)
+        x = np.asarray(ds.variables["x"][:], dtype=np.float64)
+        y = np.asarray(ds.variables["y"][:], dtype=np.float64)
+    return x, y, arr
 
-    try:
-        with nc4.Dataset("inmemory", memory=raw) as ds:
-            # ABI L2 ACHA variable names
-            ht_var  = ds.variables.get("HT")
-            tmp_var = ds.variables.get("TEMP")
-            # ACTP phase is in a separate product; approximate from ACHA quality
-            # Use DQF (Data Quality Flag) as phase proxy if no phase variable
-            phase_var = ds.variables.get("PHASE")
 
-            if ht_var is None:
-                log.warning("GOES %s: HT variable missing in %s", satellite, key)
-                return None
+def build_arrays(cth_m, ctt_k, abi_phase, grids: dict, satellite: str) -> dict:
+    """Combine raw (grid-separate) ABI arrays into the shared field dict.
 
-            cth_m    = np.ma.asarray(ht_var[:]).squeeze().astype(np.float32).filled(np.nan)
-            ctt_k    = np.ma.asarray(tmp_var[:]).squeeze().astype(np.float32).filled(np.nan) if tmp_var else np.full_like(cth_m, np.nan)
+    ``grids`` holds the (x, y) scan-angle coordinates for each of the inputs.
+    """
+    proj = project_abi(
+        {
+            "cth_m": (*grids["cth"], cth_m),
+            "ctt_k": (*grids["ctt"], ctt_k),
+            "abi_phase": (*grids["phase"], abi_phase),
+        },
+        satellite,
+    )
+    cth_ft = proj["cth_m"] * np.float32(3.28084)
+    phase, sc = _map_phase(np.nan_to_num(proj["abi_phase"], nan=-1).astype(np.int16))
+    cloudy = np.isfinite(cth_ft)
+    # Cloud-top height defines where cloud exists; phase only qualifies it.
+    phase = np.where(cloudy & ~np.isfinite(phase), np.float32(6.0), phase)
+    phase[~cloudy] = np.nan
+    sc[~cloudy] = np.nan
+    # 1 only where ACTP positively reports clear sky; a missing height under a
+    # cloudy/unknown phase is an unassessed pixel, never "clear".
+    clear = ((proj["abi_phase"] == 0) & ~cloudy).astype(np.float32)
+    return {
+        "clear": clear,
+        "cth_ft": cth_ft.astype(np.float32),
+        "ctt_k": proj["ctt_k"].astype(np.float32),
+        "phase": phase.astype(np.float32),
+        "supercooled": sc.astype(np.float32),
+    }
 
-            if phase_var is not None:
-                raw_phase = np.ma.asarray(phase_var[:]).squeeze().filled(255).astype(np.int16)
-            else:
-                # Derive a simplified phase from temperature (conservative)
-                raw_phase = np.full(cth_m.shape, 5, dtype=np.int16)   # unknown default
-                valid_ctt = np.isfinite(ctt_k) & np.isfinite(cth_m)
-                raw_phase[valid_ctt & (ctt_k >= 273.15)] = 1   # liquid
-                raw_phase[valid_ctt & (ctt_k < 273.15) & (ctt_k >= 253.15)] = 2  # supercooled
-                raw_phase[valid_ctt & (ctt_k < 253.15)] = 4   # ice
 
-            proj_lat, proj_lon = _goes_latlon(satellite, *cth_m.shape)
-    except Exception as exc:
-        log.warning("GOES %s: NetCDF decode failed: %s", satellite, exc)
-        return None
-
-    arrays = _project_to_grid(proj_lat, proj_lon, cth_m, ctt_k, raw_phase,
-                               sat["bounds"], satellite)
-    # Cache the projected field
-    path = frame_path(cache_root, satellite, dt)
+def save_frame(path: Path, arrays: dict) -> None:
     buf = BytesIO()
     np.savez_compressed(
-        buf,
-        schema_version=np.int16(_CACHE_SCHEMA),
-        **{k: v.astype(np.float32) for k, v in arrays.items()},
+        buf, schema_version=np.int16(_CACHE_SCHEMA),
+        **{k: arrays[k].astype(np.float32) for k in REQUIRED_FIELDS},
     )
     _atomic_write(path, buf.getvalue())
-    log.info("GOES %s: cached %s (%d bytes)", satellite, path.name, path.stat().st_size)
-    return arrays
+
+
+def download_frame(satellite: str, dt: datetime, cache_root: Path) -> datetime | None:
+    """Download the newest ABI full-disk scan at or before ``dt`` into the cache.
+
+    Returns the scan start time, or None when S3 / s3fs is unavailable or no
+    complete scan exists. Phase is taken from ACTP and temperature from ACHT;
+    nothing is inferred from temperature alone.
+    """
+    try:
+        import s3fs
+    except ImportError:
+        log.info("s3fs not installed; GOES download unavailable")
+        return None
+    sat = SATELLITES[satellite]
+    utc = dt.astimezone(timezone.utc)
+    try:
+        fs = s3fs.S3FileSystem(anon=True)
+        scans = {p: _list_scans(fs, sat["bucket"], prod, utc) for p, prod in _PRODUCTS.items()}
+    except Exception as exc:  # network / credentials-less S3 errors
+        log.warning("GOES %s: S3 listing failed: %s", satellite, exc)
+        return None
+    common = sorted(
+        (t for t in scans["cth"] if t <= utc and all(
+            any(abs((t - u).total_seconds()) < 60 for u in scans[p]) for p in ("ctt", "phase"))),
+        reverse=True,
+    )
+    if not common:
+        return None
+    start = common[0]
+    try:
+        raws = {}
+        for p in _PRODUCTS:
+            key = next(k for u, k in scans[p].items() if abs((start - u).total_seconds()) < 60)
+            raws[p] = fs.open(key, "rb").read()
+        cth_x, cth_y, cth = _read_abi(raws["cth"], "HT", max_dqf=1)
+        ctt_x, ctt_y, ctt = _read_abi(raws["ctt"], "TEMP", max_dqf=1)
+        ph_x, ph_y, ph = _read_abi(raws["phase"], "Phase")
+        arrays = build_arrays(
+            cth, ctt, ph,
+            {"cth": (cth_x, cth_y), "ctt": (ctt_x, ctt_y), "phase": (ph_x, ph_y)},
+            satellite,
+        )
+    except Exception as exc:
+        log.warning("GOES %s: download/decode failed: %s", satellite, exc)
+        return None
+    frame_time = start.replace(second=0, microsecond=0)
+    save_frame(frame_path(cache_root, satellite, frame_time), arrays)
+    log.info("GOES %s: cached scan %s", satellite, frame_time.isoformat())
+    return frame_time
 
 
 # ── Public API (mirrors gk2a_cloud.py interface) ─────────────────────────────
@@ -395,8 +337,11 @@ def latest_goes_field(
     if not allow_download:
         return None
 
-    # Attempt S3 download for the requested time
-    return _download_goes_frame(satellite, dt, cache_root)
+    frame_time = download_frame(satellite, dt, cache_root)
+    if frame_time is None:
+        return None
+    _, _, arrays = read_frame(frame_path(cache_root, satellite, frame_time))
+    return arrays
 
 
 def goes_status(satellite: str, cache_root: Path) -> dict:

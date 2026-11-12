@@ -8,7 +8,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
-from src.analysis.icing_profile import build_profile
+from src.analysis.icing_profile import build_global_profile, build_profile
+from src.analysis.satellite_router import available_sources, sources_for_point
 from src.analysis.route_sampler import sample_route
 from src.integration.gk2a_cloud import (
     AREA, BOUNDS, SOURCE, frame_path, frame_times, iso_utc, read_frame, timestamp,
@@ -90,6 +91,36 @@ def status():
     }
 
 
+def _global_cross_section(points, alt_ft: int, requested, now: datetime, root: Path) -> dict:
+    """Route-wide profile, each sample read from its best geostationary source."""
+    at = requested or now
+    profile = build_global_profile(points, alt_ft, at, root)
+    if profile.get("dataKind") != "observation":
+        return dict(
+            _fallback(alt_ft, "missing", requested, None, now),
+            polarGap=profile.get("polarGap", False), notices=profile.get("notices", []),
+            domain="GLOBAL",
+        )
+    observed = datetime.fromisoformat(profile["observedAt"].replace("Z", "+00:00"))
+    stale = now - observed > FRESHNESS
+    if stale and profile["icingRisk"] == "NONE":
+        profile["icingRisk"] = None
+        profile["assessmentState"] = "stale_observation"
+    return dict(
+        profile,
+        cacheState="stale" if stale else "ready",
+        requestedAt=iso_utc(requested) if requested else None, selectedAt=profile["observedAt"],
+        ageMin=_age_minutes(now, observed), domain="GLOBAL", receivedAt=None,
+    )
+
+
+@router.get("/sources")
+def sources():
+    """Per-satellite cache status for the global router."""
+    now = datetime.now(timezone.utc)
+    return {"sources": available_sources(now, _cache_root()), "polar_limit_deg": 70}
+
+
 @router.get("/cross-section")
 def cross_section(
     from_lat: Annotated[float, Query(ge=-90, le=90)],
@@ -116,6 +147,9 @@ def cross_section(
         raise HTTPException(422, str(exc)) from exc
 
     root = _cache_root()
+    if any(set(sources_for_point(lat, lon)) - {"gk2a"} for _, lat, lon in points):
+        return _global_cross_section(points, alt_ft, requested, now, root)
+
     selected = requested
     if selected is None:
         times = frame_times(root, now)
