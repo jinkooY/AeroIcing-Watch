@@ -6,6 +6,7 @@ Picks, per sample point, the geostationary source to read:
     GOES-19 ( 75.2W) — GOES-East (replaced GOES-16 in 2025)
     GOES-16 ( 75.2W) — archive only (no data after April 2025)
     GOES-18 (137.0W) — GOES-West
+    Himawari-9 (140.7E) — West Pacific / Asia / Australia
     Meteosat( 0.0E)  — Europe / Africa
 
 Selection per point:
@@ -22,6 +23,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from src.analysis.cloud_base import view_zenith_deg
 from src.integration import geogrid, gk2a_cloud, goes_cloud, meteosat_cloud
 
 MAX_AGE = timedelta(hours=1)
@@ -33,6 +35,7 @@ SUB_LON = {
     "G19": -75.2,
     "G16": -75.2,
     "G18": -137.0,
+    "H09": 140.7,
     "msg": 0.0,
 }
 _SUB_LON = SUB_LON
@@ -47,8 +50,8 @@ def _lon_distance(sat_lon: float, point_lon: float) -> float:
 
 
 def view_angle_proxy(source: str, lat: float, lon: float) -> float:
-    """Angular distance (deg) from the sub-satellite point, for ranking only."""
-    return (lat ** 2 + _lon_distance(SUB_LON[source], lon) ** 2) ** 0.5
+    """Satellite view zenith angle (deg) at the point; used to rank sources."""
+    return view_zenith_deg(lat, lon, SUB_LON[source])
 
 
 def is_polar(lat: float) -> bool:

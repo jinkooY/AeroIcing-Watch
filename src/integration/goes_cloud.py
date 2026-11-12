@@ -48,6 +48,14 @@ SATELLITES = {
         "label": "GOES-19",
         "bounds": ((-81.0, -155.0), (81.0, -15.0)),
     },
+    # Himawari-9 AHI shares this cache format; downloads live in himawari_cloud.py.
+    "H09": {
+        "bucket": "noaa-himawari9",
+        "sub_lon": 140.7,
+        "label": "Himawari-9",
+        "kind": "ahi",
+        "bounds": ((-70.0, 85.0), (70.0, -155.0)),   # wraps 180 deg
+    },
     "G16": {
         "bucket": "noaa-goes16",
         "sub_lon": -75.2,
