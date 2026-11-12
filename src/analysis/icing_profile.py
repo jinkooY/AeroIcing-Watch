@@ -12,7 +12,10 @@ from pathlib import Path
 import numpy as np
 
 from src.analysis.cloud_base import apparent_latlon, is_gk2a_daytime, estimate_base
-from src.analysis.satellite_router import available_sources, load_best_field
+from src.analysis.satellite_router import (
+    SUB_LON, is_polar, load_best_field, sources_for_point,
+)
+from src.integration.geogrid import col_for_lon, lat_rows
 from src.integration.gk2a_cloud import iso_utc
 
 _KM_TO_FT = 3280.84
@@ -22,20 +25,18 @@ _PHASE = {1: "liquid", 2: "ice", 6: "unknown"}
 _GRID_CACHE: dict[str, tuple] = {}
 
 
-def _grid_for_source(source: str, field: dict) -> tuple:
-    """Return (min_lat, max_lat, min_lon, max_lon, shape, mercator_rows) for source."""
+def _grid_for_source(source: str, field: dict | None = None) -> tuple:
+    """Return (lat_min, lat_max, lon_min, lon_max, shape, mercator_rows) for source."""
     if source in _GRID_CACHE:
         return _GRID_CACHE[source]
 
-    from src.analysis.satellite_router import _in_domain
     if source == "gk2a":
         from src.integration.gk2a_cloud import BOUNDS, SHAPE
         (lat_min, lon_min), (lat_max, lon_max) = BOUNDS
         shape = SHAPE
-    elif source in ("G16", "G18"):
+    elif source in ("G16", "G18", "G19"):
         from src.integration.goes_cloud import SATELLITES, _GRID_SHAPE
-        sat = SATELLITES[source]
-        (lat_min, lon_min), (lat_max, lon_max) = sat["bounds"]
+        (lat_min, lon_min), (lat_max, lon_max) = SATELLITES[source]["bounds"]
         shape = _GRID_SHAPE
     elif source == "msg":
         from src.integration.meteosat_cloud import BOUNDS, _GRID_SHAPE
@@ -44,13 +45,8 @@ def _grid_for_source(source: str, field: dict) -> tuple:
     else:
         raise ValueError(f"Unknown source: {source!r}")
 
-    h, w = shape
-    mercator_rows = np.degrees(np.arctan(np.sinh(np.linspace(
-        np.arcsinh(np.tan(np.radians(lat_max))),
-        np.arcsinh(np.tan(np.radians(lat_min))),
-        h,
-    ))))
-    result = (lat_min, lat_max, lon_min, lon_max, shape, mercator_rows)
+    result = (lat_min, lat_max, lon_min, lon_max, shape,
+              lat_rows(lat_min, lat_max, shape[0]))
     _GRID_CACHE[source] = result
     return result
 
@@ -58,26 +54,16 @@ def _grid_for_source(source: str, field: dict) -> tuple:
 def _latlon_to_rc(source: str, lat: float, lon: float, grid: tuple) -> tuple[int, int] | None:
     lat_min, lat_max, lon_min, lon_max, shape, mercator_rows = grid
     h, w = shape
-    # G18 wraps around 180°
-    if source == "G18" and lon_min > lon_max:
-        in_lon = lon >= lon_min or lon <= lon_max
-        if not in_lon:
-            return None
-        if lon >= 0:
-            col = round((lon - lon_min) / (360.0 + lon_max - lon_min) * (w - 1))
-        else:
-            col = round((lon - lon_min + 360.0) / (360.0 + lon_max - lon_min) * (w - 1))
-    else:
-        if not (lon_min <= lon <= lon_max):
-            return None
-        col = round((lon - lon_min) / (lon_max - lon_min) * (w - 1))
     if not (lat_min <= lat <= lat_max):
         return None
-    row = int(np.argmin(np.abs(mercator_rows - lat)))
-    return row, max(0, min(w - 1, col))
+    col = col_for_lon(lon, lon_min, lon_max, w)
+    if col is None:
+        return None
+    return int(np.argmin(np.abs(mercator_rows - lat))), col
 
 
 def _pixel_for(source: str, field: dict, grid: tuple, lat: float, lon: float) -> tuple[int, int] | None:
+    sub_lon = SUB_LON.get(source)
     corrected_lat, corrected_lon = lat, lon
     for _ in range(3):
         rc = _latlon_to_rc(source, corrected_lat, corrected_lon, grid)
@@ -86,7 +72,7 @@ def _pixel_for(source: str, field: dict, grid: tuple, lat: float, lon: float) ->
         top = float(field["cth_ft"][rc])
         if not isfinite(top):
             return rc
-        corrected_lat, corrected_lon = apparent_latlon(lat, lon, top / _KM_TO_FT)
+        corrected_lat, corrected_lon = apparent_latlon(lat, lon, top / _KM_TO_FT, sub_lon)
     return _latlon_to_rc(source, corrected_lat, corrected_lon, grid)
 
 
@@ -195,8 +181,12 @@ def _sample(
         if quality != 0 or not 0 <= top <= 25 * _KM_TO_FT:
             return dict(base_sample, retrievalState="quality_rejected")
     else:
-        if top is None or not (0 <= top <= 25 * _KM_TO_FT):
-            return dict(base_sample, retrievalState="clear", icingLevel="NONE")
+        if top is None:
+            if _value(field, "clear", rc) == 1.0:
+                return dict(base_sample, retrievalState="clear", icingLevel="NONE")
+            return dict(base_sample, retrievalState="no_retrieval")
+        if not 0 <= top <= 25 * _KM_TO_FT:
+            return dict(base_sample, retrievalState="quality_rejected")
 
     phase = _value(field, "phase", rc)
     if phase == 0:
@@ -248,6 +238,7 @@ _SOURCE_LABEL = {
     "gk2a": "KMA/NMSC GK-2A CTPS L2 (KO)",
     "G16":  "NOAA GOES-16 ABI L2 ACHA",
     "G18":  "NOAA GOES-18 ABI L2 ACHA",
+    "G19":  "NOAA GOES-19 ABI L2 ACHA",
     "msg":  "EUMETSAT Meteosat MSG CTTH",
 }
 
@@ -288,10 +279,30 @@ def build_profile(
         "icingRisk": risk,
         "assessmentState": "assessed",
         "satelliteSource": source,
+        "polarGap": False,
+        "notices": [],
         "altitudeSuggestions": alt_suggestions,
         "disclaimer": DISCLAIMER,
         "coverage": dict(Counter(p["retrievalState"] for p in samples)),
         "samples": samples,
+    }
+
+
+def _domain_edge(source: str, lon: float) -> bool:
+    """True within ~15 deg of the nominal limb (parallax/limb quality degrades)."""
+    if source == "gk2a":
+        return False
+    return abs((lon - SUB_LON[source] + 180) % 360 - 180) > 65.0
+
+
+def _unassessed_sample(point: tuple, state: str) -> dict:
+    distance, lat, lon = point
+    return {
+        "distanceKm": round(distance, 2), "latitude": round(lat, 5), "longitude": round(lon, 5),
+        "topFt": None, "baseFt": None, "phase": None, "supercooled": None,
+        "icingExposure": False, "icingLevel": None,
+        "cloudTopTemperatureC": None, "cloudBaseMethod": None, "cloudBaseState": None,
+        "satelliteSource": None, "ctpsQualityFlag": None, "retrievalState": state,
     }
 
 
@@ -315,52 +326,54 @@ def build_global_profile(
     samples: list[dict] = []
     used_sources: set[str] = set()
 
+    daytime_gk2a = is_gk2a_daytime(at)
+    polar = False
     for point in points:
-        _, lat, lon = point
+        distance, lat, lon = point
         field, source, frame_time = load_best_field(lat, lon, now, cache_root)
         if field is None:
-            # No satellite data for this point
-            distance = point[0]
-            samples.append({
-                "distanceKm": round(distance, 2),
-                "latitude": round(lat, 5),
-                "longitude": round(lon, 5),
-                "topFt": None, "baseFt": None,
-                "phase": None, "supercooled": None,
-                "icingExposure": False, "icingLevel": None,
-                "cloudTopTemperatureC": None,
-                "cloudBaseMethod": None, "cloudBaseState": None,
-                "satelliteSource": None,
-                "ctpsQualityFlag": None,
-                "retrievalState": "no_satellite_coverage",
-            })
+            if is_polar(lat):
+                state = "outside_domain"
+                polar = True
+            elif sources_for_point(lat, lon):
+                state = "source_unavailable"   # covered, but no fresh cached frame
+            else:
+                state = "outside_domain"
+            samples.append(_unassessed_sample(point, state))
             continue
 
-        daytime = is_gk2a_daytime(at)
         grid = _grid_for_source(source, field)
-        s = _sample(point, source, field, {}, grid, daytime, altitude)
+        s = _sample(point, source, field, {}, grid, daytime_gk2a and source == "gk2a", altitude)
         s["satelliteSource"] = source
+        s["domainEdge"] = _domain_edge(source, lon)
         if frame_time:
             s["observedAt"] = iso_utc(frame_time)
         samples.append(s)
         used_sources.add(source)
 
     if not used_sources:
-        return _fallback_profile(altitude)
+        fallback = _fallback_profile(altitude)
+        if polar:
+            fallback["polarGap"] = True
+            fallback["notices"] = ["polar_gap"]
+        return fallback
 
     risk = _route_risk(samples)
     alt_suggestions = _find_altitude_suggestions(samples, max_fl=600)
+    newest = max(s["observedAt"] for s in samples if s.get("observedAt"))
     source_labels = " + ".join(_SOURCE_LABEL.get(s, s) for s in sorted(used_sources))
 
     return {
         "title": "Global satellite cloud cross-section",
         "source": f"{source_labels} · Estimated cloud base (Noh et al. 2017)",
         "dataKind": "observation",
-        "observedAt": iso_utc(now),
+        "observedAt": newest,
         "flightAlt_ft": altitude,
         "icingRisk": risk,
         "assessmentState": "assessed",
         "satelliteSources": sorted(used_sources),
+        "polarGap": polar,
+        "notices": (["polar_gap"] if polar else []),
         "altitudeSuggestions": alt_suggestions,
         "disclaimer": DISCLAIMER,
         "coverage": dict(Counter(p["retrievalState"] for p in samples)),
@@ -382,5 +395,6 @@ def _fallback_profile(altitude: int) -> dict:
         icingRisk=None,
         altitudeSuggestions=[],
         satelliteSource=None,
+        polarGap=False, notices=[],
         disclaimer=DISCLAIMER,
     )
