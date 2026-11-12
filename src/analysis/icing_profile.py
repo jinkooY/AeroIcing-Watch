@@ -1,53 +1,90 @@
-"""Build viewer profiles from projected CTPS evidence."""
+"""Build viewer profiles from multi-source projected satellite evidence.
+
+Supports GK-2A (KO), GOES-16, GOES-18, and Meteosat MSG globally.
+Source selection is handled by satellite_router.py.
+"""
 
 from collections import Counter
-from datetime import datetime
-from math import isfinite, inf
+from datetime import datetime, timezone
+from math import isfinite
+from pathlib import Path
 
 import numpy as np
 
-from src.analysis.cloud_base import (
-    apparent_latlon,
-    is_gk2a_daytime,
-    estimate_base,
+from src.analysis.cloud_base import apparent_latlon, is_gk2a_daytime, estimate_base, view_zenith_deg
+from src.analysis.satellite_router import (
+    SUB_LON, is_polar, load_best_field, sources_for_point,
 )
-from src.integration.gk2a_cloud import BOUNDS, SHAPE, iso_utc
+from src.integration.geogrid import col_for_lon, lat_rows
+from src.integration.gk2a_cloud import iso_utc
 
 _KM_TO_FT = 3280.84
 _PHASE = {1: "liquid", 2: "ice", 6: "unknown"}
-_MIN_LAT, _MIN_LON = BOUNDS[0]
-_MAX_LAT, _MAX_LON = BOUNDS[1]
-_MERCATOR_ROWS = np.degrees(np.arctan(np.sinh(np.linspace(
-    np.arcsinh(np.tan(np.radians(_MAX_LAT))),
-    np.arcsinh(np.tan(np.radians(_MIN_LAT))),
-    SHAPE[0],
-))))
 
-DISCLAIMER = (
-    "Dispatcher review aid based on GK-2A CTPS satellite observations. "
-    "Does not replace AIRMETs, SIGMETs, PIREPs, or flight dispatch authority. "
-    "Satellite observes the topmost cloud layer only."
-)
+# Source-specific grid bounds and Mercator row arrays are built on demand.
+_GRID_CACHE: dict[str, tuple] = {}
 
 
-def _latlon_to_rc(lat: float, lon: float) -> tuple[int, int] | None:
-    if not (_MIN_LAT <= lat <= _MAX_LAT and _MIN_LON <= lon <= _MAX_LON):
+def _gk2a_key():
+    from src.integration import gk2a_cloud
+    (a, b), (c, d) = gk2a_cloud.BOUNDS
+    return (a, c, b, d)
+
+
+def goes_cloud_sats():
+    from src.integration.goes_cloud import SATELLITES
+    return SATELLITES
+
+
+def _grid_for_source(source: str, field: dict | None = None) -> tuple:
+    """Return (lat_min, lat_max, lon_min, lon_max, shape, mercator_rows) for source."""
+    if source in _GRID_CACHE and (source != "gk2a" or _GRID_CACHE[source][:4] == _gk2a_key()):
+        return _GRID_CACHE[source]
+
+    if source == "gk2a":
+        from src.integration.gk2a_cloud import BOUNDS, SHAPE
+        (lat_min, lon_min), (lat_max, lon_max) = BOUNDS
+        shape = SHAPE
+    elif source in goes_cloud_sats():
+        from src.integration.goes_cloud import SATELLITES, _GRID_SHAPE
+        (lat_min, lon_min), (lat_max, lon_max) = SATELLITES[source]["bounds"]
+        shape = _GRID_SHAPE
+    elif source == "msg":
+        from src.integration.meteosat_cloud import BOUNDS, _GRID_SHAPE
+        (lat_min, lon_min), (lat_max, lon_max) = BOUNDS
+        shape = _GRID_SHAPE
+    else:
+        raise ValueError(f"Unknown source: {source!r}")
+
+    result = (lat_min, lat_max, lon_min, lon_max, shape,
+              lat_rows(lat_min, lat_max, shape[0]))
+    _GRID_CACHE[source] = result
+    return result
+
+
+def _latlon_to_rc(source: str, lat: float, lon: float, grid: tuple) -> tuple[int, int] | None:
+    lat_min, lat_max, lon_min, lon_max, shape, mercator_rows = grid
+    h, w = shape
+    if not (lat_min <= lat <= lat_max):
         return None
-    col = round((lon - _MIN_LON) / (_MAX_LON - _MIN_LON) * (SHAPE[1] - 1))
-    return int(np.argmin(np.abs(_MERCATOR_ROWS - lat))), col
+    col = col_for_lon(lon, lon_min, lon_max, w)
+    if col is None:
+        return None
+    return int(np.argmin(np.abs(mercator_rows - lat))), col
 
 
-def _pixel_for(field: dict, lat: float, lon: float) -> tuple[int, int] | None:
+def _pixel_for(source: str, field: dict, grid: tuple, lat: float, lon: float) -> tuple[int, int] | None:
+    sub_lon = SUB_LON.get(source)
     corrected_lat, corrected_lon = lat, lon
     for _ in range(3):
-        rc = _latlon_to_rc(corrected_lat, corrected_lon)
+        rc = _latlon_to_rc(source, corrected_lat, corrected_lon, grid)
         if rc is None:
             return None
         top = float(field["cth_ft"][rc])
         if not isfinite(top):
             return rc
-        corrected_lat, corrected_lon = apparent_latlon(lat, lon, top / _KM_TO_FT)
-    return _latlon_to_rc(corrected_lat, corrected_lon)
+        corrected_lat, corrected_lon = apparent_latlon(lat, lon, top / _KM_TO_FT, sub_lon)
+    return _latlon_to_rc(source, corrected_lat, corrected_lon, grid)
 
 
 def _value(field: dict, name: str, rc: tuple[int, int]) -> float | None:
@@ -66,11 +103,6 @@ def _assess_icing(
     ctt_k: float | None,
     alt_ft: int,
 ) -> tuple[str, bool]:
-    """Return (risk_level, in_layer) for the planned altitude.
-
-    risk_level : 'HIGH' | 'MODERATE' | 'LOW' | 'NONE'
-    in_layer   : True when planned altitude is within the cloud layer
-    """
     if top_ft is None:
         return "NONE", False
     base = base_ft if base_ft is not None else 0
@@ -84,93 +116,115 @@ def _assess_icing(
     return "LOW", True
 
 
-def _find_altitude_suggestions(samples: list[dict], max_fl: int = 450) -> list[dict]:
-    """Find icing-free altitude bands above and below the cloud layers."""
+def _find_altitude_suggestions(samples: list[dict], max_fl: int = 600) -> list[dict]:
     suggestions = []
-    tops = [s["topFt"] for s in samples if s.get("topFt") is not None]
-    bases = [s["baseFt"] for s in samples if s.get("baseFt") is not None]
+    # Never suggest an altitude through a part of the route that was not assessed.
+    if any(s.get("icingLevel") is None for s in samples):
+        return suggestions
+    cloud_only = [s for s in samples if s.get("retrievalState") == "observed"]
+    tops  = [s["topFt"] for s in cloud_only if s.get("topFt") is not None]
+    bases = [s["baseFt"] for s in cloud_only if s.get("baseFt") is not None]
     if not tops:
         return suggestions
-
-    # Above: find the lowest altitude above ALL cloud tops
     max_top = max(tops)
-    clear_above = max_top + 2000  # 2000 ft buffer above highest top
+    clear_above = max_top + 2000
     if clear_above <= max_fl * 100:
         suggestions.append({
             "band": "above",
             "alt_ft": int(round(clear_above / 1000) * 1000),
-            "note": f"No icing detected above approximately FL{int(clear_above / 100):03d} "
-                    f"based on current satellite observations.",
+            "note": (f"No icing detected above approximately FL{int(clear_above / 100):03d} "
+                     f"based on current satellite observations."),
             "confidence": "satellite_observation",
         })
-
-    # Below: find the highest altitude below ALL estimated bases
     if bases:
         min_base = min(bases)
-        clear_below = min_base - 2000  # 2000 ft buffer below lowest base
+        clear_below = min_base - 2000
         if clear_below > 0:
             suggestions.append({
                 "band": "below",
                 "alt_ft": int(round(clear_below / 1000) * 1000),
-                "note": f"Below estimated cloud bases for most of route near "
-                        f"FL{int(clear_below / 100):03d}. "
-                        f"Confirm terrain clearance independently.",
+                "note": (f"Below estimated cloud bases near FL{int(clear_below / 100):03d}. "
+                         f"Confirm terrain clearance independently."),
                 "confidence": "estimated_base",
             })
-
     return suggestions
 
 
-def _sample(point: tuple, field: dict, optics: dict, daytime: bool, alt_ft: int) -> dict:
+def _sample(
+    point: tuple,
+    source: str,
+    field: dict,
+    optics: dict,
+    grid: tuple,
+    daytime: bool,
+    alt_ft: int,
+) -> dict:
     distance, lat, lon = point
-    sample = dict(
+    base_sample = dict(
         distanceKm=round(distance, 2),
         latitude=round(lat, 5),
         longitude=round(lon, 5),
-        topFt=None,
-        baseFt=None,
-        phase=None,
-        supercooled=None,
-        icingExposure=False,
-        icingLevel="NONE",
+        topFt=None, baseFt=None,
+        phase=None, supercooled=None,
+        icingExposure=False, icingLevel=None,  # None = unassessed, never "NONE"
         cloudTopTemperatureC=None,
-        cloudBaseMethod=None,
-        cloudBaseState=None,
+        cloudBaseMethod=None, cloudBaseState=None,
+        satelliteSource=source,
         ctpsQualityFlag=None,
         retrievalState=None,
+        **_view_geometry(source, lat, lon),
     )
-    rc = _pixel_for(field, lat, lon)
+    rc = _pixel_for(source, field, grid, lat, lon)
     if rc is None:
-        return dict(sample, retrievalState="outside_domain")
+        return dict(base_sample, retrievalState="outside_domain")
 
     top = _value(field, "cth_ft", rc)
-    quality = _value(field, "ctps_flag", rc)
-    sample["ctpsQualityFlag"] = quality
-    if top is None:
-        state = "clear" if quality == 2 else "no_retrieval"
-        return dict(sample, retrievalState=state)
-    if quality != 0 or not 0 <= top <= 25 * _KM_TO_FT:
-        return dict(sample, retrievalState="quality_rejected")
+
+    # GK-2A has a quality flag; other satellites do not
+    quality = _value(field, "ctps_flag", rc) if source == "gk2a" else None
+    base_sample["ctpsQualityFlag"] = quality
+
+    # Quality gate (GK-2A only)
+    if source == "gk2a":
+        if top is None:
+            if quality == 2:
+                return dict(base_sample, retrievalState="clear", icingLevel="NONE")
+            return dict(base_sample, retrievalState="no_retrieval")
+        if quality != 0 or not 0 <= top <= 25 * _KM_TO_FT:
+            return dict(base_sample, retrievalState="quality_rejected")
+    else:
+        if top is None:
+            if _value(field, "clear", rc) == 1.0:
+                return dict(base_sample, retrievalState="clear", icingLevel="NONE")
+            return dict(base_sample, retrievalState="no_retrieval")
+        if not 0 <= top <= 25 * _KM_TO_FT:
+            return dict(base_sample, retrievalState="quality_rejected")
 
     phase = _value(field, "phase", rc)
     if phase == 0:
-        return dict(sample, retrievalState="inconsistent_retrieval")
+        return dict(base_sample, retrievalState="inconsistent_retrieval")
 
     phase_str = _PHASE.get(int(phase)) if phase is not None else None
     flag = _value(field, "supercooled", rc)
     supercooled = bool(flag) if flag in (0.0, 1.0) else None
     ctt = _value(field, "ctt_k", rc)
+
     base, method = estimate_base(
-        top, int(phase) if phase is not None else None, ctt,
-        _value(field, "emis11", rc), daytime,
-        _value(optics, "dcoew_dqf", rc), _value(optics, "lwp_gm2", rc),
-        _value(optics, "iwp_gm2", rc), _value(optics, "cot", rc),
+        top,
+        int(phase) if phase is not None else None,
+        ctt,
+        _value(field, "emis11", rc),  # NaN for GOES/MSG — falls back to night path
+        daytime,
+        _value(optics, "dcoew_dqf", rc),
+        _value(optics, "lwp_gm2", rc),
+        _value(optics, "iwp_gm2", rc),
+        _value(optics, "cot", rc),
     )
 
     risk, in_layer = _assess_icing(round(top), base, phase_str, supercooled, ctt, alt_ft)
 
     return dict(
-        sample,
+        base_sample,
         retrievalState="observed",
         topFt=round(top),
         baseFt=base,
@@ -186,6 +240,28 @@ def _sample(point: tuple, field: dict, optics: dict, daytime: bool, alt_ft: int)
 
 _RISK_ORDER = {"HIGH": 3, "MODERATE": 2, "LOW": 1, "NONE": 0}
 
+def _route_risk(samples: list[dict]) -> str | None:
+    """Highest assessed level; None when no sample could be assessed."""
+    levels = [s["icingLevel"] for s in samples if s.get("icingLevel") is not None]
+    return max(levels, key=lambda lvl: _RISK_ORDER.get(lvl, 0)) if levels else None
+
+
+_SOURCE_LABEL = {
+    "gk2a": "KMA/NMSC GK-2A CTPS L2 (KO)",
+    "G16":  "NOAA GOES-16 ABI L2 ACHA",
+    "G18":  "NOAA GOES-18 ABI L2 ACHA",
+    "G19":  "NOAA GOES-19 ABI L2 ACHA",
+    "H09":  "NOAA/JMA Himawari-9 AHI L2 Clouds",
+    "msg":  "EUMETSAT Meteosat MSG CTTH",
+}
+
+DISCLAIMER = (
+    "Dispatcher review aid based on geostationary satellite observations. "
+    "Does not replace AIRMETs, SIGMETs, PIREPs, or flight dispatch authority. "
+    "Satellite observes the topmost cloud layer only. "
+    "Cloud base is a statistical estimate (Noh et al. 2017)."
+)
+
 
 def build_profile(
     points: list,
@@ -193,31 +269,154 @@ def build_profile(
     at: datetime,
     field: dict,
     optics: dict,
+    source: str = "gk2a",
+    frame_time: datetime | None = None,
 ) -> dict:
+    """Build a viewer.js-compatible icing profile from a pre-loaded field."""
     daytime = is_gk2a_daytime(at)
-    samples = [_sample(point, field, optics, daytime, altitude) for point in points]
+    grid = _grid_for_source(source, field)
+    samples = [_sample(p, source, field, optics, grid, daytime, altitude) for p in points]
 
-    # Overall icing risk = highest level across all samples
-    risk = max(
-        (s.get("icingLevel", "NONE") for s in samples),
-        key=lambda lvl: _RISK_ORDER.get(lvl, 0),
-        default="NONE",
-    )
+    risk = _route_risk(samples)
+    alt_suggestions = _find_altitude_suggestions(samples, max_fl=600)
 
-    # Altitude suggestions based on observed cloud layer extents
-    cloud_samples = [s for s in samples if s.get("retrievalState") == "observed"]
-    alt_suggestions = _find_altitude_suggestions(cloud_samples, max_fl=600)
+    source_label = _SOURCE_LABEL.get(source, source)
+    obs_time = frame_time or at
 
     return {
-        "title": "GK-2A cloud cross-section",
-        "source": "KMA/NMSC GK-2A CTPS L2 (KO) · Estimated cloud base",
+        "title": "Satellite cloud cross-section",
+        "source": f"{source_label} · Estimated cloud base (Noh et al. 2017)",
         "dataKind": "observation",
-        "observedAt": iso_utc(at),
+        "observedAt": iso_utc(obs_time),
         "flightAlt_ft": altitude,
         "icingRisk": risk,
         "assessmentState": "assessed",
+        "satelliteSource": source,
+        "polarGap": False,
+        "notices": [],
         "altitudeSuggestions": alt_suggestions,
         "disclaimer": DISCLAIMER,
         "coverage": dict(Counter(p["retrievalState"] for p in samples)),
         "samples": samples,
     }
+
+
+VIEW_EDGE_DEG = 60.0   # beyond this view zenith angle parallax/limb effects dominate
+
+
+def _view_geometry(source: str, lat: float, lon: float) -> dict:
+    """Additive view-geometry quality fields for a sample seen by ``source``."""
+    vza = view_zenith_deg(lat, lon, SUB_LON.get(source))
+    edge = vza >= VIEW_EDGE_DEG
+    return {
+        "viewZenithDeg": round(vza, 1),
+        "domainEdge": bool(edge),
+        "qualityNote": (
+            f"Large satellite view angle ({vza:.0f} deg): cloud-top position and height "
+            "are less reliable here." if edge else None
+        ),
+    }
+
+
+def _unassessed_sample(point: tuple, state: str) -> dict:
+    distance, lat, lon = point
+    return {
+        "distanceKm": round(distance, 2), "latitude": round(lat, 5), "longitude": round(lon, 5),
+        "topFt": None, "baseFt": None, "phase": None, "supercooled": None,
+        "icingExposure": False, "icingLevel": None,
+        "cloudTopTemperatureC": None, "cloudBaseMethod": None, "cloudBaseState": None,
+        "satelliteSource": None, "ctpsQualityFlag": None, "retrievalState": state,
+    }
+
+
+def build_global_profile(
+    points: list,
+    altitude: int,
+    at: datetime,
+    cache_root: Path | None = None,
+) -> dict:
+    """Build a profile by routing each sample to the best available satellite.
+
+    When multiple satellites cover the same point, picks by freshness + proximity.
+    Returns a fallback simulated profile when no satellite cache is available.
+    """
+    if not points:
+        return _fallback_profile(altitude)
+
+    # For global routes, different segments may come from different satellites.
+    # Group consecutive points by their best source, then merge.
+    now = at.astimezone(timezone.utc)
+    samples: list[dict] = []
+    used_sources: set[str] = set()
+
+    daytime_gk2a = is_gk2a_daytime(at)
+    polar = False
+    for point in points:
+        distance, lat, lon = point
+        field, source, frame_time = load_best_field(lat, lon, now, cache_root)
+        if field is None:
+            if is_polar(lat):
+                state = "outside_domain"
+                polar = True
+            elif sources_for_point(lat, lon):
+                state = "source_unavailable"   # covered, but no fresh cached frame
+            else:
+                state = "outside_domain"
+            samples.append(_unassessed_sample(point, state))
+            continue
+
+        grid = _grid_for_source(source, field)
+        s = _sample(point, source, field, {}, grid, daytime_gk2a and source == "gk2a", altitude)
+        s["satelliteSource"] = source
+        if frame_time:
+            s["observedAt"] = iso_utc(frame_time)
+        samples.append(s)
+        used_sources.add(source)
+
+    if not used_sources:
+        fallback = _fallback_profile(altitude)
+        if polar:
+            fallback["polarGap"] = True
+            fallback["notices"] = ["polar_gap"]
+        return fallback
+
+    risk = _route_risk(samples)
+    alt_suggestions = _find_altitude_suggestions(samples, max_fl=600)
+    newest = max(s["observedAt"] for s in samples if s.get("observedAt"))
+    source_labels = " + ".join(_SOURCE_LABEL.get(s, s) for s in sorted(used_sources))
+
+    return {
+        "title": "Global satellite cloud cross-section",
+        "source": f"{source_labels} · Estimated cloud base (Noh et al. 2017)",
+        "dataKind": "observation",
+        "observedAt": newest,
+        "flightAlt_ft": altitude,
+        "icingRisk": risk,
+        "assessmentState": "assessed",
+        "satelliteSources": sorted(used_sources),
+        "polarGap": polar,
+        "notices": (["polar_gap"] if polar else []),
+        "altitudeSuggestions": alt_suggestions,
+        "disclaimer": DISCLAIMER,
+        "coverage": dict(Counter(p["retrievalState"] for p in samples)),
+        "samples": samples,
+    }
+
+
+def _fallback_profile(altitude: int) -> dict:
+    """Return a viewer.js-compatible simulated profile."""
+    import json
+    static = Path(__file__).resolve().parents[2] / "static" / "sample.js"
+    text = static.read_text(encoding="utf-8")
+    sample = json.loads(text[text.index("{"):text.rindex("}") + 1])
+    return dict(
+        sample,
+        source="Illustrative sample · No satellite cache available",
+        flightAlt_ft=altitude,
+        assessmentState="not_assessed",
+        icingRisk=None,
+        altitudeSuggestions=[],
+        satelliteSource=None,
+        polarGap=False, notices=[],
+        disclaimer=DISCLAIMER,
+    )

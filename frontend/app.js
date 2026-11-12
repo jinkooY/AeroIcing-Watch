@@ -69,12 +69,36 @@ async function populateFrames() {
 }
 
 // ── Risk badge ──────────────────────────────────────────────────────────────
-const RISK_ICONS = { HIGH: "⚠", MODERATE: "⚡", LOW: "✓", NONE: "—", SIM: "◇" };
-const RISK_LABELS = { HIGH: "HIGH icing risk", MODERATE: "MODERATE icing risk", LOW: "LOW icing risk", NONE: "No icing detected", SIM: "Simulated data" };
+// ── Satellite source labels (G5) and retrieval states ──────────────────────
+const SOURCE_LABELS = {
+  gk2a: "GK-2A (KMA/NMSC)",
+  G16: "GOES-16 (NOAA, archive)",
+  G18: "GOES-18 (NOAA)",
+  G19: "GOES-19 (NOAA)",
+  H09: "Himawari-9 (JMA/NOAA)",
+  msg: "Meteosat (EUMETSAT)",
+};
+const STATE_LABELS = {
+  observed: "Cloud observed",
+  clear: "Clear sky",
+  no_retrieval: "No retrieval — not assessed",
+  quality_rejected: "Quality rejected — not assessed",
+  inconsistent_retrieval: "Inconsistent retrieval — not assessed",
+  outside_domain: "Outside satellite coverage — not assessed",
+  source_unavailable: "Satellite source unavailable — not assessed",
+  no_satellite_coverage: "No satellite coverage — not assessed",
+};
+
+function sourceLabel(code) {
+  return code ? (SOURCE_LABELS[code] || code) : "None";
+}
+
+const RISK_ICONS = { HIGH: "⚠", MODERATE: "⚡", LOW: "✓", NONE: "—", SIM: "◇", NA: "?" };
+const RISK_LABELS = { HIGH: "HIGH icing risk", MODERATE: "MODERATE icing risk", LOW: "LOW icing risk", NONE: "No icing detected", SIM: "Simulated data", NA: "Not assessed" };
 
 function renderRiskBadge(risk, dataKind) {
   const badge = document.getElementById("risk-badge");
-  const level = dataKind === "simulated" ? "SIM" : (risk || "NONE");
+  const level = dataKind === "simulated" ? "SIM" : (risk || "NA");
   badge.dataset.level = level;
   badge.textContent = `${RISK_ICONS[level] || "—"} ${RISK_LABELS[level] || level}`;
   badge.setAttribute("aria-label", `Icing risk: ${RISK_LABELS[level] || level}`);
@@ -120,6 +144,19 @@ function setLoading(active) {
 
 // ── Extended sample readout (additive — augments viewer.js selectSample) ───
 function updateExtendedReadout(sample) {
+  const srcEl = document.getElementById("sample-source");
+  const stateEl = document.getElementById("sample-state");
+  if (srcEl) {
+    srcEl.textContent = sample.satelliteSource !== undefined
+      ? sourceLabel(sample.satelliteSource) + (sample.domainEdge ? ` · low-quality view (${sample.viewZenithDeg}° view angle)` : "")
+      : "—";
+  }
+  if (srcEl) srcEl.title = sample.qualityNote || "";
+  if (stateEl) {
+    stateEl.textContent = sample.retrievalState
+      ? (STATE_LABELS[sample.retrievalState] || sample.retrievalState)
+      : "—";
+  }
   const tempEl = document.getElementById("top-temp");
   const expEl = document.getElementById("icing-exposure");
   if (!tempEl || !expEl) return;
@@ -131,6 +168,9 @@ function updateExtendedReadout(sample) {
     expEl.style.color = sample.icingLevel === "HIGH" ? "#ff8080"
       : sample.icingLevel === "MODERATE" ? "#ffb84d"
       : "#69db7c";
+  } else if (sample.icingLevel === null) {
+    expEl.textContent = "Not assessed";
+    expEl.style.color = "";
   } else if (sample.icingExposure === false) {
     expEl.textContent = "No";
     expEl.style.color = "";
@@ -162,6 +202,27 @@ window.loadProfile = function (profile) {
     updateExtendedReadout(profile.samples[0]);
   }
 };
+
+// ── Per-profile notices (polar gap, sources used) ──────────────────────────
+function renderProfileNotices(profile) {
+  const polar = document.getElementById("polar-notice");
+  if (polar) {
+    const hasPolar = profile.polarGap === true
+      || (profile.notices || []).includes("polar_gap")
+      || (profile.samples || []).some((s) => s.retrievalState === "outside_domain"
+        && Math.abs(s.latitude) > 70);
+    polar.classList.toggle("visible", hasPolar);
+  }
+  const partial = (profile.samples || []).some((s) => s.icingLevel === null)
+    && profile.dataKind !== "simulated";
+  const badge = document.getElementById("risk-badge");
+  if (badge && partial) badge.textContent += " · partial route";
+  const list = document.getElementById("source-list");
+  if (list) {
+    const codes = profile.satelliteSources || (profile.satelliteSource ? [profile.satelliteSource] : []);
+    list.textContent = codes.length ? `Sources: ${codes.map(sourceLabel).join(" + ")}` : "";
+  }
+}
 
 // ── Submit handler ──────────────────────────────────────────────────────────
 async function submit() {
@@ -205,6 +266,7 @@ async function submit() {
     loadProfile(profile);
     renderRiskBadge(profile.icingRisk, profile.dataKind);
     renderAltSuggestions(profile.altitudeSuggestions);
+    renderProfileNotices(profile);
     if (profile.dataKind === "simulated") showOfflineNotice(true);
   } catch (err) {
     showError(err.message || "Request failed. Check your connection.");

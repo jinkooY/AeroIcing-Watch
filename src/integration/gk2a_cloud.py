@@ -1,6 +1,7 @@
 """Read-only WeatherPath-compatible GK-2A projected caches."""
 
 import logging
+import os
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -8,14 +9,50 @@ from zipfile import BadZipFile
 
 import numpy as np
 
-AREA = "KO"
-BOUNDS = ((32.0, 122.0), (44.5, 134.5))
-SHAPE = (500, 620)
+log = logging.getLogger(__name__)
+
+# Projected-cache areas, selected with GK2A_CLOUD_AREA. Each cache is a lat/lon
+# (Mercator-row) grid written by the external collector under FIELD/<AREA>/.
+# KO is the verified legacy domain. EA / FD bounds are *planned* cache grids for
+# the wider KMA APIHub GK-2A L2 areas (East Asia, Full Disk). They are
+# UNVERIFIED: no KMA key was available, so what APIHub really delivers for CTPS
+# beyond KO has not been checked. Override with GK2A_CLOUD_BOUNDS="S,W,N,E" and
+# GK2A_CLOUD_SHAPE="H,W" to match the collector actually used.
+AREAS = {
+    "KO": {"bounds": ((32.0, 122.0), (44.5, 134.5)), "shape": (500, 620)},
+    "EA": {"bounds": ((15.0, 100.0), (55.0, 170.0)), "shape": (500, 880)},
+    "FD": {"bounds": ((-60.0, 70.0), (60.0, 180.0)), "shape": (500, 880)},
+}
+
+
+def configured_area() -> tuple[str, tuple, tuple]:
+    """Return (area, bounds, shape) from GK2A_CLOUD_AREA / _BOUNDS / _SHAPE."""
+    name = (os.getenv("GK2A_CLOUD_AREA") or "KO").strip().upper()
+    if name not in AREAS:
+        log.warning("Unknown GK2A_CLOUD_AREA %r; using KO", name)
+        name = "KO"
+    bounds, shape = AREAS[name]["bounds"], AREAS[name]["shape"]
+    try:
+        if os.getenv("GK2A_CLOUD_BOUNDS"):
+            s, w, n, e = (float(v) for v in os.environ["GK2A_CLOUD_BOUNDS"].split(","))
+            if not (-90 <= s < n <= 90 and -180 <= w < e <= 180):
+                raise ValueError("bounds out of range")
+            bounds = ((s, w), (n, e))
+        if os.getenv("GK2A_CLOUD_SHAPE"):
+            h, wd = (int(v) for v in os.environ["GK2A_CLOUD_SHAPE"].split(","))
+            if h < 2 or wd < 2:
+                raise ValueError("shape too small")
+            shape = (h, wd)
+    except ValueError as exc:
+        log.warning("Invalid GK-2A area override ignored: %s", exc)
+    return name, bounds, shape
+
+
+AREA, BOUNDS, SHAPE = configured_area()
 SOURCE = "GK2A_L2_CTPS"
 CTPS_FIELDS = ("cth_ft", "ctt_k", "phase", "ctps_flag")
 OPTIONAL_FIELDS = ("supercooled", "emis11")
 OPTICS_FIELDS = ("lwp_gm2", "iwp_gm2", "cot", "dcoew_dqf")
-log = logging.getLogger(__name__)
 
 
 def timestamp(dt: datetime) -> str:
