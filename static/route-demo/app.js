@@ -281,7 +281,7 @@ async function loadDemo() {
     const response = await fetch("scenario.json");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (data.schema_version !== 1 || data.routes.length !== 2) throw new Error("Unsupported scenario");
+    if (![1, 2].includes(data.schema_version) || data.routes.length !== 2) throw new Error("Unsupported scenario");
     render(data);
   } catch (error) {
     console.error(error);
