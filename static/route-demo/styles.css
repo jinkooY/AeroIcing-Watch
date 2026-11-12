@@ -1,0 +1,75 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1522;
+  --panel: #122132;
+  --panel-hover: #172b3e;
+  --line: #334b61;
+  --text: #eef5fb;
+  --muted: #b6c7d7;
+  --teal: #78dfcf;
+  --amber: #ffd48a;
+  font-family: "Instrument Sans", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+main { max-width: 1260px; padding: 48px clamp(16px, 4vw, 52px) 56px; margin-inline: auto; }
+h1, h2, p, figure, dl, dd { margin: 0; }
+a { color: var(--teal); }
+section { margin-block-start: 28px; }
+.page-header { border-bottom: 1px solid var(--line); padding-bottom: 23px; }
+.brand { color: var(--teal); font-weight: 650; letter-spacing: .06em; }
+.heading-row { display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; margin-block: 9px 5px; }
+h1 { font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1.02; letter-spacing: -.05em; }
+h2 { font-size: 1.2rem; margin-bottom: 10px; letter-spacing: -.02em; }
+.source-label { border: 1px solid var(--line); border-radius: 20px; padding: 5px 11px; color: var(--muted); font-size: .85rem; }
+#intro, #load-status, .note, .assumptions, dt { color: var(--muted); line-height: 1.5; }
+#load-status { margin-top: 18px; }
+.routes, .plots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.routes { margin-top: 12px; }
+button, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:where(button, select, a):focus-visible { outline: 2px solid white; outline-offset: 3px; }
+.route, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.route { text-align: left; padding: 16px; }
+.route:hover { background: var(--panel-hover); }
+.route[aria-pressed="true"] { border-color: var(--route-color); box-shadow: inset 0 0 0 1px var(--route-color); }
+.route-heading { display: block; margin-bottom: 12px; color: var(--route-color); font-weight: 700; font-size: 1.05rem; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.metric { display: grid; gap: 3px; }
+.metric strong { font-size: clamp(1rem, 2.2vw, 1.45rem); font-variant-numeric: tabular-nums; }
+.metric small, figcaption span { color: var(--muted); }
+.coverage { display: block; margin-top: 12px; font-size: .87rem; color: var(--muted); }
+.difference { margin-top: 10px; font-weight: 600; }
+.note { margin-top: 8px; font-size: .89rem; }
+figure.panel { overflow: hidden; }
+figcaption { padding: 12px 14px 0; display: flex; justify-content: space-between; gap: 5px 15px; flex-wrap: wrap; font-weight: 600; }
+figcaption span { font-size: .84rem; font-weight: 400; }
+svg { display: block; width: 100%; height: auto; }
+svg text { fill: var(--muted); font: 15px "Segoe UI", sans-serif; }
+svg line { stroke: var(--line); }
+svg .zero { stroke: var(--muted); stroke-dasharray: 4 4; }
+svg .station-label { fill: var(--text); font-weight: 700; }
+#chart { cursor: crosshair; }
+.detail-panel, .provenance { padding: 14px; }
+.detail-panel { margin-top: 12px; }
+.segment-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.segment-controls label { display: flex; align-items: center; gap: 8px; }
+.segment-controls button, select { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 5px 10px; }
+.segment-controls button:disabled { opacity: .5; cursor: default; }
+.data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 146px), 1fr)); gap: 10px 16px; margin-top: 12px; }
+.data-grid dt { font-size: .85rem; }
+.data-grid dd { font-variant-numeric: tabular-nums; line-height: 1.4; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  main { padding-top: 26px; }
+  .routes, .plots { grid-template-columns: 1fr; }
+}
+
+#segment-detail, #forecast { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#forecast > div:last-child { grid-column: span 2; }
+@media (max-width: 760px) {
+  #segment-detail, #forecast { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  svg text { font-size: 19px; }
+}

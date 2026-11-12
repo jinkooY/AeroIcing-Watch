@@ -1,59 +1,40 @@
-# AeroIcing Watch — Devpost Submission Notes
+# AeroIcing Watch — Kiroween submission notes
 
-## Elevator Pitch
+## Project description
 
-AeroIcing Watch turns GK-2A geostationary satellite Level-2 cloud observations into an interactive vertical icing-risk cross-section along any flight segment — giving airline dispatchers a satellite-grounded answer to "where is the icing, at what altitude, and can I fly above or below it?"
+AeroIcing Watch helps a dispatcher review how forecast winds and route geometry affect estimated cruise time and fuel. The demo compares two illustrative Incheon–Haneda paths under identical cruise assumptions. Select a segment to inspect the forecast wind, ground speed, temperature, relative humidity and estimated time of passage. The app shows the forecast cycle, validity window and local bundle availability for the replay.
 
-## Sample Image Caption
+The bundled case uses archived ECMWF IFS 0.25° forecasts and OpenAP 2.4. A provisional temperature and relative-humidity screen was evaluated on 49 direct-route segments and 52 waypoint-route segments. Zero segments met the criterion in this case. Icing accuracy is unevaluated and contemporaneous satellite context is unavailable. Fuel values are level-cruise model estimates for assumed inputs.
 
-GK-2A CTPS satellite-derived cloud tops, Noh et al. (2017) estimated bases, cloud phase, and supercooled cues along a selected flight segment. Icing risk badge (HIGH/MODERATE/LOW/NONE) derived from deterministic satellite rules — no NWP, no LLM.
+Proposed category **Frankenstein** combines an archived numerical forecast, a performance model and an evidence-linked route comparison in a browser.
 
-## Key Features
+## Run and reproduce
 
-- **Satellite-only icing pipeline** — GK-2A CTPS L2: cloud top height, temperature, phase, supercooled flag; cloud base from Noh et al. (2017) regression
-- **Deterministic risk rating** — HIGH/MODERATE/LOW/NONE, computed server-side from direct satellite retrievals
-- **Altitude suggestions** — icing-free bands above and below the observed cloud layer
-- **Interactive cross-section** — keyboard-accessible Canvas chart; planned altitude line overlay
-- **ICAO airport lookup** — 32 airports across Korea, Japan, China, Southeast Asia
-- **REST API** — `/api/icing/cross-section` for dispatch system integration
-- **IFS route evaluation** — `POST /api/route-review/evaluate` for ECMWF-based per-segment weather + fuel estimate (OpenAP)
-- **Offline / fallback** — illustrative sample data when no satellite cache; standalone HTML viewer
+1. Run `python -m http.server 8080 --bind 127.0.0.1 --protocol HTTP/1.1 --directory static/route-demo` from the repository root. Open [localhost:8080](http://localhost:8080/) and select segments on both routes.
+2. See [IFS route evaluation](IFS_Route_Evaluation.md) for the forecast cycle, assumptions, and procedure used to generate the archived route responses. From a directory containing the two archived request and response pairs, regenerate the public scenario with `python tools/export_route_demo.py <archive-directory>`. The exporter uses selected fields from the archived responses. Local forecast caches remain external to the static deployment.
+3. Serve the contents of `static/route-demo` as the public site root. For GitHub Pages, select **GitHub Actions** as the Pages source and run **Publish route comparison demo** from the default branch once the workflow is merged. Test the resulting URL in a signed-out browser. Confirm that the HTML, stylesheet, JavaScript and scenario JSON all load over HTTPS and that route and segment controls work on a narrow viewport.
 
-## Built With
+Weather data attribution and license are shown in the demo. The underlying public forecasts are from the [ECMWF Open Data dataset](https://www.ecmwf.int/en/forecasts/datasets/open-data). AeroIcing Watch sampled and interpolated them along illustrative routes.
 
-Python, FastAPI, uvicorn, numpy, netCDF4, pyproj, requests, python-dotenv, openap  
-HTML, CSS, JavaScript, Canvas API  
-GK-2A CTPS Level-2 (KMA/NMSC)  
-ECMWF IFS Open Data (route review)  
-Kiro IDE (AI-assisted development)
+## How Kiro was used
 
-## Demo Video Script
+Kiro IDE helped develop the satellite cross-section workflow. The local session history records successful writes to the requirements, design, tasks and steering files, and to the browser form and cloud-profile analysis. It also records edits to the icing API. The repository preserves the [spec and steering files](../.kiro/) and the [initial backend change](https://github.com/jinkooY/AeroIcing-Watch/commit/257f7d8). Codex developed the archived route comparison page, the public scenario exporter and the Pages workflow in a later pass.
 
-| Time | Footage |
+## Video outline
+
+| Time | Screen recording |
 |---|---|
-| 0:00–0:20 | Introduce the dispatcher problem: "Where is the icing, at what altitude?" |
-| 0:20–0:50 | Open the app. Enter ICN → RJTT at FL350. Submit. |
-| 0:50–1:30 | Show the cross-section chart: cloud top/base layers, planned altitude line, risk badge. |
-| 1:30–2:00 | Click through samples — show supercooled cue, cloud top temperature, icing exposure. |
-| 2:00–2:20 | Show altitude suggestions: "No icing above FL400 / below FL80." |
-| 2:20–2:45 | Show simulated-data fallback (offline mode). Open standalone viewer. |
-| 2:45–3:00 | Show API response (`/api/icing/cross-section`) in browser dev tools. |
-| 3:00–3:30 | Explain what's next: download worker, multi-waypoint, NWP overlay. |
+| 0:00–0:25 | Open the public demo and explain the two routes and fixed cruise assumptions. |
+| 0:25–0:55 | Compare the distance, time and fuel estimates, and show the archived forecast cycle. |
+| 0:55–1:40 | Select a segment, then switch routes and inspect ETA, wind, ground speed and weather values. |
+| 1:40–2:10 | Show what the screen evaluated, what satellite context is available, and how to interpret the cruise estimate. |
+| 2:10–2:40 | Show verified Kiro work with a requirement, an implementation change and its validation. |
 
-## Submission Checks
+## Submission status
 
-- [ ] Public demo URL confirmed
-- [ ] Demo video uploaded (≤ 3 min)
-- [ ] Kiro development evidence included (session logs / `.kiro/` directory in repo)
-- [ ] All source files in English
-- [ ] No API keys in git history
-- [ ] Competition eligibility confirmed
-
-## Data Attribution
-
-- **GK-2A CTPS L2** — Korea Meteorological Administration (KMA) National Meteorological Satellite Center (NMSC)
-- **Cloud base estimation** — Noh, Y.-J., et al. (2017). *J. Atmos. Ocean. Technol.* **34**, 585–598. https://doi.org/10.1175/JTECH-D-16-0066.1
-
-## Operational Disclaimer
-
-This product is a dispatcher review aid. It does not replace AIRMETs, SIGMETs, PIREPs, NOTAMs, or flight dispatch authority. The satellite observes the topmost cloud layer only.
+- [ ] Confirm the public app URL and test it signed out.
+- [ ] Confirm the public GitHub repository, Apache-2.0 license and root `.kiro` directory.
+- [x] Verify the described Kiro spec and implementation work against local session activity.
+- [ ] Document any pre-existing work incorporated into the entry, including WeatherPath-derived components, and confirm third-party data and asset rights.
+- [ ] Record the public demo and upload the video to YouTube.
+- [ ] Complete the English Devpost submission and confirm the category against the [official rules](https://kiroween.devpost.com/rules).
