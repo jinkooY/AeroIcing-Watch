@@ -41,7 +41,7 @@ def _fallback(
         selectedAt=iso_utc(selected) if selected else None,
         ageMin=_age_minutes(now, selected) if selected else None,
         assessmentState="not_assessed",
-        icingRisk="NONE",
+        icingRisk=None,
         altitudeSuggestions=[],
         disclaimer=(
             "Dispatcher review aid only. No satellite cache available — "
@@ -131,8 +131,13 @@ def cross_section(
     if requested is None and stale:
         return _fallback(alt_ft, "stale", None, selected, now)
     optics_state, _, optics = read_frame(frame_path(root, selected, "OPTICS"), optics=True)
+    profile = build_profile(points, alt_ft, selected, field, optics or {})
+    if stale and profile["icingRisk"] == "NONE":
+        # A stale (archived) observation can never support a "no icing" statement.
+        profile["icingRisk"] = None
+        profile["assessmentState"] = "stale_observation"
     return dict(
-        build_profile(points, alt_ft, selected, field, optics or {}),
+        profile,
         cacheState="stale" if stale else "ready",
         requestedAt=iso_utc(requested) if requested else None, selectedAt=iso_utc(selected),
         ageMin=age, fieldSchemaVersion=schema, opticsCacheState=optics_state,
