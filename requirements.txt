@@ -7,3 +7,5 @@ requests>=2.32
 python-dotenv
 openap==2.4
 s3fs
+eccodes
+ecmwflibs

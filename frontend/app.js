@@ -75,6 +75,7 @@ const SOURCE_LABELS = {
   G16: "GOES-16 (NOAA, archive)",
   G18: "GOES-18 (NOAA)",
   G19: "GOES-19 (NOAA)",
+  H09: "Himawari-9 (JMA/NOAA)",
   msg: "Meteosat (EUMETSAT)",
 };
 const STATE_LABELS = {
@@ -147,9 +148,10 @@ function updateExtendedReadout(sample) {
   const stateEl = document.getElementById("sample-state");
   if (srcEl) {
     srcEl.textContent = sample.satelliteSource !== undefined
-      ? sourceLabel(sample.satelliteSource) + (sample.domainEdge ? " · near limb" : "")
+      ? sourceLabel(sample.satelliteSource) + (sample.domainEdge ? ` · low-quality view (${sample.viewZenithDeg}° view angle)` : "")
       : "—";
   }
+  if (srcEl) srcEl.title = sample.qualityNote || "";
   if (stateEl) {
     stateEl.textContent = sample.retrievalState
       ? (STATE_LABELS[sample.retrievalState] || sample.retrievalState)
