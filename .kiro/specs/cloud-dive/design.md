@@ -32,7 +32,8 @@ dispatcher API (R6).
 | `src/analysis/evidence.py` | new | Rule `cloud-dive-evidence-v1`: isotherm estimate, candidate layer, evidence level, km summary |
 | `tools/export_cloud_dive.py` | new | Select frames and routes, call the profile builder, apply `evidence.py`, validate, write case JSON and `cases/index.json` |
 | `tools/check_viewer_contract.py` | new | Python port of `validProfile()` used by the exporter and tests |
-| `static/cloud-dive/index.html, game.js, game.css` | new | Game loop, rendering, input, end-of-dive report, leaderboard, Why? cards |
+| `static/cloud-dive/engine.js` | new | DOM-free ES module: `evaluateAt`, `sampleAt`, pure `step()`; tested with `node --test` |
+| `static/cloud-dive/index.html, game.js, game.css` | new | Rendering, input, HUD, end-of-dive report, leaderboard, Why? cards |
 | `static/cloud-dive/cases/` | new, committed | Derived case files only (R1.4) |
 | `.github/workflows/route-demo-pages.yml` | changed | Assemble the three-part site root |
 | `src/analysis/icing_profile.py`, `src/api/*` | unchanged | Existing behaviour (R6.1) |
