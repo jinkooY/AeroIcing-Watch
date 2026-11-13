@@ -51,6 +51,11 @@ dispatcher view (R11).
 | `tools/tune_params.py` | new | Reports Best vs Straight-ahead spread per case |
 | `static/cloud-dive/engine.js` | new | DOM-free ES module port of `game_core` |
 | `static/cloud-dive/index.html, game.js, game.css` | new | Rendering, input, HUD, gate panel, report |
+| `static/cloud-dive/scene.js` | new (revision b) | Pure `buildScene(file, engineState, phasePose, opts)` to a scene description (section 14); no DOM, no clock, no random |
+| `static/cloud-dive/phases.js` | new (revision b, required) | Pure phase machine and cinematic poses; `withDeparture` |
+| `static/cloud-dive/cockpit3d.js`, `panel.js`, `cockpit.css` | new (revision b) | WebGL drawing of the scene description; HTML overlay for instruments and controls |
+| `static/cloud-dive/hotseat.js` | new (revision b, required) | Pure hot-seat session and results table |
+| `static/cloud-dive/vendor/` | new (revision b) | Vendored 3D library at an exact version (task 15.1) |
 | `.github/workflows/route-demo-pages.yml` | changed | Publish `static/cloud-dive/` at the root and the viewer at `/viewer/` |
 | `src/analysis/icing_profile.py`, `src/api/*` | existing | Dispatcher view; unchanged API (R11.1) |
 
@@ -120,6 +125,12 @@ v in the 2026-11-12 00 UTC +21 h index).
   "viewerProfile": {"title": "...", "samples": []}
 }
 ```
+Revision b adds two fields, written by `tools/tune_params.py --write` and a small exporter
+step that refuse to change anything else (same guard as the map exporter):
+`params.departureClimbUsd` (illustrative; formula recorded in `params.departureClimbNote`)
+and `airports: {from: {icao, elevFt}, to: {icao, elevFt}}` (elevations are `elev_ft` from the repository's
+`airports.json`, which `tools/build_airports.py` builds from the OurAirports CSV; the source and licence are checked and
+recorded in `THIRD_PARTY_NOTICES.md`, decision G12). Evidence, references, balance and `viewerProfile` stay byte-identical.
 Arrays are stored flat in one of two shapes: `{shape, data}` (evidence, headwindKt, ...)
 or a group object with one `shape` and one plain flat array per field (`satellite`,
 `isotherms`). Every reader (engine, renderer, tests) accepts both shapes through one helper.
@@ -312,6 +323,13 @@ and Straight-ahead (centre lane, start altitude, anti-ice on exactly while the c
 Observed or Possible). The forced variants feed balance criteria B2 and B3. The solver can
 pause anywhere; a player who pauses at every step can match it.
 
+Departure climb (revision b): the solver and `game_core` do not change. The displayed
+references and the player's total are `engine total + params.departureClimbUsd`, added by
+`withDeparture` (Python helper for reports and tests, JavaScript in `phases.js`). Balance
+B1 to B5 and CD-P12, CD-P16, CD-P17 stay on engine totals. The saving share
+(SA - P) / (SA - Best) is the same with or without the constant. A diverted total is
+cost up to the diversion + `diversionUsd` + the constant.
+
 ## 9. UI
 
 Layout: a top-view mini map (route, lanes, aircraft), the cross-section (altitude
@@ -397,6 +415,16 @@ arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
 | CD-P20 | Renderer columns: per lane, the number of "Not assessed" curtain columns equals the number of steps whose satellite state is neither observed nor clear, for both array shapes | R10.1, R2.5 |
 | CD-P21 | Map registration: for every lane and step, project then unproject returns the point within half a pixel, and every lane point lies inside the image extent | R13.1, R13.2 |
 | CD-P22 | Map and side view agree: the evidence drawn for a lane cell on the map equals the level of the side-view column for that lane, step and altitude | R13.5 |
+| CD-P23 | Scene purity: same (case, engine state, phase pose, options) gives a deep-equal scene; deep-frozen inputs are not mutated; the scene holds only finite numbers | R19.5 |
+| CD-P24 | Cloud truth: every cloud volume lies on a lane and step whose retrieval is `observed` with a finite top; none where `clear`; top and base equal the case numbers within the merge tolerance; a null base gives a faded, "estimated" volume | R16.6 |
+| CD-P25 | Evidence mapping: every evidence band has the level the engine reports (`levelAt`) for each cell it covers; `Not indicated` produces no band; every Observed cell in the view window is covered by a band | R16.7, R16.8 |
+| CD-P26 | Budgets: for every case, step and altitude, volumes <= `MAX_CLOUD_VOLUMES`, bands <= `MAX_EVIDENCE_BANDS`, estimated triangles <= `MAX_TRIANGLES` | R19.3 |
+| CD-P27 | Gate-choice equivalence: any sequence of panel actions gives the same engine targets and the same flight as the matching 2D actions; targets stay inside the corridor and the block | R17.2, R7.2 |
+| CD-P28 | Effects: frost = ice / 100 and never decreases over a flight; shake is 0 unless anti-ice is off, the cell is Observed or Possible, ice > 0 and reduced motion is off; the wing-heat lamp equals the anti-ice switch | R18.1, R18.2, R18.3, R15.12 |
+| CD-P29 | Departure constant: for any action sequence the departure climb component is the same number; displayed total = engine total + constant; engine state and balance B1 to B5 are unchanged by it | R15.5 |
+| CD-P30 | Phase machine: only the transitions of section 14.6 occur; the engine steps only in cruise and gate; the engine state at the start of cruise is the initial state; skipping a cinematic changes no value; in takeoff and climb the camera x is in [-`LEAD_IN_KM`, 0], no volume has x0 < 0, no evidence band is drawn and `cloudAlpha` is 1 only after the fade | R15.6, R15.7, R15.11, R15.13, R15.15 |
+| CD-P31 | Hot-seat: the table has one row per player, ranked flights ordered by total, diverted flights marked "not ranked", nothing written to storage except the per-case local best | R20.2, R20.3 |
+| CD-P32 | Cost pop-up: N equals the sum of the component differences between two consecutive stops, is never negative, and is not shown before any choice at a gate | R18.5, R6.5 |
 
 Unit tests cover every rule row, the cost formulas with fixed numbers, and the
 parallax correction on a synthetic cloud. A wording test scans `static/cloud-dive/**`
@@ -410,12 +438,19 @@ and case files for the R9.1 terms.
   report says so.
 - Export fails on any non-finite value, secret, absolute path or missing source.
 
-## 12. Risks and cuts (about 20 days left)
+## 12. Risks and cuts (about 21 days left on 2026-11-13)
 
 | Risk | Mitigation |
 |---|---|
-| Too much to build | Order: evidence, cube export, Python core, JS port, UI. Cut order: third case, Wasteful extreme, share text |
-| Trivial game (always climb, never use anti-ice, or always use it) | Altitude block, ECMWF head-winds, climb cost and the two-sided anti-ice penalty; balance criteria B1 to B4 (section 5.2) are enforced by the exporter |
+| Too much to build | Order: evidence, cube export, Python core, JS port, UI. Required: groups 13 to 16 (except 16.2, 16.4, 16.7), 17.1 to 17.4, 17.6 to 17.8 and 18. Cuttable, first to go first: chase view (19), wind streaks (16.4), shake (16.2), arrival and diversion cinematics (17.5); optional cost pop-up (16.7); then third case, Wasteful extreme, share text. Each group ends shippable; feature freeze 2026-11-28 (approved, G9) |
+| 3D scope grows past the schedule | The scene description is built and tested first (group 14); the cockpit cruise view (15) already ships a playable 3D game; the 2D view stays as the fallback |
+| Frame rate on a laptop or phone | Geometry caps per lane and step (14.9), pixel-ratio cap, adaptive view distance, merged geometry; `?perf=1` overlay; measured in task 15.6, never assumed |
+| 3D view invents data or reads as severity | Volumes only where the satellite reports a top; no noise or random; base faded and "estimated"; effects only draw the engine state (CD-P24, CD-P25, CD-P28); wording test on scene strings |
+| Vendored library breaks the wording test or the licence list | Exact pinned version, MIT licence and file hash recorded in `THIRD_PARTY_NOTICES.md`; the wording test skips `vendor/` and scans scene strings (G7) |
+| Motion discomfort | Small shake with a fixed limit; none under reduced motion; shorter cinematics; Skip |
+| Flat ground misleads on Denver | Stated in a "Why?" card and the README; no terrain claim (G10); the video uses KJFK-KBNA (G11) |
+| WebGL unavailable (old phones, locked browsers) | 2D view fallback with the same flight and costs (R19.1) |
+| Trivial game (always climb, never use anti-ice, or always use it) | Altitude block, ECMWF head-winds, climb cost and the two-sided anti-ice penalty; balance criteria B1 to B5 (section 5.2) are enforced by the exporter |
 | GOES height is 10 km resolution | Label it; lanes are 15 km apart; no claim finer than a pixel |
 | Anti-ice penalty has no source | Stored as a labelled game parameter |
 | OpenAP licence | Build-time only, never shipped; notice in `THIRD_PARTY_NOTICES.md` |
@@ -423,5 +458,167 @@ and case files for the R9.1 terms.
 
 ## 13. Out of scope
 
-3D flight (reconsider after the map view is played), map tiles, animated satellite loops, real icing physics, live data, accounts, an online leaderboard, advice
+3D realism (terrain and obstacles, real aircraft or cockpit models, liveries, flight dynamics, sound, VR; the 3D cockpit view itself is section 14), online multiplayer, map tiles, animated satellite loops, real icing physics, live data, accounts, an online leaderboard, advice
 on real operations, the Incheon-Haneda demo, Meteosat, Himawari, GK-2A.
+
+## 14. 3D cockpit renderer (revision b)
+
+### 14.1 Principles and data flow
+The renderer is read-only. Nothing in it changes the case file, `engine.js` or the cost
+model.
+```
+case file + engine state (controller.js) + phase pose (phases.js)
+        |  buildScene()  pure, tested in Node          (scene.js)
+        v
+scene description (plain JSON)
+   |-> cockpit3d.js   draws sky, ground, lanes, clouds, evidence, frost (three.js)
+   |-> panel.js       HTML overlay: instruments, text line, controls, legend strip
+```
+Gates, actions and costs go through the existing controller, so the 2D and the 3D view play
+the same flight (CD-P27).
+
+### 14.2 Coordinates and scale
+World x = along-track km, z = lateral display km (positive to the right of travel, as in
+`lanes.py`), y = altitude. The case route starts at x = 0 ("Top of climb") and the runway is
+at x = -`LEAD_IN_KM` (section 14.6). Three display constants, all in `scene.js` and listed in
+the display-scale "Why?" text (R16.12):
+- `VEX`, vertical exaggeration (starting value 3), so a cloud a few thousand feet thick is
+  visible next to 15 km lane spacing;
+- `LATK`, lateral compression of lane spacing (starting value 0.5; 1 = true spacing; may go down to 0.2 in task 15.2 if the side lanes are not readable from the cockpit): lane
+  guides, cloud footprints and the camera z are all multiplied by it, so the lanes stay in
+  view in front of the windshield, as the 2D map widens its lanes to be readable;
+- `LEAD_IN_KM`, the climb lead-in (starting value 30, tuned in 17.4).
+Field of view, eye height, `VEX` and `LATK` are tuned in task 15.2. The engine always uses true
+distances (15 km lanes, 10 km steps); only the scene is scaled (CD-P23 checks this).
+
+### 14.3 Scene description
+```json
+{
+  "schemaVersion": 1, "phase": "cruise", "mode": "cockpit",
+  "camera": {"pos": [0,0,0], "yawDeg": 0, "pitchDeg": 0, "rollDeg": 0, "fovDeg": 75},
+  "sky": {}, "ground": {"y": 0, "elevFt": 0},
+  "lanes": [{"index": 0, "zKm": -30, "isCurrent": false, "isTarget": false}],
+  "airports": [{"icao": "KJFK", "role": "departure", "xKm": -30, "zKm": 0},
+               {"icao": "", "role": "topOfClimb", "xKm": 0, "zKm": 0}],
+  "cloudAlpha": 1,
+  "clouds": [{"lane": 0, "step": 0, "x0Km": 0, "x1Km": 10, "zKm": -30, "halfWidthKm": 7.5,
+              "topFt": 0, "baseFt": null, "baseEstimated": true}],
+  "evidence": [{"lane": 0, "step0": 0, "step1": 0, "level": "Observed supercooled layer at planned altitude",
+                "loFt": 0, "hiFt": 0}],
+  "effects": {"frost": 0, "shakeDeg": 0, "wingLamp": false, "windStreaks": 0, "headwindKt": 0},
+  "panel": {"totalUsd": 0, "components": {}, "ice": 0, "antiIce": false, "altFt": 0, "lane": 2,
+            "distanceKm": 0, "levelHere": "", "levelAhead": "", "textLine": "", "gate": null}
+}
+```
+All numbers finite; the function uses no clock, no random and no DOM; strings come from one
+table that the wording test scans (CD-P23).
+
+### 14.4 Clouds
+One volume per (lane, step) with retrieval `observed` and a finite top: footprint 10 km along
+by 15 km across, from `topFt` down to `baseFt`. A null base gives a thin faded volume below the
+top, as the 2D view draws a thin cap. The base edge fades and is labelled "estimated". Shading
+is a fixed soft-edge gradient: no noise, no random, no per-cell variation. Window: 2 steps
+behind to the view distance ahead; no volume starts before x = 0. `cloudAlpha` is 0 during
+takeoff, 0 to 1 over the last 1.5 s of the climb, and 1 afterwards. Beyond 12 steps ahead, neighbouring cells of one lane are
+merged when top and base differ by at most the merge tolerance (500 ft, raised to 1,000 ft if
+the cap is exceeded); the window shrinks last. Observed evidence is never dropped to meet the
+cap (CD-P24, CD-P26).
+
+### 14.5 Evidence
+Bands are runs of cells of one lane with the same level and the same altitude interval,
+merged along track. `Observed` (orange glow) and `Possible` (blue haze) bands cover the whole
+block inside the window. `Not assessed` (sparse grey hatch) is drawn only within 2,000 ft of
+the aircraft altitude, like the 2D curtain. `Not indicated` makes no band. Priority when the
+cap binds: Observed, Possible, Not assessed. The four drawings differ by pattern (solid glow,
+stippled haze, line hatch, nothing) and each has a text label on the panel (CD-P25, R16.8).
+
+### 14.6 Phases
+```
+ready -> takeoff (5 s) -> climb (10-15 s) -> cruise <-> gate -> arrival (10 s) -> report
+                                                  \-> diversion (4 s) -> report
+```
+`phases.js` holds a pure `phaseStep(phaseState, dtMs, input)` and `phasePose(phaseState)`
+(camera pose, displayed altitude, panel readout). The engine steps only in cruise and gate,
+through the existing controller. At the end of the climb the controller creates the initial
+engine state (step 0). The runway is at x = -`LEAD_IN_KM` and x = 0 is the "Top of climb" marker, where the engine starts at step 0 (decision G5). The
+climb is a cinematic over the lead-in: the camera moves from the runway to x = 0 at a display speed chosen so
+the climb lasts 10 to 15 s, the altitude tape rises from the airport elevation to the start altitude, and engine
+distance stays 0 km. The lead-in is a display convention: the case route length is unchanged, so the drawn
+airport-to-airport distance is `LEAD_IN_KM` longer than the route; the Why text says so. During takeoff and climb no
+evidence band is drawn, clouds have `cloudAlpha` 0 and fade in over the last 1.5 s, and the camera stays at x <= 0,
+so the player never appears to fly through evidence without the engine (and frost) running (R15.15). `withDeparture(total)` adds
+`params.departureClimbUsd`. Under reduced motion each cinematic is at most 2 s. Skip
+jumps to the end pose (CD-P29, CD-P30).
+
+The departure climb constant is computed once at build time from the same OpenAP climb table
+(extra fuel per 1,000 ft from the departure airport elevation to the start altitude, the first
+table entry used below the block); the formula is recorded in `params.departureClimbNote`
+and the value is labelled illustrative.
+
+### 14.7 Camera
+Cockpit: eye at the aircraft position (lane z, altitude y, step x interpolated by the same
+`motionFrac` as the map), looking down track; pitch +8 degrees in the climb, small pitch
+change in the arrival descent. Fast-forward is a normal forward motion at a display speed.
+At a gate the speed eases to zero over at most 1.5 s (R15.8). Lane guides are faint lines at the
+aircraft altitude; at a gate they become "sky gates" at the next boundary. Chase (key C,
+task 19): camera behind and above a generic aircraft model drawn at an exaggerated display
+scale; no livery.
+
+### 14.8 Panel and feedback
+The panel is an HTML overlay (G6): fuel counter, ice gauge with the label "Ice index (game
+model)", anti-ice switch with a lamp, altitude tape, a canvas top-view map from `map.js`
+helpers (lanes, track, next cells with the R13.5 patterns, no image), a legend strip with the four
+level names, one small text line (lane, distance, head-wind in kt, level here and ahead, source
+and UTC time), and the game note. Text updates for assistive technology at most every 1.5 s, as
+the map text alternative does.
+
+| Cue | Source | Rule |
+|---|---|---|
+| Frost on windshield edges | `ice` | opacity = ice / 100; never decreases |
+| Shake | `ice`, `antiIce`, level of the cell flown | amplitude = ice / 100 x `SHAKE_MAX_DEG` (starting value 0.4); zero when anti-ice is on, outside Observed or Possible cells, or under reduced motion |
+| Wing-heat lamp | `antiIce` | on while anti-ice is on |
+| Fuel counter rate | per-step cost of the engine | interpolated; faster with anti-ice on because the engine cost is higher |
+| Cost pop-up (optional, 16.7) | cost components before and after the stop | "+$N this segment" for a few seconds at a gate, pause, step or the end; N = sum of the component changes since the previous stop; never shown before a choice |
+| Wind | `headwindKt` at the current cell | at most 12 streaks, speed from the number; head-wind number in the text line |
+
+### 14.9 Performance and caps
+Starting values, tuned in task 15.6: `MAX_CLOUD_VOLUMES` 160, `MAX_EVIDENCE_BANDS` 240,
+`MAX_TRIANGLES` 40,000, view distance 80 km with fog, device pixel ratio at most 2 (1.5 on
+touch devices), merged or instanced geometry so one draw call serves many volumes. Adaptive
+step: if the mean frame time exceeds 40 ms for 2 s, drop the pixel ratio to 1 and the view
+distance to 50 km. `?perf=1` shows a frame-rate overlay (never shown otherwise). Targets are
+60 fps on a laptop and 30 fps on a phone; results are recorded in the usage log.
+
+### 14.10 Fallback
+`cockpit3d.js` is loaded only after a WebGL context test passes; if the test or the import
+fails, `game.js` opens the 2D view with a notice (R19.1). The departure climb is a status card
+with its cost. At a gate in the cockpit view the 2D side view is a small inset (R17.5); key V
+and a button open the full 2D view at any time.
+
+### 14.11 Assets and licences
+One 3D library, vendored as a single module file under `static/cloud-dive/vendor/three/` at an
+exact version chosen in task 15.1 (version, MIT licence text and file hash recorded in
+`THIRD_PARTY_NOTICES.md`). No other library, CDN or font file. Cockpit frame, panel, aircraft
+model and airport markers are built from primitive geometry in code. Textures (hatch, frost,
+sky gradient) are generated on a canvas at load. If a file asset is added later, it must be
+self-made or CC0 and get a row in `THIRD_PARTY_NOTICES.md` first. No logos, no airline or
+manufacturer marks.
+
+### 14.12 Terrain and airport elevation
+Flat ground at the departure airport elevation, easing linearly to the arrival airport
+elevation along the route. No terrain. For KDEN-KLAX the Rocky Mountains are not drawn and
+the block (10,000 to 20,000 ft) was set without terrain data; the open item of 5.4 stays open
+(G10). The flat-ground "Why?" card and the README say so; the block is not changed now. The video uses KJFK-KBNA
+(G11). Airport elevations: KJFK 13, KBNA 599, KDEN 5431, KLAX 125, KBUF 728, KPWM 76 ft, from `airports.json` (G12).
+
+### 14.13 Hot-seat
+`hotseat.js` holds `{players: [{name, result}], current}` and pure transitions (`start`,
+`finish`, `next`, `table`). The setup dialog takes 2 to 4 names (default "Player 1" to
+"Player 4"). After each flight the report opens, then a hand-over dialog names the next player.
+The table lists total, ranked or "not ranked", and share of the possible saving, with Best and
+Straight-ahead as the last two rows. It is held in memory only (CD-P31).
+
+### 14.14 Wording
+Display-scale Why text: vertical exaggeration, lateral compression of lane spacing, and the lead-in before "Top of climb". Cost pop-up text: "+$N this segment". Button labels: "Fly through", "Climb over", "Descend", "Go left", "Go right", "Anti-ice",
+"Continue", "Pause", "2D view", "Skip". Panel lamp text says "lamp". Scene strings, panel
+strings and Why-card text are scanned by `tests/test_wording.py` for the terms of R9.1.

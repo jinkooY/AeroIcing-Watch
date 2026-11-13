@@ -5,7 +5,8 @@ fuel-cost score, decision-gate flow). Supersedes `../aeroicing-watch/`, which
 stays as the completed baseline. Deadline: 2026-12-04 2:00 pm Pacific
 (2026-12-05 07:00 KST). Section 5 is the decision log; section 6 is the
 official rules digest. Where sections 1-4 and section 5 differ, section 5 wins
-only for rows marked "Superseded".
+only for rows marked "Superseded". Revision b (3D cockpit game): decision G1 in
+section 5.7, requirements R15 to R21.
 
 ## 1. Pitch
 
@@ -16,6 +17,13 @@ decides: stay on course, move to another lane, climb or descend, and turn
 anti-ice on or off. Every choice has a dollar price: longer path, climb, anti-ice
 fuel, ice drag, or a forced diversion. The score is the total fuel cost in
 dollars; lower wins.
+
+From revision b the game is played in 3D from a regional-jet cockpit: the player
+takes off, climbs to the case's cruise level, and flies the route in first person.
+In front of each cloud the game pauses and the player chooses: fly through, climb
+over, descend, go left or right, and anti-ice on or off. It is casual and readable,
+not a flight simulator. The 3D view is a new renderer over the same case and the
+same engine state; the 2D screens stay as the fallback and as an inset at gates.
 
 The same evidence engine feeds the existing dispatcher cross-section view and
 API (repository only, not the public site).
@@ -53,6 +61,15 @@ API (repository only, not the public site).
 - **Map view**: the top-down view of the flight: an overview of the whole route and a
   follow view around the aircraft, over the case's satellite image and state lines.
 - **Side view**: the cross-section (altitude against distance) of the selected lane.
+- **Cruise level**: the game's name for the case start altitude, inside the altitude
+  block. It is below airline cruise level and is not an ATC assignment.
+- **Departure climb**: the automatic, unscored climb from the departure runway to the
+  cruise level. Same illustrative cost for every player; outside the engine.
+- **Flight phase**: one of ready, takeoff, climb, cruise, gate, arrival, diversion, report.
+- **Cockpit view**: the 3D first-person view (WebGL). **2D view**: the map view and side
+  view of R13 and R14.
+- **Scene description**: plain data built by a pure function from the case, the engine
+  state and the phase; the WebGL layer only draws it.
 
 ## 4. Requirements (EARS)
 
@@ -126,7 +143,8 @@ factor stored in the case file.
 fuel flow by factors that grow convexly with the index (ice drag), so that unprotected
 flight in icing evidence is costly even before the index reaches 100.
 4.6 THE SYSTEM SHALL show the cost as a running dollar total and as components:
-cruise fuel, climb, detour, anti-ice, ice drag, diversion.
+cruise fuel, climb, detour, anti-ice, ice drag, diversion and, when the departure
+phase is on (R15), departure climb.
 4.7 THE FUEL PRICE, ANTI-ICE FACTOR, DRAG FACTOR, ICE RATES AND DIVERSION COST SHALL be labelled
 illustrative and uncalibrated wherever shown.
 4.8 EACH CASE FILE SHALL carry balance results from the solver, and THE EXPORTER SHALL
@@ -184,9 +202,9 @@ the targets.
 
 ### R8 Report, references and local best
 
-8.1 AT the end of a flight, THE GAME SHALL show total cost and components, the
-ice-index peak, minutes with anti-ice on, and kilometres per evidence level
-(their sum equals the distance flown).
+8.1 AT the end of a flight, THE GAME SHALL show total cost and components (including
+the departure climb, R15.5), the ice-index peak, minutes with anti-ice on, and
+kilometres per evidence level (their sum equals the distance flown).
 8.2 AFTER the flight, THE GAME SHALL show the Best, Straight-ahead and Wasteful
 extreme costs for the same case, computed by the solver, and the share of the
 possible saving the player achieved, measured from Straight-ahead (0 percent) to Best
@@ -238,7 +256,8 @@ entries in `docs/kiro-usage-log.md`.
 12.3 THE WRITE-UP SHALL state which code came from Codex, Claude and WeatherPath.
 ### R13 Map view
 
-13.1 EVERY flight screen SHALL show the map view and the side view together. The map shows
+13.1 EVERY 2D flight screen SHALL show the map view and the side view together (the cockpit
+view meets this through R16.5 and R17.5). The map shows
 the aircraft at its current lane and step, the route, the five lanes, the flown track,
 the airports, and state and coast lines.
 13.2 THE MAP SHALL have a follow view centred on the aircraft, about 200 km across and
@@ -268,7 +287,7 @@ is display only; the engine state changes per step as before.
 ### R14 One-screen layout
 
 14.1 WHILE a flight is shown in a viewport of at least 1280 x 720 CSS pixels, THE FLIGHT
-SCREEN SHALL fit the viewport without page scrolling. The screen holds the HUD, the map
+SCREEN (2D view or cockpit view) SHALL fit the viewport without page scrolling. The screen holds the HUD, the map
 view, the side view, the gate panel, the controls and the game note (R9.3).
 14.2 THE FOUR evidence-level patterns with their text labels and the R13.3 image label
 SHALL stay visible on the flight screen. The full legend SHALL open from a "Legend"
@@ -282,6 +301,175 @@ to the control that opened them.
 Canvas text SHALL be at least 11 CSS pixels.
 14.6 Below 1280 CSS pixels of width, or in portrait orientation, THE LAYOUT MAY stack
 and scroll, and every element of 14.1 SHALL stay reachable.
+
+### R15 Flight phases
+
+15.1 WHEN a case is opened in the cockpit view, THE GAME SHALL show the cockpit on the
+runway of the departure airport and SHALL start the takeoff on one button press or key
+press.
+15.2 THE TAKEOFF ROLL AND LIFT-OFF SHALL take about 5 s.
+15.3 AFTER lift-off, THE GAME SHALL climb the aircraft on the centre lane to the case
+start altitude in about 10 to 15 s of accelerated time, without player input, along a
+lead-in of `LEAD_IN_KM` kilometres (15.14).
+15.4 THE GAME SHALL call the start altitude "cruise level" and SHALL say in the "Why?"
+cards that it is the game's altitude block, below airline cruise level.
+15.5 THE DEPARTURE CLIMB SHALL cost the same illustrative amount (case parameter
+`departureClimbUsd`) for every player and every flight, SHALL appear as its own cost
+component "Departure climb" in the running total and in the report, and SHALL be labelled
+illustrative (R4.7). THE SOLVER REFERENCES (Best, Straight-ahead, Wasteful extreme) SHALL
+include the same constant, so they stay comparable with the player's total.
+15.6 THE ENGINE SHALL NOT step during takeoff and climb, and the ice index SHALL stay 0.
+WHILE the aircraft is below the altitude block, THE PANEL SHALL read "Not assessed (below
+the game's altitude block)"; WHILE it climbs inside the block, it SHALL read "Not assessed
+(departure climb)".
+15.7 WHEN the climb ends, THE GAME SHALL start the engine at step 0 with its existing
+initial state (centre lane, start altitude).
+15.8 WHILE cruising, THE GAME SHALL fast-forward as in R6.1. WHEN a gate is reached, THE
+CAMERA SHALL slow to a stop with the cloud ahead in view within 1.5 s.
+15.9 WHERE the arrival cinematic is built (cuttable, G2), WHEN the engine reports arrival,
+THE GAME SHALL play an automatic, unscored descent and landing cinematic of about 10 s,
+then open the report (R14.3). Without it, the report opens at arrival.
+15.10 WHERE the arrival cinematic is built, WHEN the flight ends in a diversion, THE GAME
+SHALL play a turn-away cinematic of about 4 s, then open the report, marked "not ranked"
+(R5.6). Without it, the report opens at the diversion.
+15.11 THE PLAYER SHALL be able to skip a cinematic with a button or Space. Skipping SHALL
+NOT change any value.
+15.12 WHERE the browser asks for reduced motion, THE GAME SHALL shorten each cinematic to
+at most 2 s and SHALL NOT shake the view.
+15.13 THE PHASES AND THE CINEMATICS SHALL NOT change the case or the engine state, except
+that the engine starts at step 0 (15.7).
+15.14 THE RUNWAY SHALL be at x = -`LEAD_IN_KM` km on the track and the case route starts at
+x = 0, which the game marks "Top of climb". The lead-in is a display convention: the case
+route length and the engine distance are unchanged, and the departure airport is drawn L km
+before the route start. The "Why?" text SHALL say so.
+15.15 DURING takeoff and climb, THE VIEW SHALL draw no evidence and SHALL fade the clouds out,
+and SHALL fade them in during the last 1.5 s of the climb, so the aircraft never appears to
+fly through evidence without the engine running (and so without frost). No cloud volume
+SHALL start before x = 0, and the camera SHALL stay at x <= 0 until the climb ends.
+
+### R16 Cockpit view
+
+16.1 THE COCKPIT VIEW SHALL show a first-person camera from a generic regional-jet
+cockpit: a stylised windshield frame and a simple low-poly panel. It SHALL NOT show a real
+manufacturer cockpit, logo, livery or registration.
+16.2 THE PANEL SHALL show, large: the dollar fuel counter, the ice gauge (0 to 100,
+labelled "Ice index (game model)"), the anti-ice switch with a lamp, an altitude tape and
+a small top-view map with the five lanes. Everything else SHALL be in one small text line.
+16.3 Every instrument value SHALL come from the engine state. The fuel counter MAY be
+interpolated between steps for display only (R13.10).
+16.4 OUTSIDE, THE VIEW SHALL show a stylised sky, a flat stylised ground, the five lanes as
+faint guide lines or "sky gates" ahead, and markers for the departure and arrival airports.
+The ground SHALL be flat at the airport elevation; no terrain data is used. THE GAME SHALL
+state this limit in a "Why?" card (for example, the Rocky Mountains on the Denver case are
+not drawn).
+16.5 THE PANEL MAP SHALL show the five lanes, the aircraft, the flown track and the
+evidence level of the cells ahead at the current altitude with the patterns and labels of
+R13.5. The satellite image of R13.3 stays in the 2D view, which opens with a "2D view"
+button and the key V.
+16.6 CLOUDS SHALL be stylised soft volumes from the satellite cloud top down to the
+estimated base, by lane and step. The base SHALL be faded and labelled "estimated". THE
+VIEW SHALL draw no cloud where the satellite reports clear, and SHALL NOT draw internal
+structure that is not in the data (no noise textures, no random variation).
+16.7 EVIDENCE INSIDE the view SHALL be drawn as: `Observed` cells glow orange; `Possible`
+cells are a faint blue haze; `Not indicated` draws nothing; `Not assessed` is a sparse grey
+hatch.
+16.8 THE PANEL SHALL keep a text label for each of the four levels (a legend strip with the
+exact level names, and the level of the cell here and the cell ahead in the text line), so
+that play works in greyscale (R10.1). The four drawings SHALL also differ by pattern, not
+by hue alone.
+16.9 WHERE wind streaks are built (cuttable, G2), WIND SHALL be shown as at most 12 streaks
+and a head-wind number in knots, not as a barb per cell. The head-wind number stays in the
+text line in any case.
+16.12 THE VIEW SHALL use two display scales, a vertical exaggeration and a lateral
+compression of lane spacing (design 14.2). They are display only and SHALL be explained in
+the display-scale "Why?" text. The engine uses true distances.
+16.10 EVERY cockpit screen, including during cinematics, SHALL show the game note (R9.3) and
+a one-line source attribution with the observation or run time in UTC (R1.3).
+16.11 WHERE the chase view is built (cuttable, G2), THE KEY C SHALL toggle an outside chase camera behind a
+generic aircraft model (no livery). Instruments and gate controls SHALL stay usable.
+
+### R17 Gate choices in the cockpit view
+
+17.1 AT a gate, THE GAME SHALL show the cloud ahead, the lanes and the gate reasons (R6.7),
+and these controls on the panel: "Fly through", "Climb over", "Descend", "Go left",
+"Go right", the anti-ice switch and "Continue".
+17.2 THE CONTROLS SHALL map to the existing actions of R7: "Fly through" sets the targets to
+the current lane and altitude; each press of "Climb over" or "Descend" moves the target
+altitude by 1,000 ft within the altitude block; each press of "Go left" or "Go right" moves
+the target lane by one lane (left is toward the lower lane index) within the corridor. The
+aircraft follows R7.2.
+17.3 THE GATE SHALL NOT show a cost preview or a recommended choice (R6.5, R9.4). Button
+labels and all text SHALL follow R9.1 (for example "lamp", not a banned word).
+17.4 KEYBOARD: arrow left and right set the lane, arrow up and down set the altitude, A
+toggles anti-ice, Space continues or pauses. Pointer and touch buttons of at least 44 x 44
+CSS pixels do the same (R7.4, R10.2).
+17.5 AT a gate, THE COCKPIT VIEW SHALL show the 2D side view of the selected lane as a small
+inset, so the cross-section ahead of R6.5 stays visible.
+17.6 THE PLAYER SHALL be able to pause at any step (R6.3) with Space or a Pause button.
+
+### R18 Feedback in the cockpit view
+
+18.1 WHILE the ice index is above 0, THE WINDSHIELD EDGES SHALL show frost in proportion to
+the ice index. The index grows only with anti-ice off in `Observed` or `Possible` cells
+(R5.1, R5.2) and never decreases (R5.4), so frost never recedes.
+18.2 WHERE shake is built (cuttable, G2), WHILE anti-ice is off and the cell flown is
+`Observed` or `Possible` and the ice index is above 0, THE VIEW SHALL shake slightly, with an amplitude that grows with the ice index
+and a fixed upper limit.
+18.3 WHILE anti-ice is on, THE WING-HEAT LAMP SHALL glow and THE FUEL COUNTER SHALL run
+faster, because it follows the real per-step cost of the engine (R4.4). No other number
+is shown.
+18.4 THE EFFECTS SHALL only draw the engine state. They SHALL NOT change it, carry a severity
+word, or be called a severity (R9.1, J1).
+18.5 WHERE the cost pop-up is built (optional), WHEN the flight stops at a gate, a pause or
+the end, or after a single step, THE PANEL SHALL show "+$N this segment" for a few seconds,
+where N is the cost actually incurred since the previous stop (sum of the component changes).
+It is shown only after the cost is incurred, never before a choice, so R6.5 holds.
+
+### R19 Fallback, performance and static site
+
+19.1 WHEN WebGL is unavailable or the 3D library fails to load, THE GAME SHALL open the 2D
+view with a notice, play the same flight with the same costs, and show the departure climb
+as a status card with its cost.
+19.2 THE 2D view SHALL be available at any time (key V).
+19.3 THE COCKPIT VIEW SHALL target 60 frames per second on a laptop and 30 on a phone, and
+SHALL cap its geometry per lane and step (design 14.9). Measured frame rates SHALL be
+recorded, not assumed.
+19.4 THE 3D library SHALL be vendored in `static/cloud-dive/vendor/` at an exact version. All
+models and textures SHALL be self-made or CC0, each recorded in `THIRD_PARTY_NOTICES.md`.
+THE SITE SHALL load no tile service, CDN or third-party logo (R10.3, R13.8).
+19.5 THE SCENE SHALL be built by a pure function from (case, engine state, phase) to a scene
+description, tested in Node. THE WEBGL LAYER SHALL only draw that description and SHALL NOT
+read or change the case or the engine state.
+19.6 NEW CASE FIELDS SHALL be additive (`params.departureClimbUsd`, `airports`); evidence,
+references, balance and the viewer profile SHALL NOT change. Airport elevations SHALL come
+from `elev_ft` in the repository's `airports.json`, and their source SHALL be recorded in
+`THIRD_PARTY_NOTICES.md` after it is checked.
+
+### R20 Local multiplayer (hot-seat)
+
+20.1 THE GAME SHALL let 2 to 4 players take turns on the same case on one device; each
+player flies a full flight.
+20.2 AFTER the last flight, THE GAME SHALL show a results table with each player's total
+cost (including the departure climb) beside Best and Straight-ahead. A diverted flight is
+shown as "not ranked".
+20.3 NOTHING SHALL be uploaded and no online ranking SHALL exist (R8.4, R8.5). The table
+stays in memory for the session.
+20.4 A player SHALL see the references only after their own flight (R8.2).
+
+### R21 Playtest fixes (status: implemented in tasks 10.1 to 10.5; re-verified in task 13.1)
+
+21.1 THE 2D renderer SHALL read satellite arrays in both stored shapes, and SHALL draw the
+"Not assessed" curtain only for steps whose retrieval is neither observed nor clear
+(CD-P20).
+21.2 THE REPORT SHALL measure the saving share from Straight-ahead (0 percent) to Best
+(100 percent), negative when the player is costlier than Straight-ahead (R8.2).
+21.3 `diversionUsd` SHALL be non-zero and illustrative, set with `tools/tune_params.py`,
+with B1 to B5 passing (R4.8).
+21.4 GATES SHALL merge when exit and entry are close together (R6.6, R6.7, CD-P14, CD-P18);
+the always-on anti-ice run of KJFK-KBNA SHALL have fewer gates than the 17 seen in the
+playtest.
+21.5 THE GAME SHALL place a gate when the ice index first passes 50 (R6.2c, CD-P19), with
+the text "Ice index (game model) reached 50 of 100".
 
 ## 5. Decision log (2026-11-13)
 
@@ -387,6 +575,25 @@ Findings:
 **Owner answer (2026-11-13):** F1, F2, F4, F5 and F6 approved. F3 approved with an amendment: both anti-ice choices carry a penalty. Anti-ice on costs fuel flow (bleed air) for as long as it is on, even in clear air. Anti-ice off in icing evidence builds ice, which lowers speed and raises fuel flow (drag) for the rest of the flight and ends the flight at 100 (F5). Balance criteria B1 to B4 (R4.8) make sure that never using anti-ice, or always using it, cannot win. F5 is designed together with F3.
 
 Not verified: the real anti-ice fuel penalty (no source found; the anti-ice factor is a labelled game parameter); the text of 14 CFR 121.647 about icing fuel (seen only in a search snippet of the 2024 edition; do not quote it until read); OpenAP climb input units (ft/min assumed).
+### 5.7 3D cockpit game (revision b, 2026-11-13)
+
+| Id | Decision |
+|---|---|
+| G1 | **Owner: evolve Cloud Dive into a casual 3D cockpit game** (R15 to R20). Reason: the 2D cross-section did not communicate the idea to players in playtests; the case cube is already 3D (lane, step, altitude), so a 3D view shows the same data. The 3D view is a new renderer over the same case and engine state. The engine rules, cost model, solver, references, balance B1 to B5 and CD-P1 to CD-P22 stay unchanged. Evidence rule v2, the science guardrails and the R9 wording stay unchanged. |
+| G2 | **Owner: order of work and cuts (amended 2026-11-13).** Order: (a) fixes 13, (b) scene description 14, (c) cockpit cruise view with gates 15, (d) feedback 16, then departure and climb 17, hot-seat 18, chase view 19, documentation 20. **Required:** everything in 13 to 16 except 16.2, 16.4 and 16.7, and 17.1 to 17.4, 17.6 to 17.8 (departure constant, `phases.js`, runway, automatic climb, skip, fallback card) and 18. **Cuttable before 2026-12-04:** 17.5 (arrival and diversion cinematics), 16.2 (shake), 16.4 (wind streaks) and 19 (chase view). **Optional, after 16:** 16.7 (cost pop-up). Frost (16.1) and the wing-heat lamp (16.3) are required and come before 17. Cut order, first to go: 19, 16.4, 16.2, 17.5, 16.7. Build order: required work first (13, 14, 15, 16.1, 16.3, 16.5, 16.6, 17 without 17.5, 18), then 16.2, 16.4, 17.5, 16.7, then 19, then 20. Each group ends in a shippable state. |
+| G3 | **Playtest fixes already exist.** The five fixes of R21 were implemented in tasks 10.1 to 10.5 (commit f1b382f). The owner confirmed (2026-11-13) that the playtest was on a build from before group 10, which explains the numbers (17 gates, `diversionUsd` 0, `column()` shape). Group 13 re-verifies on the current build and adds a test only where a gap is found. Gate count of KJFK-KBNA always-on is 10 now. |
+| G4 | Kiro judgement (owner may veto): the departure climb is a constant added outside the engine. Balance criteria B1 to B5 stay on engine totals, because adding the same constant to both sides would shrink the 3 percent margins. The saving share of R8.2 is unchanged by the constant. Local best moves to a new storage key (`v2`); old entries are ignored. |
+| G5 | **Climb geometry (owner, 2026-11-13).** The runway is at x = -L km (`LEAD_IN_KM`, the lead-in length of the climb) and x = 0 is marked "Top of climb", where the engine starts at step 0. During takeoff and climb the evidence is not drawn and clouds fade out, then fade in during the last 1.5 s of the climb, so the player never appears to fly through evidence without frost. The lead-in is a display convention; route length and engine distance are unchanged and the Why text says so (R15.14, R15.15). |
+| G6 | Kiro judgement: instruments, buttons and labels are an HTML overlay on the WebGL canvas, not 3D textures, so text, focus and touch work and greyscale labels stay real text. |
+| G7 | Kiro judgement: UI text says "lamp", never "light"; the wording test skips `static/cloud-dive/vendor/` (third-party code, not user-facing text) and scans scene strings instead. |
+| G8 | Kiro judgement: the label "Not assessed (below the game's altitude block)" is kept for altitudes below the block; inside the block during the climb the label is "Not assessed (departure climb)", because the cube has data there but the engine does not run. |
+| G9 | **Owner approved (2026-11-13):** feature freeze 2026-11-28 so the video (P6) is recorded on a finished build; Space or a Skip button skips cinematics; the local best uses a new storage key (`v2`) and old entries are ignored. |
+| G10 | Terrain is not modelled. Open item from 5.4 (terrain floor, height reference above sea level or ground) stays open; the 3D view draws flat ground and says so (R16.4). For KDEN-KLAX the flat-ground "Why?" card stays and the altitude block is not changed now (see G11). |
+| G11 | **Owner: the video uses KJFK-KBNA** (2026-11-12, headline case). KDEN-KLAX keeps the flat-ground card and no block change now. |
+| G12 | **Owner: airport elevations come from `elev_ft` in the repository's `airports.json`** (generated by `tools/build_airports.py` from the OurAirports CSV). The source and licence are checked and recorded in `THIRD_PARTY_NOTICES.md` in task 17.1. Values in the file: KJFK 13, KBNA 599, KDEN 5431, KLAX 125, KBUF 728, KPWM 76 ft. |
+| G13 | **Owner: lateral display compression.** A display constant `LATK` scales lane spacing in the cockpit view (as the 2D map widens its lanes), tuned in task 15.2 together with the vertical exaggeration `VEX` (down to 0.2 if the side lanes are not readable from the cockpit), and explained in the display-scale "Why?" text (R16.12). |
+| G14 | **Owner: optional cost pop-up.** After 16, a short "+$N this segment" pop-up shows the actual cost since the previous stop. It is shown after the cost is incurred, never as a preview (R18.5, R6.5). |
+
 ## 6. Official rules digest (read in full on 2026-11-13)
 
 | Rule | Value or text | Consequence |
