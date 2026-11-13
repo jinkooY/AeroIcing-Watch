@@ -1,0 +1,559 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "7.1 Write `static/cloud-dive/engine.js`": [
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543167460
+      },
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543254982
+      }
+    ],
+    "7.2 Write the Python-JavaScript parity test (CD-P7)": [
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543259231
+      },
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543445548
+      }
+    ],
+    "7.3 Write Node tests with `node --test`": [
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543449017
+      },
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543523687
+      }
+    ],
+    "7. Build the JavaScript engine": [
+      {
+        "executionId": "8e869221-015e-46ec-a1b0-55ad7cc8c805",
+        "chatSessionId": "sess_0c09f4ea-35b1-4e7a-9bae-5159e89d8766",
+        "timestamp": 1794543523781
+      }
+    ],
+    "8.1 Create `static/cloud-dive/index.html`, `game.css`, `game.js`": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768019
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543773078
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543903298
+      }
+    ],
+    "8.2 Implement the cross-section renderer": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768089
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543910308
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544147859
+      }
+    ],
+    "8.3 Implement the gate panel, controls and fast-forward": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768161
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544151003
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544295916
+      }
+    ],
+    "8.4 Implement the end-of-flight report": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768229
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544299199
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544429241
+      }
+    ],
+    "8.5 Add four \"Why?\" cards": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768296
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544433616
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544478762
+      }
+    ],
+    "8.6 Write `tests/test_wording.py` and a hook that runs it on save under `static/cloud-dive/`": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768359
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544481909
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544882339
+      }
+    ],
+    "8.7 Checkpoint: pytest, `node --check` and `node --test` all pass": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768458
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544886488
+      },
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544954503
+      }
+    ],
+    "9.1 Change `.github/workflows/route-demo-pages.yml` to publish the game": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768546
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545077568
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545202385
+      }
+    ],
+    "9.2 Apply decision D1 (replace) to the dispatcher view": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768596
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545205676
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545442309
+      }
+    ],
+    "9.3 Write API compatibility tests": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768671
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545445298
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545577781
+      }
+    ],
+    "9.4 Final checkpoint: full test suite, wording test and Node checks pass": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794543768753
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545581127
+      },
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545640051
+      }
+    ],
+    "8. Build the game UI": [
+      {
+        "executionId": "9922c9fa-5126-4e91-b0a0-367b12c46c3a",
+        "chatSessionId": "sess_c55be031-2f44-427f-8c5e-ec230f2e124d",
+        "timestamp": 1794544954556
+      }
+    ],
+    "9. Publish the site and keep the dispatcher view working": [
+      {
+        "executionId": "ba8c5eb4-b67a-4711-a736-db194e17269b",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794545640119
+      }
+    ],
+    "10.1 Read both array shapes in the renderer": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030410
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549036145
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549117396
+      }
+    ],
+    "10.2 Measure the saving share from Straight-ahead to Best": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030487
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549122600
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549186508
+      }
+    ],
+    "10.3 Set a non-zero diversion cost through `tools/tune_params.py`": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030537
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549191509
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549384928
+      }
+    ],
+    "10.4 Merge gates in `game_core.py` and `engine.js`": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030585
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549390336
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549792475
+      }
+    ],
+    "10.5 Add the ice gate at index 50": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030632
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549797850
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549989083
+      }
+    ],
+    "10.6 Checkpoint: pytest, wording test, `node --check` and `node --test` pass": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549030673
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794549999418
+      },
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794550101895
+      }
+    ],
+    "10. Playtest fixes (2026-11-13)": [
+      {
+        "executionId": "844020d8-f71a-41df-836e-048030e9c349",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794550101937
+      }
+    ],
+    "11.1 Add ABI-L2-CMIPC band 13 to `goes_conus.py` and write `tools/export_map_images.py`": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879222
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553889254
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554305088
+      }
+    ],
+    "11.2 Write `tools/build_basemap.py`": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879339
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554310234
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554505156
+      }
+    ],
+    "11.3 Write `static/cloud-dive/map.js`": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879423
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554510681
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554689360
+      }
+    ],
+    "11.4 Change the layout and wire the map view": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879502
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794554694526
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794555129221
+      }
+    ],
+    "11.5 Run the image export for the three cases and commit the images and basemap": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879574
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794555133907
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794555455172
+      }
+    ],
+    "11.6 Checkpoint: pytest, wording test, `node --check` and `node --test` pass": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794553879639
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794555460132
+      },
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794556231458
+      }
+    ],
+    "11. Map view with the satellite image": [
+      {
+        "executionId": "0e779660-3a5f-4e4f-b614-86c8b50daad6",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794556231555
+      }
+    ],
+    "12.1 Size canvases to their boxes": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557170500
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557180119
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557317364
+      }
+    ],
+    "12.2 Build the grid layout, top bar, bottom bar, map key strip and compact controls": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557170553
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557322707
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794558443664
+      }
+    ],
+    "12.3 Move the report, Why cards, sources and full legend into dialogs": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557170619
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794558448820
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794558734906
+      }
+    ],
+    "12.4 Check the layout in a headless browser": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557170669
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794558744472
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794559359883
+      }
+    ],
+    "12.5 Checkpoint: pytest, wording test, `node --check`, `node --test` and the layout check pass": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794557170717
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794559359967
+      },
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794559626549
+      }
+    ],
+    "12. One-screen layout": [
+      {
+        "executionId": "59846763-3ad2-482c-bf9b-26eb52d5be5d",
+        "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
+        "timestamp": 1794559626597
+      }
+    ]
+  }
+}
