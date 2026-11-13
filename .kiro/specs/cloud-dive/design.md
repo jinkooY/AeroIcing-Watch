@@ -63,15 +63,32 @@ has N steps (JFK-BNA about 123). Altitude levels every 1,000 ft inside the block
 
 ### 3.2 Satellite (per lane and step)
 Native arrays are sampled by nearest pixel after parallax correction
-(`apparent_latlon`, sub-satellite longitude of the chosen satellite, three
-iterations). Resolutions: phase, optical depth, particle size 2 km; cloud-top
+(`apparent_latlon`, sub-satellite longitude of the chosen satellite). The cloud
+over a ground point is found by a candidate-height ray search: for heights 0.25
+to 16 km (step 0.25) the point appears at `apparent(h)`; take the highest `h`
+whose height pixel there reports a top at or above `h`, refine by interpolating
+the sign change, and read all layers at that apparent location. A first pass
+uses good-quality heights only; a second pass with any finite height gives
+`quality_rejected`. (A three-iteration search from the ground pixel was
+rejected: it misses clouds displaced over a clear ground pixel.) Resolutions: phase, optical depth, particle size 2 km; cloud-top
 height 10 km. The cloud-top height is geopotential height (standard name
 `geopotential_height_at_cloud_top`), taken as height above sea level.
 Phase code 2 (`super_cooled_liquid_water`) is the supercooled flag; code 3 (mixed)
 is kept as `mixed`, not supercooled. Cloud water: `LWP = 2/3 * COD * re` in
 g m-2 with re in micrometres (ice: times 0.917). Base: `noh_cloud_base_km` with
-that cloud water; null where the method gives none. Quality flags (DQF) not
-good, or solar zenith 80 degrees or more, set the sample to `quality_rejected`.
+that cloud water; null where the method gives none; method `goes_cod_cps` when
+cloud water was used. States: `observed`, `clear`, `no_retrieval` (fill or
+cloud without height), `quality_rejected`, `inconsistent_retrieval` (clear phase
+with a cloud height), `outside_domain`. Quality policy from inspecting real
+scans: phase DQF bit 0 set (overall degraded) or height DQF not 0 gives
+`quality_rejected`. COD/CPS DQF is a 10-bit mask in which about 89 percent of
+supercooled pixels carry the "degraded" bit and about 86 percent the
+"non-convergence" bit, so those pixels are NOT rejected; they are used and
+labelled `cloud_water_quality` (good or degraded) and
+`cloud_water_nonconverged`. Cloud water is dropped (base falls back to the
+statistical median, never to a measurement) when a value is not finite, DQF bit
+0 (not day algorithm) or bit 6 (glint) is set, or solar zenith is 80 degrees or
+more.
 
 ### 3.3 Forecast (per lane, step and altitude)
 IFS run chosen before the case hour (for 2026-11-12: 00 UTC run, +18 and +21 h,
