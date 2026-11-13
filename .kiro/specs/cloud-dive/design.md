@@ -1,173 +1,254 @@
-# Design — Cloud Dive
+# Design - Cloud Dive (revision 2026-11-13)
 
-Requirement ids (R*) refer to `requirements.md`. Properties (CD-P*) in §8 are
-the contract for property-based tests.
+Requirement ids (R*) refer to `requirements.md`. Properties (CD-P*) in section 10
+are the contract for property-based tests. Parameter values are illustrative
+and uncalibrated; they are stored in each case file (R4.7).
 
 ## 1. Architecture
 
 ```
-satellite caches (git-ignored)          existing engine (unchanged API)
-  GK-2A / GOES-18/19 / Himawari-9  -->  src/analysis/icing_profile.py
-                                          build_profile / build_global_profile
-                                                   |
-                                   NEW src/analysis/evidence.py   (rule v1)
-                                                   |
-                                   NEW tools/export_cloud_dive.py
-                                                   |
-                         static/cloud-dive/cases/<case-id>.json  (committed)
-                                                   |
-  GitHub Pages site root  <-- workflow assembles:  |
-    /              static/cloud-dive/   (game, leaderboard, Why? cards)
-    /route-demo/   static/route-demo/   (existing Kiroween route comparison)
-    /viewer/       static/viewer-standalone.html + viewer.js (dispatcher view)
+GOES-18/19 CONUS (AWS S3, anonymous)        ECMWF IFS 0p25 (AWS mirror)
+  ACTPC phase 2 km, ACHAC height 10 km,       gh, t, r, u, v at 925..250 hPa
+  CODC optical depth 2 km, CPSC size 2 km     cropped to the route box
+              |                                          |
+   src/integration/goes_conus.py              tools/collect_ifs.py (levels extended)
+              |                                          |
+   src/analysis/lanes.py  -- 5 lanes x 10 km steps, parallax-corrected --+
+              |                                          |
+   src/analysis/cloud_base.py (Noh)               src/analysis/ifs_cube.py
+              +------------------+-----------------------+
+                                 v
+                  src/analysis/evidence.py   (rule v2, four levels)
+                                 v
+   src/analysis/cost_model.py (OpenAP tables, build time only)
+   src/analysis/game_core.py  (pure step, ice, gates)  <-> static/cloud-dive/engine.js
+   src/analysis/solver.py     (exact DP: Best, Straight-ahead, Wasteful extreme)
+                                 v
+                  tools/export_cloud_dive.py
+                                 v
+        static/cloud-dive/cases/<id>.json + cases/index.json  (committed)
+                                 v
+   GitHub Pages root = static/cloud-dive/   (game)     /viewer/ = standalone viewer
 ```
 
-No backend is needed for the public site (R8.3). The FastAPI app stays for the
-dispatcher API (R6).
+No backend on the public site (R10.3). FastAPI and `/api/icing/*` stay for the
+dispatcher view (R11).
 
 ## 2. Modules
 
 | Path | Status | Responsibility |
 |---|---|---|
-| `src/analysis/evidence.py` | new | Rule `cloud-dive-evidence-v1`: isotherm estimate, candidate layer, evidence level, km summary |
-| `tools/export_cloud_dive.py` | new | Select frames and routes, call the profile builder, apply `evidence.py`, validate, write case JSON and `cases/index.json` |
-| `tools/check_viewer_contract.py` | new | Python port of `validProfile()` used by the exporter and tests |
-| `static/cloud-dive/engine.js` | new | DOM-free ES module: `evaluateAt`, `sampleAt`, pure `step()`; tested with `node --test` |
-| `static/cloud-dive/index.html, game.js, game.css` | new | Rendering, input, HUD, end-of-dive report, leaderboard, Why? cards |
-| `static/cloud-dive/cases/` | new, committed | Derived case files only (R1.4) |
-| `.github/workflows/route-demo-pages.yml` | changed | Assemble the three-part site root |
-| `src/analysis/icing_profile.py`, `src/api/*` | unchanged | Existing behaviour (R6.1) |
+| `src/integration/goes_conus.py` | new | Anonymous S3 read of ACTPC, ACHAC, CODC, CPSC for one hour; keeps native arrays and projection; local cache under git-ignored `data/` |
+| `src/analysis/lanes.py` | new | Great-circle route, five lanes, 10 km steps (pyproj Geod); lane offsets by forward azimuth +/- 90 degrees |
+| `src/analysis/cloud_base.py` | existing (WeatherPath) | Noh base, parallax, solar zenith; night path legacy |
+| `src/analysis/ifs_cube.py` | new | ISA altitude to pressure, IFS sampling at (lane, step, altitude), head-wind component, ECMWF isotherm heights |
+| `src/analysis/evidence.py` | new | Rule v2 and route summary |
+| `src/analysis/cost_model.py` | new | OpenAP fuel tables and parameters (lazy import; build time only) |
+| `src/analysis/game_core.py` | new | Pure `step`, ice, cost components, gate lookahead; no I/O |
+| `src/analysis/solver.py` | new | Exact dynamic programme over the same transition function |
+| `tools/export_cloud_dive.py` | new | Manifest-driven export, validation, secrets scan |
+| `tools/check_viewer_contract.py` | new | Python port of `validProfile()` |
+| `tools/tune_params.py` | new | Reports Best vs Straight-ahead spread per case |
+| `static/cloud-dive/engine.js` | new | DOM-free ES module port of `game_core` |
+| `static/cloud-dive/index.html, game.js, game.css` | new | Rendering, input, HUD, gate panel, report |
+| `.github/workflows/route-demo-pages.yml` | changed | Publish `static/cloud-dive/` at the root and the viewer at `/viewer/` |
+| `src/analysis/icing_profile.py`, `src/api/*` | existing | Dispatcher view; unchanged API (R11.1) |
 
-## 3. Evidence rule v1 (`evidence.py`)
+## 3. Data
 
-Inputs per sample: `retrievalState`, `topFt`, `baseFt`, `supercooled`,
-`cloudTopTemperatureC`; plus `plannedAltFt`.
+### 3.1 Geometry
+Lanes at -30, -15, 0, 15, 30 km. Step 10 km (about one minute at 330 kt). A case
+has N steps (JFK-BNA about 123). Altitude levels every 1,000 ft inside the block
+(for example 6,000 to 24,000 ft). Lane 0 is the great circle between the airports.
 
+### 3.2 Satellite (per lane and step)
+Native arrays are sampled by nearest pixel after parallax correction
+(`apparent_latlon`, sub-satellite longitude of the chosen satellite, three
+iterations). Resolutions: phase, optical depth, particle size 2 km; cloud-top
+height 10 km. The cloud-top height is geopotential height (standard name
+`geopotential_height_at_cloud_top`), taken as height above sea level.
+Phase code 2 (`super_cooled_liquid_water`) is the supercooled flag; code 3 (mixed)
+is kept as `mixed`, not supercooled. Cloud water: `LWP = 2/3 * COD * re` in
+g m-2 with re in micrometres (ice: times 0.917). Base: `noh_cloud_base_km` with
+that cloud water; null where the method gives none. Quality flags (DQF) not
+good, or solar zenith 80 degrees or more, set the sample to `quality_rejected`.
+
+### 3.3 Forecast (per lane, step and altitude)
+IFS run chosen before the case hour (for 2026-11-12: 00 UTC run, +18 and +21 h,
+linear in time). Altitude to pressure with ISA; sampling by `ifs_grid.sample`
+(log-pressure, bilinear). Head-wind component `hw = -(u*sin(az) + v*cos(az))`
+converted to knots, positive when the wind is against the flight. Levels
+925, 850, 700, 600, 500, 400, 300, 250 hPa (all verified present for gh, t, r, u,
+v in the 2026-11-12 00 UTC +21 h index).
+
+### 3.4 Case file
+```json
+{
+  "schemaVersion": 2, "id": "20261112-kjfk-kbna-1930z", "title": "...",
+  "dataKind": "observation", "route": {"from": "KJFK", "to": "KBNA", "lengthKm": 1232},
+  "sources": {"satellite": "GOES-19 ABI L2 ... (UTC time)", "forecast": "ECMWF IFS 0p25 run ...", "attribution": ["..."]},
+  "grid": {"stepKm": 10, "lanesKm": [-30,-15,0,15,30], "altitudesFt": [6000, "..."]},
+  "start": {"lane": 2, "altFt": 10000},
+  "rule": {"name": "cloud-dive-evidence-v2", "version": 2, "...thresholds": 0},
+  "params": {"aircraft": "E75L", "engine": "CF34-8E6", "massKg": 30340, "fuelUsdPerKg": 0.79,
+             "tasKtByAlt": {}, "flowKgHByAlt": {}, "climbExtraKgPer1000Ft": {},
+             "antiIceFactor": 1.04, "dragFactorAtFull": 0.15, "diversionUsd": 0,
+             "iceRates": {}, "possibleRateFactor": 0.25},
+  "lanesLatLon": [[[0,0]]],
+  "evidence": "uint8 array [lane][step][alt]  (0 Not assessed, 1 Not indicated, 2 Possible, 3 Observed)",
+  "headwindKt": "int16 array [lane][step][alt]", "temperatureC": "float array [lane][step][alt]",
+  "satellite": [{"lane": 0, "step": 0, "topFt": 0, "baseFt": 0, "phase": "liquid", "supercooled": true, "retrieval": "observed"}],
+  "references": {"best": {}, "straightAhead": {}, "wasteful": {}},
+  "viewerProfile": {"title": "...", "samples": []}
+}
 ```
-LAPSE_C_PER_KFT = 1.98        # ISA, uncalibrated screening value, echoed
-zeroCFt    = topFt + cloudTopTemperatureC / LAPSE_C_PER_KFT * 1000
-minus20CFt = topFt + (cloudTopTemperatureC + 20) / LAPSE_C_PER_KFT * 1000
-lowerFt = max(baseFt, zeroCFt)
-upperFt = min(topFt, minus20CFt)
-candidateLayer = [lowerFt, upperFt] if lowerFt <= upperFt else null
-```
+Arrays are stored flat with a shape field. Expected size under 300 KB per case.
+
+## 4. Evidence rule v2 (per cell: lane, step, altitude)
+
+Inputs: satellite retrieval state, top, base, supercooled flag; ECMWF temperature
+and humidity at the altitude; isotherm heights; altitude.
 
 | # | Condition (first match wins) | Level | reason |
 |---|---|---|---|
-| 1 | `retrievalState` not in {observed, clear} | Not assessed | the retrieval state |
-| 2 | `retrievalState == clear` | Not indicated | `clear` |
-| 3 | `supercooled is null` or `baseFt is null` or temperature null | Not assessed | `evidence_incomplete` |
-| 4 | `supercooled == false` | Not indicated | `no_supercooled_signal` |
-| 5 | `candidateLayer is null` | Not indicated | `no_candidate_layer` |
-| 6 | `lowerFt <= plannedAltFt <= upperFt` | Observed supercooled layer at planned altitude | `inside_candidate_layer` |
-| 7 | otherwise | Not indicated | `altitude_outside_candidate_layer` |
+| 1 | satellite `observed`, supercooled true, base known, altitude in [max(base, zeroC), min(top, minus20C)] | Observed supercooled layer at planned altitude | `inside_candidate_layer` |
+| 2 | satellite `observed`, supercooled true, base null, altitude in [zeroC, min(top, minus20C)] and altitude <= top | Not assessed | `cloud_base_unknown` |
+| 3 | forecast criterion met (T in [-25, 0] C, RH >= 85 %) and rows 1-2 did not match | Possible (forecast only) | `forecast_criterion_met` |
+| 4 | forecast available, criterion not met, and the satellite state is `observed` or `clear` | Not indicated | `forecast_criterion_not_met` or `satellite_clear` |
+| 5 | forecast available, criterion not met, satellite state not usable | Not indicated | `no_supercooled_signal_forecast_dry` |
+| 6 | forecast missing and satellite `clear` or supercooled false | Not indicated | `no_supercooled_signal` |
+| 7 | otherwise | Not assessed | the missing-evidence reason |
 
-Every case carries `rule: {name, version, lapseRateCPerKft,
-isothermMethod: "cloud_top_lapse_rate_estimate"}` (R2.6, R2.7).
+Row 5 is deliberate: a dry forecast with no satellite signal is not evidence of
+icing, but it is evidence of absence only as far as the forecast goes; the reason
+code keeps the difference. The rule never returns `Possible` when the satellite
+says Observed.
 
-The rule is a strict subset of the `icing-layer-fusion` table: it never
-returns `Possible (forecast only)`, and rows 6–7 match fusion rows 3–4. When
-fusion lands, `evidence.py` is replaced by it without changing the case
-format.
+Isotherms: from the IFS temperature profile at the lane and step when 925 to 250 hPa
+are present (`ifs_profile`); otherwise from cloud-top temperature and a lapse rate of
+1.98 C per 1,000 ft (`cloud_top_lapse_rate_estimate`). The method is stored.
 
-## 4. Route summary
+## 5. Cost model
 
-Each sample owns the interval between the midpoints to its neighbours (first
-sample from 0, last to the end). `routeSummary.levels` has all three level
-keys with `km` and the list of `[startKm, endKm]` segments. Used by the
-leaderboard (R5.2) and the end-of-dive report reference.
+Per step of length d (10 km, plus the extra path of a lane change) at altitude
+level a, lane l and step s:
 
-## 5. Case file
-
-```json
-{
-  "schemaVersion": 1,
-  "id": "rksi-rjtt-20261120T0300Z-fl180",
-  "title": "Incheon to Tokyo Haneda",
-  "dataKind": "observation",
-  "source": "KMA/NMSC GK-2A CTPS L2 + JMA Himawari-9 (NOAA) ...",
-  "attribution": ["..."],
-  "observedAt": "2026-11-20T03:00:00Z",
-  "flightAlt_ft": 18000,
-  "rule": { "name": "cloud-dive-evidence-v1", "version": 1, "...": "..." },
-  "routeSummary": { "levels": { "Observed supercooled layer at planned altitude": {"km": 0, "segments": []}, "Not indicated": {}, "Not assessed": {} } },
-  "samples": [ { "distanceKm": 0, "topFt": 0, "baseFt": 0, "phase": "liquid", "supercooled": true,
-                 "cloudTopTemperatureC": -12.0, "cloudBaseMethod": "dcoew",
-                 "zeroCFt": 0, "minus20CFt": 0, "candidateLayer": [0, 0],
-                 "evidenceLevel": "...", "evidenceReason": "...", "satelliteSource": "gk2a" } ]
-}
 ```
+TAS      = tasKtByAlt[a]                                  # illustrative schedule
+GS       = max(TAS - headwindKt[l][s][a], 120)            # knots
+hours    = d / (GS * 1.852)
+flow     = flowKgHByAlt[a] * (antiIceOn ? antiIceFactor : 1)
+                          * (1 + dragFactorAtFull * ice / 100)
+cruise   = flow * hours * fuelUsdPerKg
+climb    = climbExtraKgPer1000Ft[a] * (1000 ft climbed this step) * fuelUsdPerKg
+detour   = flow * (extra path hours) * fuelUsdPerKg       # hypot(10, 15) - 10 = 8.0 km per lane change
+```
+Descending costs no extra and earns no credit. A diversion adds `diversionUsd`
+and ends the flight. Illustrative scale from OpenAP for the E75L at 30,340 kg:
+about 3.3 kg/km at 6,000 ft down to 2.2 kg/km at 30,000 ft; 1,232 km costs about
+$3,240 at 6,000 ft and $2,170 at 30,000 ft at $0.79/kg. Higher is cheaper per
+kilometre, so the altitude block (and the wind) must create the trade-off; tuning
+checks this (task 5.5).
 
-The legacy fields `icingRisk`, `icingLevel` and `altitudeSuggestions` are
-dropped from case files (they are not needed by the game and conflict with
-R7). The dispatcher API keeps them pending D1.
+## 6. Ice state
 
-## 6. Game
+Integer index 0 to 100. Per step, without anti-ice:
+`gain = round(baseGain * tempFactor(T) * waterFactor(LWP) * rateFactor)` where
+`rateFactor` is 1 for Observed, `possibleRateFactor` for Possible, 0 otherwise;
+`tempFactor` is a triangle on [-20, 0] C peaking at -10 C; `waterFactor =
+min(1.5, 0.5 + LWP / 100)`; `baseGain` about 7 so a full Observed layer reaches
+100 in about 150 km. Satellite fields are those of the lane and step; LWP is null
+for Possible cells, then `waterFactor` is 1. Index never decreases; at 100 the
+flight ends (diversion). All gains are integers, so the solver is exact.
 
-**Loop.** `requestAnimationFrame`; distance advances at a fixed
-`GAME_KM_PER_SECOND` (tuned so a case lasts 60–90 s). Input changes target
-altitude with a bounded climb rate. All state updates are a pure function
-`step(state, inputs, dtSeconds, case)` so they can be tested (CD-P6, CD-P7).
+## 7. Game engine (decision gates)
 
-**Sample lookup.** The current sample is the one whose interval (§4) contains
-the aircraft distance. Altitude is compared with that sample's evidence at the
-aircraft's current altitude, by re-running rule rows 3–7 client-side with the
-case's echoed constants (the case stores per-sample inputs, so the client can
-evaluate any altitude).
+State: `{step, lane, alt, targetLane, targetAlt, antiIce, ice, cost parts,
+kmPerLevel, minutesAntiIce, status}`.
 
-**Rendering (Canvas, reuse viewer palette).**
-- Cloud body: phase colour fill from `baseFt` to `topFt`; base edge dashed and
-  labelled "estimated base".
-- Candidate layer: hatched band.
-- `Not assessed`: vertical grey curtain with diagonal hatch and the word
-  "Unknown"; never drawn as sky (R4.4).
-- In-cloud: screen fog overlay and muffled HUD.
-- Ice: frost sprite on wings and windscreen; opacity = clamp(observedKm /
-  ICE_KM_FULL, 0, 1).
+`step(state, case)` performs one 10 km step: move toward the targets by at most
+one lane and 1,000 ft; read the cell (lane, step, alt); update ice, cost and
+`kmPerLevel`; return the new state and the events.
 
-**HUD.** Altitude, distance, current evidence level as text, observed km,
-persistent game-effect note (R4.7).
+`runUntilGate(state, case)` repeats `step` and stops when:
+- a lookahead of three steps (simulated with the current targets, anti-ice and
+  positions) enters an Observed or Possible cell from a cell that is neither;
+- the flight is in a cell that is neither Observed nor Possible with anti-ice on,
+  and the previous cell was Observed or Possible (exit gate);
+- the flight ends (arrival or diversion);
+- the player pressed pause (handled by the UI between steps).
 
-**End of dive.** km per level (sum equals flown distance, R4.5), case source
-and time, a "Why?" card link, replay button, share text without numbers that
-imply severity.
+Rendering at a gate: the cross-section along lane 0 and the other lanes, the ECMWF
+wind barbs and forecast-environment shading, the unknown curtain; no costs ahead,
+no recommended action (R6.5).
 
-**Accessibility.** Arrow keys or W/S; pointer drag; on-screen buttons for
-touch. Each level has a text label and pattern (R8.1).
+## 8. Reference solver
 
-## 7. Leaderboard
+Exact dynamic programme over `(step, lane, altLevel, antiIce, ice)` with ice in
+0..99 (100 is terminal) and actions `(dLane in {-1,0,1}, dAlt in {-1,0,1}, antiIce
+in {0,1})` per step: 5 x 25 x 2 x 100 states, about 35 actions. The transition is
+the same function as `step`. Outputs: Best (minimum cost over completed flights),
+Wasteful extreme (maximum cost over completed flights), Straight-ahead (centre
+lane, start altitude, anti-ice on exactly while the cell is Observed or Possible).
+The solver can pause anywhere; a player who pauses at every step can match it.
 
-Read `cases/index.json` (written by the exporter): per case id, title,
-`flightAlt_ft`, `observedAt`, source, and km per level. Sort by observed km,
-then by fewer `Not assessed` km. Show all three km values on every row (R5.2).
+## 9. UI
 
-## 8. Correctness properties (PBT, Hypothesis)
+Layout: a top-view mini map (route, lanes, aircraft), the cross-section (altitude
+against distance for the selected lane) with the cloud body by phase, dashed
+estimated base, hatched candidate band, wind barbs, forecast-environment shading,
+the "Unknown" curtain; a HUD with the running dollar total, ice bar, anti-ice
+switch, altitude, lane and distance; a gate panel (lane, altitude, anti-ice,
+continue); the end-of-flight report (components, references, share of possible
+saving, kilometres per level, personal best, share text without severity words).
+Patterns plus text labels distinguish data kinds and levels (R10.1). Keyboard:
+arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
+
+## 10. Correctness properties (Hypothesis and Node)
 
 | Id | Property | Requirement |
 |---|---|---|
-| CD-P1 | Not assessed is sticky: any sample with `retrievalState` outside {observed, clear}, or with null supercooled/base/temperature, is `Not assessed` for every planned altitude | R2.2, R2.5 |
-| CD-P2 | Observed implies evidence: `Observed` ⇒ `retrievalState == observed`, `supercooled is true`, and `lowerFt <= plannedAltFt <= upperFt` | R2.4 |
-| CD-P3 | Layer containment: when `candidateLayer` is non-null, `baseFt <= lowerFt <= upperFt <= topFt` | R2.6 |
-| CD-P4 | Isotherm ordering: `minus20CFt >= zeroCFt` for every finite temperature | R2.6 |
-| CD-P5 | Summary conservation: km over the three levels sums to the last `distanceKm` within 0.001; every sample is in exactly one segment | §4, R5.2 |
-| CD-P6 | Dive conservation: for any input sequence, final km per level sums to distance flown within 0.001; observed km is non-decreasing over time | R4.5, R4.3 |
-| CD-P7 | Determinism: evidence and `step` give equal output for equal input (Python and a Node-run check of `game.js`) | R2.8, R4.6 |
-| CD-P8 | Viewer validity: every exported case passes the ported `validProfile()` | R3.2 |
-| CD-P9 | JSON finiteness: no NaN or infinity anywhere in a case | R3.3 |
-| CD-P10 | Route sampling: distances start at 0, strictly increase, count in [10, 200], and adjacent spacing stays bounded across the dateline | R3.1 |
+| CD-P1 | Not assessed is sticky: with satellite and forecast both missing for a cell, the level is `Not assessed` for every altitude | R2.5 |
+| CD-P2 | Observed implies evidence: `Observed` => satellite observed, supercooled true, altitude in [max(base, zeroC), min(top, minus20C)] | R2.3 |
+| CD-P3 | Layer containment: when a candidate layer exists, base <= lower <= upper <= top | R2.6 |
+| CD-P4 | Isotherm ordering: minus20C height >= zeroC height | R2.6 |
+| CD-P5 | Summary conservation: km per level sums to the distance, within 0.001 km | R8.1 |
+| CD-P6 | Cost components are non-negative and sum to the total | R4.6 |
+| CD-P7 | Determinism: same case and same actions give equal state in Python and in JavaScript | R6, R2.8 |
+| CD-P8 | Anti-ice: turning it on never raises the ice index and never lowers fuel flow | R5.3, R4.4 |
+| CD-P9 | Ice index never decreases; flight ends at 100 | R5.4, R5.5 |
+| CD-P10 | Bounds: lane in 0..4, altitude inside the block, at most one lane and 1,000 ft per step | R7.2, R7.3 |
+| CD-P11 | Distance conservation: kilometres per level sum to the distance flown | R8.1 |
+| CD-P12 | Solver bounds: Best <= cost of any random completed policy <= Wasteful | R8.2 |
+| CD-P13 | Lane sampling: distances start at 0, strictly increase, lanes are parallel within 0.5 km | R3.1 |
+| CD-P14 | No silent entry: for any policy, entering an Observed cell with anti-ice off is preceded by a gate or pause at least one step earlier | R6.4 |
+| CD-P15 | Case finiteness and viewer validity | R3.4 |
+| CD-P16 | Straight-ahead reference equals the cost of the matching fixed policy | R8.3 |
 
-Unit tests cover each rule row in §3 with fixed numbers. A wording test scans
-`static/cloud-dive/**` and case files for the R7.1 terms.
+Unit tests cover every rule row, the cost formulas with fixed numbers, and the
+parallax correction on a synthetic cloud. A wording test scans `static/cloud-dive/**`
+and case files for the R9.1 terms.
 
-## 9. Error handling
+## 11. Error handling
 
-- Missing or unreadable case file: show the case list with the entry
-  disabled and the reason; never a blank canvas.
-- No case with observed km: the leaderboard shows the honest result and the
-  game still plays (R3.4, R3.5).
+- Missing or unreadable case file: show the case list with the entry disabled
+  and the reason; never a blank canvas.
+- Case with no Observed cell on the straight path: the game still plays and the
+  report says so.
+- Export fails on any non-finite value, secret, absolute path or missing source.
 
-## 10. Out of scope
+## 12. Risks and cuts (about 20 days left)
 
-3D flight (the CesiumJS replay stays on its branch), physics-based icing
-accretion, live collection on the public site, fuel and flight lookup, any
-operational advice.
+| Risk | Mitigation |
+|---|---|
+| Too much to build | Order: evidence, cube export, Python core, JS port, UI. Cut order: third case, Wasteful extreme, share text |
+| Trivial game (always climb) | Altitude block, ECMWF head-winds and climb cost; `tune_params.py` must show Best at least 3 percent below Straight-ahead on each case |
+| GOES height is 10 km resolution | Label it; lanes are 15 km apart; no claim finer than a pixel |
+| Anti-ice penalty has no source | Stored as a labelled game parameter |
+| OpenAP licence | Build-time only, never shipped; notice in `THIRD_PARTY_NOTICES.md` |
+| 21 UTC low sun in the east | Use 19-20 UTC and the solar-zenith check |
+
+## 13. Out of scope
+
+3D flight, real icing physics, live data, accounts, an online leaderboard, advice
+on real operations, the Incheon-Haneda demo, Meteosat, Himawari, GK-2A.

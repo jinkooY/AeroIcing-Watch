@@ -13,14 +13,18 @@ add work to it. After each task, add a row to `docs/kiro-usage-log.md`.
 
 ## Overview
 
-Kiroween 2026 entry. **Cloud Dive — "Who gets iced the most?"**: anyone can fly
-a small aircraft through a real geostationary-satellite cross-section of
-today's clouds (GK-2A, GOES-18/19, Himawari-9). The same evidence engine also
-serves the existing dispatcher cross-section view and API.
+Kiroween 2026 entry. **Cloud Dive: fly a real US icing day and spend the least
+fuel.** A regional jet flies a real route on a real day using GOES satellite
+cloud data and an ECMWF forecast. Cruise fast-forwards to a cloud; the player
+then decides lane, altitude and anti-ice, each with a dollar price. Score is
+total fuel cost; lower wins. The same evidence engine also serves the existing
+dispatcher cross-section view and API (repository only).
 
-Evidence wording and levels follow the science guardrails (see
-`cloud-dive/design.md` §3 until `science-guardrails.md` is on `main`).
-
+Evidence levels, wording and the ice index follow the science guardrails
+(`science-guardrails.md` once imported; until then `cloud-dive/design.md`
+sections 4 to 6 and `requirements.md` R9). Legacy code (GK-2A, Meteosat, Himawari,
+fuel route review, Incheon-Haneda demo) is listed in the README and is not part
+of the entry.
 ## Tech Stack
 
 - **Backend:** FastAPI (Python 3.11+), uvicorn
