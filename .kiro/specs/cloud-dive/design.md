@@ -240,6 +240,25 @@ Rendering at a gate: the cross-section along lane 0 and the other lanes, the ECM
 wind barbs and forecast-environment shading, the unknown curtain; no costs ahead,
 no recommended action (R6.5).
 
+### 7.1 Implementation notes (src/analysis/game_core.py)
+- Segment `s` is flown in the cell `(lane, s, alt)` reached by that segment's move, so cells
+  0..N-1 are flown and cell N is display only. The last segment may be shorter than 10 km.
+- Ice gain is a stored integer per cell (`iceGain`, computed once by `compute_ice_gain` with
+  round-half-up), so Python and JavaScript read the same integers. The case file also keeps
+  `temperatureC` and `lwpGm2` so the tuner can recompute the gain. Missing temperature uses
+  factor 0.5; missing water uses factor 1. Head-wind is stored as integer knots.
+- The cost uses the ice index before the segment; the gain applies after it. The climb extra is
+  charged at the level reached; a lane change adds `hypot(10, lateral) - 10` km at the actual
+  flow and ground speed. Cost components: base, antiIce, ice, climb, detour (+ diversion).
+- Gates are checked at every segment boundary, and at the start of the flight. The call that
+  continues from a gate always flies at least one segment. An entry gate is announced once per
+  predicted entry cell (the player can still pause anywhere). Interpretation of R6.4: the gate or
+  pause is a decision boundary at or before the boundary where the entering segment starts, and
+  at most two segments before it (property CD-P14 checks `entry-2 <= stop <= entry`).
+- The solver treats anti-ice as a free per-segment action (no switching cost), so the state is
+  `(step, lane, altitude, ice)`; it is vectorised over lane, altitude and ice with the same
+  `cost_components` function the engine calls. It is checked against brute force on tiny cases.
+
 ## 8. Reference solver
 
 Exact dynamic programme over `(step, lane, altLevel, antiIce, ice)` with ice in
