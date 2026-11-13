@@ -92,13 +92,14 @@ v in the 2026-11-12 00 UTC +21 h index).
   "rule": {"name": "cloud-dive-evidence-v2", "version": 2, "...thresholds": 0},
   "params": {"aircraft": "E75L", "engine": "CF34-8E6", "massKg": 30340, "fuelUsdPerKg": 0.79,
              "tasKtByAlt": {}, "flowKgHByAlt": {}, "climbExtraKgPer1000Ft": {},
-             "antiIceFactor": 1.04, "dragFactorAtFull": 0.15, "diversionUsd": 0,
+             "antiIceFactor": 1.08, "speedLossAtFull": 0.12, "dragFlowAtFull": 0.20, "iceExponent": 1.5, "diversionUsd": 0,
              "iceRates": {}, "possibleRateFactor": 0.25},
   "lanesLatLon": [[[0,0]]],
   "evidence": "uint8 array [lane][step][alt]  (0 Not assessed, 1 Not indicated, 2 Possible, 3 Observed)",
   "headwindKt": "int16 array [lane][step][alt]", "temperatureC": "float array [lane][step][alt]",
   "satellite": [{"lane": 0, "step": 0, "topFt": 0, "baseFt": 0, "phase": "liquid", "supercooled": true, "retrieval": "observed"}],
-  "references": {"best": {}, "straightAhead": {}, "wasteful": {}},
+  "references": {"best": {}, "bestNoAntiIce": {}, "bestAlwaysAntiIce": {}, "straightAhead": {}, "wasteful": {}},
+  "balance": {"B1": true, "B2": true, "B3": true, "antiIceKmInBest": 0},
   "viewerProfile": {"title": "...", "samples": []}
 }
 ```
@@ -131,25 +132,51 @@ are present (`ifs_profile`); otherwise from cloud-top temperature and a lapse ra
 ## 5. Cost model
 
 Per step of length d (10 km, plus the extra path of a lane change) at altitude
-level a, lane l and step s:
+level a, lane l and step s, with ice index `ice` (0-100) and anti-ice switch `AI`:
 
 ```
-TAS      = tasKtByAlt[a]                                  # illustrative schedule
+iceTerm  = (ice / 100) ^ 1.5                              # convex: late ice hurts most
+TAS      = tasKtByAlt[a] * (1 - speedLossAtFull * iceTerm)
 GS       = max(TAS - headwindKt[l][s][a], 120)            # knots
 hours    = d / (GS * 1.852)
-flow     = flowKgHByAlt[a] * (antiIceOn ? antiIceFactor : 1)
-                          * (1 + dragFactorAtFull * ice / 100)
+flow     = flowKgHByAlt[a] * (AI ? antiIceFactor : 1) * (1 + dragFlowAtFull * iceTerm)
 cruise   = flow * hours * fuelUsdPerKg
 climb    = climbExtraKgPer1000Ft[a] * (1000 ft climbed this step) * fuelUsdPerKg
 detour   = flow * (extra path hours) * fuelUsdPerKg       # hypot(10, 15) - 10 = 8.0 km per lane change
 ```
 Descending costs no extra and earns no credit. A diversion adds `diversionUsd`
-and ends the flight. Illustrative scale from OpenAP for the E75L at 30,340 kg:
-about 3.3 kg/km at 6,000 ft down to 2.2 kg/km at 30,000 ft; 1,232 km costs about
-$3,240 at 6,000 ft and $2,170 at 30,000 ft at $0.79/kg. Higher is cheaper per
-kilometre, so the altitude block (and the wind) must create the trade-off; tuning
-checks this (task 5.5).
+and ends the flight (not ranked).
 
+### 5.1 Penalty table (both anti-ice choices cost something)
+
+| Choice | What it costs | Stops when |
+|---|---|---|
+| Anti-ice on | `antiIceFactor` on fuel flow, every step it is on, also in clear air (bleed air) | switched off |
+| Anti-ice off, in Observed cell | ice index rises; speed falls by up to `speedLossAtFull` and fuel flow rises by up to `dragFlowAtFull` for the **rest of the flight** (the index never decreases) | never; at index 100 the flight diverts |
+| Anti-ice off, in Possible cell | the same, at `possibleRateFactor` of the rate | never |
+| Lane change | 8 km of extra path per lane | - |
+| Climb | extra fuel per 1,000 ft | - |
+
+Initial placeholder values, all tunable and labelled illustrative:
+`antiIceFactor` 1.08, `speedLossAtFull` 0.12, `dragFlowAtFull` 0.20, exponent 1.5,
+`possibleRateFactor` 0.25, `baseGain` 7. They are chosen only through
+`tools/tune_params.py` so that the balance criteria below hold.
+
+### 5.2 Balance criteria (R4.8), computed by the solver per case
+
+- B1: Best <= 0.97 x Straight-ahead.
+- B2: Best with anti-ice forced off is at least 3 percent costlier than Best, or does not complete.
+- B3: Best with anti-ice forced on is at least 3 percent costlier than Best.
+- B4: Best uses anti-ice for at least 20 km on at least two of the three cases.
+
+If a case fails, the allowed levers are the altitude block and the corridor
+width in the manifest, then the parameters in 5.1; the weather data are never
+edited. Results are stored in the case file; the exporter refuses a failing case.
+
+Illustrative scale from OpenAP for the E75L at 30,340 kg: about 3.3 kg/km at
+6,000 ft down to 2.2 kg/km at 30,000 ft; 1,232 km costs about $3,240 at 6,000 ft
+and $2,170 at 30,000 ft at $0.79/kg. Higher is cheaper per kilometre, so the
+altitude block and the wind must create the trade-off; the balance criteria check it.
 ## 6. Ice state
 
 Integer index 0 to 100. Per step, without anti-ice:
@@ -158,7 +185,7 @@ Integer index 0 to 100. Per step, without anti-ice:
 `tempFactor` is a triangle on [-20, 0] C peaking at -10 C; `waterFactor =
 min(1.5, 0.5 + LWP / 100)`; `baseGain` about 7 so a full Observed layer reaches
 100 in about 150 km. Satellite fields are those of the lane and step; LWP is null
-for Possible cells, then `waterFactor` is 1. Index never decreases; at 100 the
+for Possible cells, then `waterFactor` is 1. The index never decreases (its drag lasts for the rest of the flight, section 5.1); at 100 the
 flight ends (diversion). All gains are integers, so the solver is exact.
 
 ## 7. Game engine (decision gates)
@@ -187,10 +214,11 @@ no recommended action (R6.5).
 Exact dynamic programme over `(step, lane, altLevel, antiIce, ice)` with ice in
 0..99 (100 is terminal) and actions `(dLane in {-1,0,1}, dAlt in {-1,0,1}, antiIce
 in {0,1})` per step: 5 x 25 x 2 x 100 states, about 35 actions. The transition is
-the same function as `step`. Outputs: Best (minimum cost over completed flights),
-Wasteful extreme (maximum cost over completed flights), Straight-ahead (centre
-lane, start altitude, anti-ice on exactly while the cell is Observed or Possible).
-The solver can pause anywhere; a player who pauses at every step can match it.
+the same function as `step`. Outputs: Best (minimum cost over completed flights), Best with anti-ice forced off,
+Best with anti-ice forced on, Wasteful extreme (maximum cost over completed flights),
+and Straight-ahead (centre lane, start altitude, anti-ice on exactly while the cell is
+Observed or Possible). The forced variants feed balance criteria B2 and B3. The solver can
+pause anywhere; a player who pauses at every step can match it.
 
 ## 9. UI
 
@@ -215,7 +243,7 @@ arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
 | CD-P5 | Summary conservation: km per level sums to the distance, within 0.001 km | R8.1 |
 | CD-P6 | Cost components are non-negative and sum to the total | R4.6 |
 | CD-P7 | Determinism: same case and same actions give equal state in Python and in JavaScript | R6, R2.8 |
-| CD-P8 | Anti-ice: turning it on never raises the ice index and never lowers fuel flow | R5.3, R4.4 |
+| CD-P8 | Anti-ice and ice: turning anti-ice on never raises the ice index and never lowers fuel flow; a higher ice index never lowers the cost of a step and never raises the speed | R5.3, R4.4, R4.5 |
 | CD-P9 | Ice index never decreases; flight ends at 100 | R5.4, R5.5 |
 | CD-P10 | Bounds: lane in 0..4, altitude inside the block, at most one lane and 1,000 ft per step | R7.2, R7.3 |
 | CD-P11 | Distance conservation: kilometres per level sum to the distance flown | R8.1 |
@@ -224,6 +252,7 @@ arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
 | CD-P14 | No silent entry: for any policy, entering an Observed cell with anti-ice off is preceded by a gate or pause at least one step earlier | R6.4 |
 | CD-P15 | Case finiteness and viewer validity | R3.4 |
 | CD-P16 | Straight-ahead reference equals the cost of the matching fixed policy | R8.3 |
+| CD-P17 | Restricted solvers: Best <= Best with anti-ice forced off, and Best <= Best with anti-ice forced on (or the restricted flight does not complete) | R4.8 |
 
 Unit tests cover every rule row, the cost formulas with fixed numbers, and the
 parallax correction on a synthetic cloud. A wording test scans `static/cloud-dive/**`
@@ -242,7 +271,7 @@ and case files for the R9.1 terms.
 | Risk | Mitigation |
 |---|---|
 | Too much to build | Order: evidence, cube export, Python core, JS port, UI. Cut order: third case, Wasteful extreme, share text |
-| Trivial game (always climb) | Altitude block, ECMWF head-winds and climb cost; `tune_params.py` must show Best at least 3 percent below Straight-ahead on each case |
+| Trivial game (always climb, never use anti-ice, or always use it) | Altitude block, ECMWF head-winds, climb cost and the two-sided anti-ice penalty; balance criteria B1 to B4 (section 5.2) are enforced by the exporter |
 | GOES height is 10 km resolution | Label it; lanes are 15 km apart; no claim finer than a pixel |
 | Anti-ice penalty has no source | Stored as a labelled game parameter |
 | OpenAP licence | Build-time only, never shipped; notice in `THIRD_PARTY_NOTICES.md` |

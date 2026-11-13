@@ -116,12 +116,19 @@ and SHALL be stored in the case file with the aircraft, engine, mass and price.
 per lane change (extra path length), and no credit for descending.
 4.4 WHILE anti-ice is on, THE SYSTEM SHALL multiply fuel flow by the anti-ice
 factor stored in the case file.
-4.5 WHILE the ice index is above zero, THE SYSTEM SHALL multiply fuel flow by an
-ice-drag factor that grows with the index.
+4.5 WHILE the ice index is above zero, THE SYSTEM SHALL lower the true airspeed and raise
+fuel flow by factors that grow convexly with the index (ice drag), so that unprotected
+flight in icing evidence is costly even before the index reaches 100.
 4.6 THE SYSTEM SHALL show the cost as a running dollar total and as components:
 cruise fuel, climb, detour, anti-ice, ice drag, diversion.
 4.7 THE FUEL PRICE, ANTI-ICE FACTOR, DRAG FACTOR AND ICE RATES SHALL be labelled
 illustrative and uncalibrated wherever shown.
+4.8 EACH CASE FILE SHALL carry balance results from the solver, and THE EXPORTER SHALL
+refuse a case that fails any of: B1 Best is at least 3 percent cheaper than Straight-ahead;
+B2 Best with anti-ice never used is at least 3 percent costlier than Best, or does not
+complete; B3 Best with anti-ice always on is at least 3 percent costlier than Best; B4 Best
+uses anti-ice for at least 20 km on at least two of the three cases. Neither never using
+anti-ice nor always using it can therefore win.
 
 ### R5 Ice state and failure
 
@@ -135,6 +142,8 @@ SHALL raise the index at a lower stored rate.
 5.4 THE ICE INDEX SHALL NOT decrease.
 5.5 WHEN the ice index reaches 100, THE SYSTEM SHALL end the flight as a forced
 diversion, add the diversion cost, and mark the result as not ranked.
+5.6 THE REPORT of a diverted flight SHALL show the cost up to the diversion plus the
+diversion cost, marked "not ranked".
 
 ### R6 Decision-gate flow
 
@@ -299,7 +308,7 @@ Findings:
 3. **11-01 reaches the highest tops** (21 kft) with less coverage: a good case for avoiding by climbing. The western route needs GOES-West; the scan used GOES-East.
 4. All strong cases have cloud-top height, optical depth and particle size on 100 percent of the supercooled samples.
 5. Caveats unchanged: no data-quality filter, no parallax correction, 11-12 is a partial and very recent day, PIREPs are reports and not validation.
-### 5.6 Proposed on 2026-11-13: fuel-cost scoring (confirm each)
+### 5.6 Fuel-cost scoring F1 to F6 (approved 2026-11-13, F3 amended)
 
 | Id | Proposal | Reason |
 |---|---|---|
@@ -310,7 +319,9 @@ Findings:
 | F5 | **Forced diversion** at ice index 100 ends the flight and is not ranked. | Stops "never turn anti-ice on" from winning. |
 | F6 | Cases: 2026-11-12 JFK-BNA (headline, 19-20 UTC), 2026-11-01 DEN-LAX (GOES-West checked: coverage and cloud tops match GOES-East), 2026-11-07 BUF-PWM. | From the case scans in 5.4 and 5.5. |
 
-Not verified: the real anti-ice fuel penalty (no source found; the 4 percent value is a game parameter); the text of 14 CFR 121.647 about icing fuel (seen only in a search snippet of the 2024 edition; do not quote it until read); OpenAP climb input units (ft/min assumed).
+**Owner answer (2026-11-13):** F1, F2, F4, F5 and F6 approved. F3 approved with an amendment: both anti-ice choices carry a penalty. Anti-ice on costs fuel flow (bleed air) for as long as it is on, even in clear air. Anti-ice off in icing evidence builds ice, which lowers speed and raises fuel flow (drag) for the rest of the flight and ends the flight at 100 (F5). Balance criteria B1 to B4 (R4.8) make sure that never using anti-ice, or always using it, cannot win. F5 is designed together with F3.
+
+Not verified: the real anti-ice fuel penalty (no source found; the anti-ice factor is a labelled game parameter); the text of 14 CFR 121.647 about icing fuel (seen only in a search snippet of the 2024 edition; do not quote it until read); OpenAP climb input units (ft/min assumed).
 ## 6. Official rules digest (read in full on 2026-11-13)
 
 | Rule | Value or text | Consequence |
