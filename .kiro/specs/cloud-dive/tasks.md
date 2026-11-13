@@ -81,19 +81,19 @@ write-up, bonuses, Devpost form) is in
   - Synthetic arrays plus one small real fixture (under 200 KB) from a GOES hour
   - _Requirements: R3.2, R3.3_
 
-- [ ] 4. Build the ECMWF background
-- [ ] 4.1 Extend `tools/collect_ifs.py` levels to 925, 850, 700, 600, 500, 400, 300, 250 hPa
+- [x] 4. Build the ECMWF background
+- [x] 4.1 Extend `tools/collect_ifs.py` levels to 925, 850, 700, 600, 500, 400, 300, 250 hPa
   - Keep the message-count check; support `--source aws`; add a test with a
     synthetic index that rejects a missing level
   - _Requirements: R3.1_
-- [ ] 4.2 Write `src/analysis/ifs_cube.py`
+- [x] 4.2 Write `src/analysis/ifs_cube.py`
   - ISA altitude to pressure; sample T, RH, u, v at (lane, step, altitude) with
     `ifs_grid.sample`; head-wind component in knots, positive against the flight
   - _Requirements: R4.1, R2.4_
-- [ ] 4.3 Implement the forecast icing screen
+- [x] 4.3 Implement the forecast icing screen
   - Criterion T in [-25, 0] C and RH >= 85 percent, rule id `ifs-temperature-rh-v1`
   - _Requirements: R2.4_
-- [ ] 4.4 Write tests
+- [x] 4.4 Write tests
   - Head-wind sign on a known wind; missing data returns None; time interpolation
   - _Requirements: R2.5, R4.1_
 

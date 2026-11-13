@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,14 +27,31 @@ ROOTS = {
     "google": "https://storage.googleapis.com/ecmwf-open-data",
 }
 FIELDS = ("gh", "t", "r", "u", "v")
-LEVELS = (850, 500, 300, 250)
+# Cloud Dive needs every 1,000 ft block of its flight band, so eight levels (high pressure first;
+# ifs_grid reverses the order into an increasing log-pressure axis).
+LEVELS = (925, 850, 700, 600, 500, 400, 300, 250)
 BOUNDS = (30, 46, 118, 143)  # default (south, north, west, east); see --bbox / --route
 BBOX_MAX_CELLS_DEG2 = 12000   # sanity cap on bbox area (deg^2); keeps bundles small
 LIMIT = 64 * 1024 * 1024
 PROJECT = Path(__file__).resolve().parents[1]
 
 
-def read(url, *, offset=None, length=None, limit=4 * 1024 * 1024):
+def read(url, *, offset=None, length=None, limit=4 * 1024 * 1024, attempts=5):
+    """`_read_once` with retries on server errors and dropped connections (S3 returns sporadic 503)."""
+    for attempt in range(attempts):
+        try:
+            return _read_once(url, offset=offset, length=length, limit=limit)
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else 0
+            if status < 500 or attempt == attempts - 1:
+                raise
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == attempts - 1:
+                raise
+        time.sleep(min(2 ** attempt, 8))
+
+
+def _read_once(url, *, offset=None, length=None, limit=4 * 1024 * 1024):
     headers = {"Accept-Encoding": "identity"}
     if offset is not None:
         headers["Range"] = f"bytes={offset}-{offset + length - 1}"
