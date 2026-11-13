@@ -206,3 +206,25 @@ This product is a dispatcher review aid based on satellite observations. It does
 - Time-window analysis (will the icing clear in 30 minutes?)
 - KIM / ECMWF NWP icing probability overlay
 - PIREP ingestion for corroboration
+
+## Legacy components (outside the Kiroween 2026 entry)
+
+The entry is the US-origin Cloud Dive game and its evidence engine (see
+`.kiro/specs/cloud-dive/`). These parts stay in the repository and in git
+history but are not part of the entry and are not described in the write-up:
+
+- GK-2A reader and WeatherPath import: `src/integration/gk2a_cloud.py`,
+  `tools/import_weatherpath_ctps.py`.
+- Meteosat and Himawari sources: `src/integration/meteosat_cloud.py`,
+  `src/integration/himawari_cloud.py`, `tools/collect_himawari.py`.
+- Fuel route review (OpenAP) and flight lookup: `src/api/route_review.py`,
+  `src/analysis/route_weather.py`, `src/analysis/aircraft_performance.py`,
+  `src/integration/flight_lookup.py`, `tools/validate_ifs_icing.py`.
+- Incheon-Haneda route comparison demo: `static/route-demo/`,
+  `tools/export_route_demo.py`, `.github/workflows/route-demo-pages.yml`.
+- Night cloud-water path in `src/analysis/cloud_base.py` (cases are daytime only).
+
+Origin of every file (WeatherPath, Kiro, Claude, Codex) is listed in
+[`docs/Preexisting_Work_Disclosure.md`](docs/Preexisting_Work_Disclosure.md).
+Code copied or adapted from the author's earlier WeatherPath project is
+released under this repository's Apache-2.0 licence.
