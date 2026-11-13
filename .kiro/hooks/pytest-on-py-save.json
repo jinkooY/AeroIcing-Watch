@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Run tests when a Python file is saved",
+      "trigger": "PostFileSave",
+      "description": "Runs the project test suite (pytest, stop at first failure) every time a .py file is saved, so evidence-rule and game-core regressions show up immediately.",
+      "matcher": "\\.py$",
+      "action": {
+        "type": "command",
+        "command": "C:\\Users\\I7-JIN\\miniconda3\\envs\\WeatherPath\\python.exe -m pytest -q -x",
+        "timeout": 180
+      }
+    }
+  ]
+}

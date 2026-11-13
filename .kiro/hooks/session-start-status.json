@@ -2,12 +2,12 @@
   "version": "v1",
   "hooks": [
     {
-      "name": "Session Start — Project Status",
+      "name": "Session Start - Project Status",
       "trigger": "SessionStart",
-      "description": "Reads the active cloud-dive tasks.md at session start and prints a short status",
+      "description": "Reads the active cloud-dive plan at session start and prints a short status",
       "action": {
         "type": "agent",
-        "prompt": "At the start of this session, read `.kiro/specs/cloud-dive/tasks.md` (the active plan; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline) and produce a brief status so the agent knows where work left off.\n\nCount `[x]` and `[ ]` per priority section (P0, P1, P2, P3, Submission). Output, under 15 lines:\n\n## Cloud Dive — Session Start Status\n**Progress:** X / Y tasks (N%)\n**Days to deadline:** days from today (UTC) to 2026-12-04\n**Active section:** first section with an open task\n**Next task:** first open task id and short description\n**Open decisions:** any of D1–D5 in `.kiro/specs/cloud-dive/requirements.md` §5 still marked Open\n**Usage log:** number of rows in `docs/kiro-usage-log.md` (or \"missing\")"
+        "prompt": "At the start of this session, read `.kiro/specs/cloud-dive/tasks.md` (the active plan; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline) and `.kiro/specs/cloud-dive/submission-checklist.md`, then print a status of at most 15 lines so the agent knows where work stopped.\n\nCount `- [x] N.M` and `- [ ] N.M` subtasks per top-level group 1 to 9. Output (plain text, no emoji):\nCloud Dive - Session Start Status\nProgress: X / Y subtasks (N percent)\nDays to deadline: days from today (UTC) to 2026-12-04 2 pm Pacific (Dec 5 07:00 KST)\nActive group: first group with an open subtask\nNext task: its first open subtask and a short description\nOwner items open: open C items that only the owner can do (credits form due Dec 1 12:00 PT, blog, social, video upload, Devpost form)\nDecisions: any of F1 to F6, D1 to D5 in `.kiro/specs/cloud-dive/requirements.md` section 5 still unresolved\nUsage log: number of rows in `docs/kiro-usage-log.md` (or \"missing\")\nRemind that all remaining coding is done in Kiro only."
       }
     }
   ]

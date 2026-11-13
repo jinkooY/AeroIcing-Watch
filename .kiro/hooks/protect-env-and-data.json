@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Block agent writes to .env and data/",
+      "trigger": "PreToolUse",
+      "description": "Before any file write, rename, move or delete, blocks (exit 2) paths under the repository-root data/ folder and the .env files. .env.example is allowed. Keeps secrets and cached satellite data out of agent edits and out of git.",
+      "matcher": "fs_write|str_replace|fs_append|delete_file|smart_relocate|semantic_rename",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks/scripts/guard-protected-paths.ps1",
+        "timeout": 15
+      }
+    }
+  ]
+}

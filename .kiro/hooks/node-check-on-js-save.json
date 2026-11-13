@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Syntax-check JavaScript when saved",
+      "trigger": "PostFileSave",
+      "description": "Runs node --check on the saved .js or .mjs file (the frontend has no build step, so this is the only compile gate). Skips vendor and node_modules.",
+      "matcher": "\\.(js|mjs)$",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks/scripts/node-check.ps1",
+        "timeout": 30
+      }
+    }
+  ]
+}

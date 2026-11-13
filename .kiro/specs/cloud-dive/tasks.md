@@ -14,8 +14,8 @@ write-up, bonuses, Devpost form) is in
 
 ## Tasks
 
-- [ ] 1. Set up guardrails and automation
-- [ ] 1.1 Import and amend the science guardrails steering file
+- [x] 1. Set up guardrails and automation
+- [x] 1.1 Import and amend the science guardrails steering file
   - Copy `.kiro/steering/science-guardrails.md` from
     `origin/claude/kiro-research-direction-review-b971c3` (that file only)
   - Set `fileMatchPattern` for `src/analysis/**`, `tools/export_cloud_dive.py`,
@@ -24,12 +24,12 @@ write-up, bonuses, Devpost form) is in
     dollar costs are allowed as game values; the index is never a risk label;
     reference results appear only after play
   - _Requirements: R2.1, R9.1, R9.2, R9.4_
-- [ ] 1.2 Add a command hook that runs `pytest -q` when a `*.py` file is saved
+- [x] 1.2 Add a command hook that runs `pytest -q` when a `*.py` file is saved
   - Create it with the Kiro Hook UI, not by hand-editing JSON
   - _Requirements: R2.8_
-- [ ] 1.3 Add a command hook that runs `node --check` on a saved `*.js` file
+- [x] 1.3 Add a command hook that runs `node --check` on a saved `*.js` file
   - _Requirements: R10.3_
-- [ ] 1.4 Add a PreToolUse hook that blocks writes to `.env` and `data/` (exit 2)
+- [x] 1.4 Add a PreToolUse hook that blocks writes to `.env` and `data/` (exit 2)
   - _Requirements: R1.4_
 - [x] 1.5 Point the session-start and progress hooks at this plan
   - _Requirements: R12.2_
@@ -101,23 +101,25 @@ write-up, bonuses, Devpost form) is in
 - [ ] 5.1 Write `src/analysis/cost_model.py`
   - OpenAP tables for E75L at 30,340 kg: flow by altitude, climb extra per
     1,000 ft (check the vertical-speed unit), TAS schedule; lazy import; parameter
-    dataclass with price, anti-ice factor, drag factor, ice rates
+    dataclass with price, anti-ice factor, speed loss, drag flow, ice exponent, ice rates
   - _Requirements: R4.1, R4.2, R4.3, R4.7_
 - [ ] 5.2 Write `src/analysis/game_core.py`
-  - Pure `step`, ice integer index, cost components, lane and altitude limits,
-    gate lookahead, `run_until_gate`
+  - Pure `step`, ice integer index with convex speed loss and fuel-flow drag, anti-ice
+    fuel factor, cost components, lane and altitude limits, gate lookahead,
+    `run_until_gate`
   - _Requirements: R4.4, R4.5, R4.6, R5.1, R5.2, R5.3, R5.4, R5.5, R6.1, R6.2, R7.1, R7.2, R7.3_
 - [ ] 5.3 Write property tests CD-P6 to CD-P11 and CD-P14
   - Random action sequences over a synthetic cube
   - _Requirements: R4.6, R5.3, R5.4, R5.5, R6.4, R7.2, R7.3, R8.1_
 - [ ] 5.4 Write `src/analysis/solver.py`
-  - Exact dynamic programme over the same transition; Best, Wasteful extreme,
-    Straight-ahead
-  - _Requirements: R8.2, R8.3_
-- [ ] 5.5 Write property tests CD-P12 and CD-P16 and `tools/tune_params.py`
-  - The tuning report prints Best versus Straight-ahead per case; acceptance is a
-    gap of at least 3 percent
-  - _Requirements: R8.2, R8.3_
+  - Exact dynamic programme over the same transition; Best, Best with anti-ice forced
+    off, Best with anti-ice forced on, Wasteful extreme, Straight-ahead
+  - _Requirements: R4.8, R8.2, R8.3_
+- [ ] 5.5 Write property tests CD-P12, CD-P16 and CD-P17 and `tools/tune_params.py`
+  - The tuning report prints Best, the two forced-anti-ice variants and Straight-ahead per
+    case and checks balance criteria B1 to B4; levers are the altitude block, corridor
+    width and the parameters, never the weather data
+  - _Requirements: R4.8, R8.2, R8.3_
 - [ ] 5.6 Checkpoint: run the full test suite and fix failures
 
 - [ ] 6. Build the case exporter
@@ -125,10 +127,10 @@ write-up, bonuses, Devpost form) is in
   - Python port of every rule in `validProfile()`; property test CD-P15
   - _Requirements: R3.4_
 - [ ] 6.2 Write `tools/export_cloud_dive.py`
-  - Manifest-driven: satellite lanes, IFS cube, evidence, params, references,
-    embedded centre-lane viewer profile, provenance, attribution; fails on
-    non-finite values, secrets or absolute paths
-  - _Requirements: R1.3, R1.4, R2.7, R3.1, R3.4, R4.2_
+  - Manifest-driven: satellite lanes, IFS cube, evidence, params, references, balance
+    results, embedded centre-lane viewer profile, provenance, attribution; fails on
+    non-finite values, secrets, absolute paths, or a case that fails B1 to B3
+  - _Requirements: R1.3, R1.4, R2.7, R3.1, R3.4, R4.2, R4.8_
 - [ ] 6.3 Add manifests for the three cases and a `--simulated` mode
   - 2026-11-12 JFK-BNA 19:30 UTC (GOES-19), 2026-11-01 DEN-LAX 21 UTC (GOES-18),
     2026-11-07 BUF-PWM 19 UTC (GOES-19); simulated case labelled "Simulated"
@@ -137,9 +139,9 @@ write-up, bonuses, Devpost form) is in
   - Fixtures in `tmp_path`; attribution present; no paths or keys in the output
   - _Requirements: R1.4, R3.4_
 - [ ] 6.5 Run the real export and commit the cases
-  - Collect the GOES hours and the IFS run, export, run `tune_params.py`, commit
-    `static/cloud-dive/cases/`
-  - _Requirements: R3.5_
+  - Collect the GOES hours and the IFS run, export, run `tune_params.py` (B4 is checked
+    across the three cases), commit `static/cloud-dive/cases/`
+  - _Requirements: R3.5, R4.8_
 
 - [ ] 7. Build the JavaScript engine
 - [ ] 7.1 Write `static/cloud-dive/engine.js`
@@ -195,7 +197,7 @@ write-up, bonuses, Devpost form) is in
 
 ## Notes
 
-- Confirmations F1 to F6 (`requirements.md` 5.6) must be answered before task 5.
+- F1 to F6 are approved (`requirements.md` 5.6; F3 amended with the two-sided anti-ice penalty and the balance criteria).
 - Task 6.5 and the real data runs need network access; the rest runs offline.
 - Parameter values (price, anti-ice factor, drag, ice rates) are illustrative; tune
   them only through `tools/tune_params.py` and record changes in the usage log.
