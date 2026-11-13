@@ -97,30 +97,30 @@ write-up, bonuses, Devpost form) is in
   - Head-wind sign on a known wind; missing data returns None; time interpolation
   - _Requirements: R2.5, R4.1_
 
-- [ ] 5. Build the cost model, game core and solver (Python reference)
-- [ ] 5.1 Write `src/analysis/cost_model.py`
+- [x] 5. Build the cost model, game core and solver (Python reference)
+- [x] 5.1 Write `src/analysis/cost_model.py`
   - OpenAP tables for E75L at 30,340 kg: flow by altitude, climb extra per
     1,000 ft (check the vertical-speed unit), TAS schedule; lazy import; parameter
     dataclass with price, anti-ice factor, speed loss, drag flow, ice exponent, ice rates
   - _Requirements: R4.1, R4.2, R4.3, R4.7_
-- [ ] 5.2 Write `src/analysis/game_core.py`
+- [x] 5.2 Write `src/analysis/game_core.py`
   - Pure `step`, ice integer index with convex speed loss and fuel-flow drag, anti-ice
     fuel factor, cost components, lane and altitude limits, gate lookahead,
     `run_until_gate`
   - _Requirements: R4.4, R4.5, R4.6, R5.1, R5.2, R5.3, R5.4, R5.5, R6.1, R6.2, R7.1, R7.2, R7.3_
-- [ ] 5.3 Write property tests CD-P6 to CD-P11 and CD-P14
+- [x] 5.3 Write property tests CD-P6 to CD-P11 and CD-P14
   - Random action sequences over a synthetic cube
   - _Requirements: R4.6, R5.3, R5.4, R5.5, R6.4, R7.2, R7.3, R8.1_
-- [ ] 5.4 Write `src/analysis/solver.py`
+- [x] 5.4 Write `src/analysis/solver.py`
   - Exact dynamic programme over the same transition; Best, Best with anti-ice forced
     off, Best with anti-ice forced on, Wasteful extreme, Straight-ahead
   - _Requirements: R4.8, R8.2, R8.3_
-- [ ] 5.5 Write property tests CD-P12, CD-P16 and CD-P17 and `tools/tune_params.py`
+- [x] 5.5 Write property tests CD-P12, CD-P16 and CD-P17 and `tools/tune_params.py`
   - The tuning report prints Best, the two forced-anti-ice variants and Straight-ahead per
     case and checks balance criteria B1 to B4; levers are the altitude block, corridor
     width and the parameters, never the weather data
   - _Requirements: R4.8, R8.2, R8.3_
-- [ ] 5.6 Checkpoint: run the full test suite and fix failures
+- [x] 5.6 Checkpoint: run the full test suite and fix failures
 
 - [ ] 6. Build the case exporter
 - [ ] 6.1 Write `tools/check_viewer_contract.py` and tests
