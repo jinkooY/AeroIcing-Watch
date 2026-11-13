@@ -31,3 +31,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Hypothesis example database
+.hypothesis/
