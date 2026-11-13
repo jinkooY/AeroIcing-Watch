@@ -84,7 +84,7 @@ def _record(state: str, **extra) -> dict:
     rec = {
         "state": state, "top_ft": None, "base_ft": None, "supercooled": None, "phase_code": None,
         "base_method": None, "cloud_water_quality": None, "cloud_water_nonconverged": None,
-        "parallax_km": None,
+        "parallax_km": None, "lwp_gm2": None,
     }
     rec.update(extra)
     return rec
@@ -151,6 +151,7 @@ def sample_point(scene: ConusScene, lat: float, lon: float) -> dict:
         "observed", top_ft=round(top_ft), base_ft=base_ft, supercooled=PHASE_SUPERCOOLED[code],
         phase_code=code, base_method=method, cloud_water_quality=quality,
         cloud_water_nonconverged=nonconv, parallax_km=round(parallax_km, 1),
+        lwp_gm2=None if lwp is None else round(lwp, 1),
     )
 
 

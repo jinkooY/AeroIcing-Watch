@@ -1,0 +1,14 @@
+{
+  "id": "20261107-kbuf-kpwm-1900z",
+  "title": "Buffalo to Portland (Maine), 7 Nov 2026, 19:00 UTC",
+  "from": "KBUF",
+  "to": "KPWM",
+  "satellite": "G19",
+  "observedUtc": "2026-11-07T19:00:00Z",
+  "forecastRun": "2026110700",
+  "altitudes": { "minFt": 6000, "maxFt": 12000, "startFt": 9000 },
+  "lanesKm": [-30, -15, 0, 15, 30],
+  "stepKm": 10,
+  "params": { "baseGain": 20, "speedLossAtFull": 0.25, "dragFlowAtFull": 0.5, "possibleRateFactor": 0.6 },
+  "note": "Short north-eastern case."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "20261112-kjfk-kbna-1930z",
+  "title": "JFK to Nashville, 12 Nov 2026, 19:30 UTC",
+  "from": "KJFK",
+  "to": "KBNA",
+  "satellite": "G19",
+  "observedUtc": "2026-11-12T19:30:00Z",
+  "forecastRun": "2026111200",
+  "altitudes": { "minFt": 6000, "maxFt": 12000, "startFt": 9000 },
+  "lanesKm": [-30, -15, 0, 15, 30],
+  "stepKm": 10,
+  "params": { "baseGain": 20, "speedLossAtFull": 0.25, "dragFlowAtFull": 0.5, "possibleRateFactor": 0.6 },
+  "note": "Headline case: the day with the most icing pilot reports in the 12-day scan (reports choose and label cases; they are not validation)."
+}

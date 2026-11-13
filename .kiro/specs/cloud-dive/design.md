@@ -204,6 +204,18 @@ If a case fails, the allowed levers are the altitude block and the corridor
 width in the manifest, then the parameters in 5.1; the weather data are never
 edited. Results are stored in the case file; the exporter refuses a failing case.
 
+Result of the first real export (2026-11-13). With the placeholder parameters and a block up to
+24,000 ft, the Best flight never used anti-ice (B2 and B4 failed on all three cases): the observed
+supercooled bands lie at 7,000 to 13,000 ft, climbing over them costs about $8 per 1,000 ft and
+saves fuel per kilometre, so everyone climbs. The levers of this section were then used, and only
+these: the altitude block (6,000 to 12,000 ft for JFK-BNA and BUF-PWM, 10,000 to 20,000 ft for
+DEN-LAX, so the −20 C level stays out of reach and the player must choose between lane, altitude and
+anti-ice) and four parameters (baseGain 20, speedLossAtFull 0.25, dragFlowAtFull 0.5,
+possibleRateFactor 0.6; antiIceFactor stays 1.08). The weather data were not touched. Result:
+Best is 5 to 8 percent cheaper than Straight-ahead, Best without anti-ice is 4 to 12 percent
+costlier, Best with anti-ice always on is 5 to 8 percent costlier, and Best uses anti-ice for 200 to
+490 km. The low ceiling is a game setting and is stated in the game note.
+
 Illustrative scale from OpenAP for the E75L at 30,340 kg: about 3.3 kg/km at
 6,000 ft down to 2.2 kg/km at 30,000 ft; 1,232 km costs about $3,240 at 6,000 ft
 and $2,170 at 30,000 ft at $0.79/kg. Higher is cheaper per kilometre, so the

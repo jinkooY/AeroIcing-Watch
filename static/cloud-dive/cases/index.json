@@ -1,0 +1,59 @@
+{
+ "schemaVersion": 2,
+ "cases": [
+  {
+   "id": "20261101-kden-klax-2100z",
+   "title": "Denver to Los Angeles, 1 Nov 2026, 21:00 UTC",
+   "dataKind": "observation",
+   "file": "20261101-kden-klax-2100z.json",
+   "observedAtUtc": "2026-11-01T21:00:00Z",
+   "route": {
+    "from": "KDEN",
+    "to": "KLAX",
+    "lengthKm": 1386.9
+   },
+   "balance": {
+    "B1": true,
+    "B2": true,
+    "B3": true,
+    "antiIceKmInBest": 490.0
+   }
+  },
+  {
+   "id": "20261107-kbuf-kpwm-1900z",
+   "title": "Buffalo to Portland (Maine), 7 Nov 2026, 19:00 UTC",
+   "dataKind": "observation",
+   "file": "20261107-kbuf-kpwm-1900z.json",
+   "observedAtUtc": "2026-11-07T19:00:00Z",
+   "route": {
+    "from": "KBUF",
+    "to": "KPWM",
+    "lengthKm": 687.7
+   },
+   "balance": {
+    "B1": true,
+    "B2": true,
+    "B3": true,
+    "antiIceKmInBest": 200.0
+   }
+  },
+  {
+   "id": "20261112-kjfk-kbna-1930z",
+   "title": "JFK to Nashville, 12 Nov 2026, 19:30 UTC",
+   "dataKind": "observation",
+   "file": "20261112-kjfk-kbna-1930z.json",
+   "observedAtUtc": "2026-11-12T19:30:00Z",
+   "route": {
+    "from": "KJFK",
+    "to": "KBNA",
+    "lengthKm": 1231.8
+   },
+   "balance": {
+    "B1": true,
+    "B2": true,
+    "B3": true,
+    "antiIceKmInBest": 400.0
+   }
+  }
+ ]
+}

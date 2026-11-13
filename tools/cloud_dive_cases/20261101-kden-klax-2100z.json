@@ -1,0 +1,14 @@
+{
+  "id": "20261101-kden-klax-2100z",
+  "title": "Denver to Los Angeles, 1 Nov 2026, 21:00 UTC",
+  "from": "KDEN",
+  "to": "KLAX",
+  "satellite": "G18",
+  "observedUtc": "2026-11-01T21:00:00Z",
+  "forecastRun": "2026110100",
+  "altitudes": { "minFt": 10000, "maxFt": 20000, "startFt": 14000 },
+  "lanesKm": [-30, -15, 0, 15, 30],
+  "stepKm": 10,
+  "params": { "baseGain": 20, "speedLossAtFull": 0.25, "dragFlowAtFull": 0.5, "possibleRateFactor": 0.6 },
+  "note": "Western case seen by GOES-West. Terrain is not modelled; the altitude block stays well above the mountains."
+}
