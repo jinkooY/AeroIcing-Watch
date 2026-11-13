@@ -50,6 +50,9 @@ API (repository only, not the public site).
   anti-ice on. The player may also pause at any step.
 - **References**: three costs for the same case, computed by the solver, shown
   only after play: Best, Straight-ahead, Wasteful extreme.
+- **Map view**: the top-down view of the flight: an overview of the whole route and a
+  follow view around the aircraft, over the case's satellite image and state lines.
+- **Side view**: the cross-section (altitude against distance) of the selected lane.
 
 ## 4. Requirements (EARS)
 
@@ -124,14 +127,15 @@ fuel flow by factors that grow convexly with the index (ice drag), so that unpro
 flight in icing evidence is costly even before the index reaches 100.
 4.6 THE SYSTEM SHALL show the cost as a running dollar total and as components:
 cruise fuel, climb, detour, anti-ice, ice drag, diversion.
-4.7 THE FUEL PRICE, ANTI-ICE FACTOR, DRAG FACTOR AND ICE RATES SHALL be labelled
+4.7 THE FUEL PRICE, ANTI-ICE FACTOR, DRAG FACTOR, ICE RATES AND DIVERSION COST SHALL be labelled
 illustrative and uncalibrated wherever shown.
 4.8 EACH CASE FILE SHALL carry balance results from the solver, and THE EXPORTER SHALL
 refuse a case that fails any of: B1 Best is at least 3 percent cheaper than Straight-ahead;
 B2 Best with anti-ice never used is at least 3 percent costlier than Best, or does not
 complete; B3 Best with anti-ice always on is at least 3 percent costlier than Best; B4 Best
 uses anti-ice for at least 20 km on at least two of the three cases. Neither never using
-anti-ice nor always using it can therefore win.
+anti-ice nor always using it can therefore win; B5 the diversion cost is higher than the
+Straight-ahead cost of the case, so a diverted flight always costs more than Straight-ahead.
 
 ### R5 Ice state and failure
 
@@ -151,15 +155,23 @@ diversion cost, marked "not ranked".
 ### R6 Decision-gate flow
 
 6.1 THE GAME SHALL advance the flight in fast-forward and SHALL pause at a gate.
-6.2 THE GAME SHALL place a gate when a simulation of the next three steps
-(30 km) with the current targets enters an `Observed` or `Possible` cell from a
-cell that is neither, and at the first step outside such cells while anti-ice is on.
+6.2 THE GAME SHALL place a gate at a step boundary when any of these holds:
+(a) entry: a simulation of the next three steps (30 km) with the current targets
+enters an `Observed` or `Possible` cell from a cell that is neither;
+(b) exit: anti-ice is on, the cell just flown was `Observed` or `Possible`, and a
+simulation of the next five steps (50 km) with the current targets contains no such cell;
+(c) ice: the ice index is 50 or more for the first time in the flight.
 6.3 THE GAME SHALL let the player pause at any step.
 6.4 FOR any sequence of player actions, THE GAME SHALL NOT enter an `Observed`
 cell with anti-ice off unless a gate or a pause occurred at least one step earlier.
 6.5 AT a gate, THE GAME SHALL show the cross-section ahead, the five lanes and
 the ECMWF wind and icing background, and SHALL NOT show cost previews or a
 recommended choice.
+6.6 WHILE anti-ice is on, THE GAME SHALL NOT place an entry gate when an `Observed` or
+`Possible` cell was flown in the previous five segments (a gap under 50 km is the same
+cloud). An entry gate that is skipped this way SHALL NOT count as announced.
+6.7 WHEN several gate reasons hold at one boundary, THE GAME SHALL place one gate that
+names each reason.
 
 ### R7 Player actions and limits
 
@@ -177,7 +189,10 @@ ice-index peak, minutes with anti-ice on, and kilometres per evidence level
 (their sum equals the distance flown).
 8.2 AFTER the flight, THE GAME SHALL show the Best, Straight-ahead and Wasteful
 extreme costs for the same case, computed by the solver, and the share of the
-possible saving the player achieved.
+possible saving the player achieved, measured from Straight-ahead (0 percent) to Best
+(100 percent): (Straight-ahead - player) / (Straight-ahead - Best) x 100, at most 100,
+negative (not clamped) when the player's cost is above Straight-ahead, and shown only for
+ranked flights.
 8.3 THE "Straight-ahead" reference SHALL be the cost of staying on the centre
 lane at the start altitude with anti-ice on only while in `Observed` or
 `Possible` cells, labelled as a game baseline and not as a procedure.
@@ -221,6 +236,53 @@ public on YouTube, show the app running, and contain no third-party logo or musi
 agents, hooks, specs, steering, MCP, property-based testing, powers) using only
 entries in `docs/kiro-usage-log.md`.
 12.3 THE WRITE-UP SHALL state which code came from Codex, Claude and WeatherPath.
+### R13 Map view
+
+13.1 EVERY flight screen SHALL show the map view and the side view together. The map shows
+the aircraft at its current lane and step, the route, the five lanes, the flown track,
+the airports, and state and coast lines.
+13.2 THE MAP SHALL have a follow view centred on the aircraft, about 200 km across and
+north-up, in which the lanes are drawn at true spacing, and an overview of the whole route
+as an inset in the follow view.
+13.3 THE MAP SHALL show the case's GOES satellite image as background. It SHALL be
+labelled "Satellite image for context" with satellite, product and scan time (UTC), and
+drawn without smoothing so that one satellite pixel stays visible as one pixel.
+13.4 THE MAP SHALL state that the image is the single scan of the case (the weather
+does not change during the flight). It SHALL also state that the image is not
+parallax-corrected while the lane evidence is, with the largest parallax shift of the
+case in kilometres.
+13.5 IN the follow view, THE MAP SHALL draw the evidence level of each lane cell ahead
+at the aircraft's current altitude, with the same patterns and labels as the side view,
+including `Not assessed`.
+13.6 THE MAP SHALL mark the lane shown in the side view, and THE SIDE VIEW SHALL mark
+the aircraft's current distance with a vertical line.
+13.7 WHEN the image or the basemap is missing, THE MAP SHALL still draw the lanes, the
+aircraft and the evidence, and SHALL say "Satellite image not available".
+13.8 THE MAP SHALL NOT load map tiles or any network resource. The image and the basemap
+are static files of the site.
+13.9 THE MAP SHALL have a text alternative: lane, distance, altitude and the evidence
+levels of the next three cells.
+13.10 DURING fast-forward, THE MAP SHALL move the aircraft smoothly between steps. This
+is display only; the engine state changes per step as before.
+
+### R14 One-screen layout
+
+14.1 WHILE a flight is shown in a viewport of at least 1280 x 720 CSS pixels, THE FLIGHT
+SCREEN SHALL fit the viewport without page scrolling. The screen holds the HUD, the map
+view, the side view, the gate panel, the controls and the game note (R9.3).
+14.2 THE FOUR evidence-level patterns with their text labels and the R13.3 image label
+SHALL stay visible on the flight screen. The full legend SHALL open from a "Legend"
+button and the key L.
+14.3 THE END-OF-FLIGHT REPORT SHALL open as a dialog over the flight screen when the
+flight ends. THE "Why?" cards and the data sources SHALL open as dialogs from buttons.
+A one-line source attribution SHALL stay visible.
+14.4 Dialogs SHALL move focus in, close with Escape and a close button, and return focus
+to the control that opened them.
+14.5 Canvases SHALL be drawn at their displayed size times the device pixel ratio.
+Canvas text SHALL be at least 11 CSS pixels.
+14.6 Below 1280 CSS pixels of width, or in portrait orientation, THE LAYOUT MAY stack
+and scroll, and every element of 14.1 SHALL stay reachable.
+
 ## 5. Decision log (2026-11-13)
 
 Sections 1-4 above predate these decisions. Where they conflict, this log

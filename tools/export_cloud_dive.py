@@ -97,7 +97,7 @@ def build_one(m: cb.Manifest, airports, ifs_root: Path):
     params = apply_overrides(default_params(m.alts_ft), m.param_overrides)
     case = cb.make_game_case(m, lanes, grid, params)
     refs = solve_references(case)
-    flags = balance(refs)
+    flags = balance(refs, case.params)
     case_file = cb.assemble_case_file(m, lanes, case, grid, sat, cube, refs, flags, sources, airports)
     return case_file, refs, flags
 

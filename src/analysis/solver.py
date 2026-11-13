@@ -121,8 +121,12 @@ def solve_references(case: Case) -> dict[str, Reference]:
     return out
 
 
-def balance(refs: dict[str, Reference]) -> dict:
-    """Per-case balance criteria B1..B3 (B4 needs several cases) and the anti-ice km of Best."""
+def balance(refs: dict[str, Reference], params) -> dict:
+    """Per-case balance criteria B1..B3 and B5 (B4 needs several cases) and the anti-ice km of Best.
+
+    B5: the diversion cost is above the Straight-ahead cost, so a forced diversion never beats
+    flying straight through (R4.8).
+    """
     best, ahead = refs["best"], refs["straight_ahead"]
     b1 = bool(best.completed and ahead.completed and best.cost_usd <= 0.97 * ahead.cost_usd)
     no_ai = refs["best_no_anti_ice"]
@@ -130,4 +134,5 @@ def balance(refs: dict[str, Reference]) -> dict:
     all_ai = refs["best_always_anti_ice"]
     b3 = bool(best.completed and all_ai.completed and all_ai.cost_usd >= 1.03 * best.cost_usd)
     ai_km = best.summary["antiIceKm"] if best.summary else 0.0
-    return {"B1": b1, "B2": b2, "B3": b3, "antiIceKmInBest": ai_km}
+    b5 = bool(ahead.completed and params.diversion_usd > ahead.cost_usd)
+    return {"B1": b1, "B2": b2, "B3": b3, "B5": b5, "antiIceKmInBest": ai_km}

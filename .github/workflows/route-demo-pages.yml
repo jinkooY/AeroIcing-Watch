@@ -1,4 +1,4 @@
-name: Publish route comparison demo
+name: Publish Cloud Dive
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: route-demo-pages
+  group: cloud-dive-pages
   cancel-in-progress: false
 
 jobs:
@@ -19,9 +19,35 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
+      - name: Assemble site (game at /, viewer at /viewer/)
+        run: |
+          set -euo pipefail
+          mkdir -p _site/viewer
+          cp -R static/cloud-dive/. _site/
+          cp static/viewer-standalone.html _site/viewer/index.html
+          cp static/viewer.js static/sample.js static/styles.css _site/viewer/
+          touch _site/.nojekyll
+      - name: Check that published paths resolve
+        run: |
+          set -euo pipefail
+          for f in index.html game.js game.css engine.js render.js controls.js \
+                   report-view.js why.js cases/index.json \
+                   viewer/index.html viewer/viewer.js viewer/sample.js viewer/styles.css; do
+            test -s "_site/$f" || { echo "missing: $f"; exit 1; }
+          done
+          # Every case listed in the index must be published.
+          python3 - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("_site/cases")
+          idx = json.loads((root / "index.json").read_text(encoding="utf-8"))
+          for e in idx["cases"]:
+              assert (root / e["file"]).is_file(), f"missing case {e['file']}"
+          PY
+          # The route demo must not be published.
+          test ! -e _site/route-demo && test ! -e _site/scenario.json
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: static/route-demo
+          path: _site
   deploy:
     needs: package
     runs-on: ubuntu-latest

@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Check Cloud Dive wording when a game file is saved",
+      "trigger": "PostFileSave",
+      "description": "Runs tests/test_wording.py (R9.1 banned terms, R9.2 Not indicated / Not assessed, R9.3 game note) whenever a file under static/cloud-dive/ is saved.",
+      "matcher": "static[\\\\/]cloud-dive[\\\\/]",
+      "action": {
+        "type": "command",
+        "command": "C:\\Users\\I7-JIN\\miniconda3\\envs\\WeatherPath\\python.exe -m pytest tests/test_wording.py -q -x",
+        "timeout": 60
+      }
+    }
+  ]
+}

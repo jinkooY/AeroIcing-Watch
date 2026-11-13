@@ -50,47 +50,21 @@
     #submit-btn:hover { background: #245c82; }
     #submit-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* Risk badge */
-    .risk-row {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      flex-wrap: wrap;
-      margin-bottom: .6rem;
+    /* Evidence summary (kilometres per level; patterns keep levels distinct in greyscale) */
+    #evidence-summary { margin: 0 0 .8rem; }
+    #evidence-summary h3 { margin: 0 0 .4rem; font-size: .9rem; }
+    #evidence-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+    #evidence-list li {
+      display: flex; justify-content: space-between; gap: .75rem;
+      padding: .4rem .65rem; background: #0c1828; border-radius: .4rem;
+      font-size: .85rem; border-left: 6px solid var(--border);
     }
-    #risk-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      padding: .3rem .75rem;
-      border-radius: .35rem;
-      font-weight: 700;
-      font-size: .9rem;
-      border: 1px solid transparent;
-      min-width: 7rem;
-      justify-content: center;
-    }
-    #risk-badge[data-level="HIGH"]     { background: rgba(255,107,107,.18); color: #ff8080; border-color: #ff6b6b55; }
-    #risk-badge[data-level="MODERATE"] { background: rgba(255,169,77,.15); color: #ffb84d; border-color: #ffa94d44; }
-    #risk-badge[data-level="LOW"]      { background: rgba(105,219,124,.12); color: #69db7c; border-color: #69db7c33; }
-    #risk-badge[data-level="NONE"]     { background: rgba(169,189,209,.1); color: var(--muted); border-color: var(--border); }
-    #risk-badge[data-level="SIM"]      { background: rgba(255,211,148,.12); color: #ffd394; border-color: #ffd39444; }
-    #risk-badge[data-level="NA"]       { background: rgba(120,170,255,.12); color: #b9d2ff; border-color: #78aaff55; }
-
-    /* Altitude suggestions */
-    #alt-suggestions { margin-top: .9rem; display: flex; flex-direction: column; gap: .5rem; }
-    .suggestion-card {
-      padding: .55rem .75rem;
-      background: #0c1828;
-      border-radius: .4rem;
-      font-size: .82rem;
-      border-left: 3px solid var(--border);
-    }
-    .suggestion-card.above { border-left-color: #69db7c; }
-    .suggestion-card.below { border-left-color: #61b7f0; }
-    .suggestion-card strong { display: block; margin-bottom: .2rem; color: #e9f1fa; }
-    .suggestion-card span { color: var(--muted); }
-
+    #evidence-list li[data-level="observed"] { border-left: 6px solid #ff8080; background-image: repeating-linear-gradient(45deg, rgba(255,128,128,.18) 0 4px, transparent 4px 8px); }
+    #evidence-list li[data-level="possible"] { border-left: 6px dotted #ffb84d; }
+    #evidence-list li[data-level="not-indicated"] { border-left: 6px solid #69db7c; }
+    #evidence-list li[data-level="not-assessed"] { border-left: 6px dashed #b9d2ff; }
+    #evidence-list strong { font-variant-numeric: tabular-nums; }
+    #evidence-note { color: var(--muted); font-size: .78rem; margin: .4rem 0 0; }
     /* Loading and notice */
     #loading { display: none; color: var(--muted); font-size: .85rem; margin-top: .5rem; }
     #loading.visible { display: block; }
@@ -131,7 +105,7 @@
     <header>
       <div>
         <h1>AeroIcing Watch</h1>
-        <p>Satellite-based icing risk along a flight segment.</p>
+        <p>Satellite and forecast icing evidence along a flight segment.</p>
       </div>
       <div class="actions">
         <a href="/static/viewer-standalone.html" style="display:inline-flex;align-items:center;min-height:2.75rem;padding:.55rem .8rem;border:1px solid var(--border);border-radius:.5rem;background:#1b3046;color:inherit;text-decoration:none;font:inherit;font-size:.9rem;">Standalone viewer</a>
@@ -172,7 +146,7 @@
         <div id="error-msg" role="alert"></div>
         <div id="polar-notice" role="note">
           Polar gap: geostationary satellites provide no cloud retrievals above 70°N/S.
-          Those parts of the route are <strong>not assessed</strong> (not "no icing").
+          Those parts of the route are <strong>Not assessed</strong>.
         </div>
         <div id="source-list"></div>
         <div id="offline-notice">
@@ -195,16 +169,17 @@
           </div>
           <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
             <span id="data-kind"></span>
-            <div class="risk-row">
-              <span id="risk-badge" role="status" aria-live="polite" data-level="NONE">—</span>
-            </div>
           </div>
         </div>
 
         <canvas id="chart" role="img" aria-label="Altitude by distance cloud cross-section. Use the sample selector below to read the values."></canvas>
 
-        <!-- Altitude suggestions -->
-        <div id="alt-suggestions" aria-label="Altitude suggestions"></div>
+        <!-- Evidence levels: kilometres per level at the planned altitude -->
+        <div id="evidence-summary" role="status" aria-live="polite">
+          <h3>Evidence at planned altitude, kilometres per level</h3>
+          <ul id="evidence-list"><li data-level="not-assessed"><span>Not assessed</span><strong>—</strong></li></ul>
+          <p id="evidence-note">Cloud-top evidence from one satellite pass. No forecast layer in this view.</p>
+        </div>
 
         <ul class="legend" aria-label="Chart legend">
           <li><i class="water"></i>Liquid</li>
@@ -224,7 +199,7 @@
           <div><dt>Phase</dt><dd id="phase"></dd></div>
           <div><dt>Supercooled cue</dt><dd id="cue"></dd></div>
           <div><dt>Top temperature</dt><dd id="top-temp">—</dd></div>
-          <div><dt>Icing exposure</dt><dd id="icing-exposure">—</dd></div>
+          <div><dt>Evidence level</dt><dd id="icing-exposure">—</dd></div>
           <div><dt>Satellite source</dt><dd id="sample-source">—</dd></div>
           <div><dt>Retrieval</dt><dd id="sample-state">—</dd></div>
         </dl>
