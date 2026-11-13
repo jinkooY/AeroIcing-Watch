@@ -30,7 +30,10 @@ from src.analysis.cost_model import Params
 NOT_ASSESSED, NOT_INDICATED, POSSIBLE, OBSERVED = 0, 1, 2, 3
 N_LEVELS = 4
 ICE_MAX = 100
-LOOKAHEAD_STEPS = 3
+ENTRY_LOOKAHEAD = 3
+EXIT_LOOKAHEAD = 5  # cells that must be free of Possible/Observed for an exit gate
+MERGE_GAP = 5  # steps; entry gates within this gap after an icing cell merge (anti-ice on)
+ICE_GATE = 50  # ice index of the ice gate (task 10.5)
 COMPONENTS = ("base", "antiIce", "ice", "climb", "detour")
 
 
@@ -163,7 +166,9 @@ class State:
     minutes_anti_ice: float = 0.0
     prev_level: int | None = None  # level of the last cell flown
     prev2_level: int | None = None
+    last_icing_step: int | None = None  # index of the last Possible/Observed cell flown
     announced_entry: int | None = None  # first Possible/Observed cell index of the last entry gate
+    ice_gate_done: bool = False  # the ice gate (index >= ICE_GATE) has been announced
     status: str = "flying"  # flying | arrived | diverted
     events: tuple = field(default=(), compare=False)
 
@@ -215,6 +220,7 @@ def step(case: Case, state: State) -> State:
         minutes=state.minutes + hours * 60.0,
         minutes_anti_ice=state.minutes_anti_ice + (hours * 60.0 if state.anti_ice else 0.0),
         prev2_level=state.prev_level, prev_level=level, status=status,
+        last_icing_step=s if _is_icing_level(level) else state.last_icing_step,
         events=({"step": s, "lane": lane, "alt": alt, "level": level, "iceGain": gain, "iceAfter": ice},),
     )
 
@@ -227,7 +233,7 @@ def _is_icing_level(level) -> bool:
     return level in (POSSIBLE, OBSERVED)
 
 
-def lookahead_levels(case: Case, state: State, n: int = LOOKAHEAD_STEPS) -> list[int]:
+def lookahead_levels(case: Case, state: State, n: int = ENTRY_LOOKAHEAD) -> list[int]:
     """Levels of the next `n` cells when the aircraft keeps the current targets and anti-ice."""
     lane, alt, out = state.lane, state.alt, []
     for i in range(n):
@@ -240,54 +246,70 @@ def lookahead_levels(case: Case, state: State, n: int = LOOKAHEAD_STEPS) -> list
 
 
 def entry_index(case: Case, state: State) -> int | None:
-    """Index of the first Possible/Observed cell within the lookahead, when the aircraft is not
-    already in such a cell; otherwise None."""
+    """Index of the first Possible/Observed cell within the 3-step lookahead, when the aircraft is
+    not already in such a cell; otherwise None."""
     if _is_icing_level(state.prev_level):
         return None
-    for i, level in enumerate(lookahead_levels(case, state)):
+    for i, level in enumerate(lookahead_levels(case, state, ENTRY_LOOKAHEAD)):
         if _is_icing_level(level):
             return state.step + i
     return None
 
 
-def gate_reason(case: Case, state: State) -> str | None:
-    """'entry' (cloud within 3 steps), 'exit' (first step outside with anti-ice on) or None."""
+def gate_reasons(case: Case, state: State) -> list[str]:
+    """Reasons that hold at this boundary, in the order ice, exit, entry (design section 7).
+
+    The ice reason holds once, at the first boundary with index >= ICE_GATE while still flying.
+    """
     if state.status != "flying":
-        return None
-    exited = (state.anti_ice and not _is_icing_level(state.prev_level) and _is_icing_level(state.prev2_level)
-              and state.prev_level is not None)
-    if exited:
-        return "exit"
-    idx = entry_index(case, state)
-    if idx is not None and idx != state.announced_entry:
-        return "entry"
-    return None
+        return []
+    reasons: list[str] = []
+    if state.ice >= ICE_GATE and not state.ice_gate_done:
+        reasons.append("ice")
+    if (state.anti_ice and _is_icing_level(state.prev_level)
+            and not any(_is_icing_level(v) for v in lookahead_levels(case, state, EXIT_LOOKAHEAD))):
+        reasons.append("exit")
+    e = entry_index(case, state)
+    if e is not None and e != state.announced_entry:
+        merged = (state.anti_ice and state.last_icing_step is not None
+                  and e - state.last_icing_step - 1 < MERGE_GAP)
+        if not merged:
+            reasons.append("entry")
+    return reasons
 
 
-def run_until_gate(case: Case, state: State, *, check_start: bool = True) -> tuple[State, str]:
+def gate_reason(case: Case, state: State) -> str | None:
+    """First reason of `gate_reasons`, or None (kept for callers that need a single reason)."""
+    reasons = gate_reasons(case, state)
+    return reasons[0] if reasons else None
+
+
+def run_until_gate(case: Case, state: State, *, check_start: bool = True) -> tuple[State, list[str]]:
     """Fast-forward until a gate or the end of the flight. Always flies at least one segment,
     except that a gate at the very start of a flight (step 0) is reported first.
 
-    Returns (state, reason) with reason 'entry' | 'exit' | 'arrived' | 'diverted'.
+    Returns (state, reasons): all reasons of the gate in order (one gate per boundary), or
+    `['arrived']` / `['diverted']` when the flight ended.
     """
     if check_start and state.step == 0 and state.status == "flying":
-        reason = gate_reason(case, state)
-        if reason:
-            return _announce(case, state, reason), reason
+        reasons = gate_reasons(case, state)
+        if reasons:
+            return _announce(case, state, reasons), reasons
     while True:
         state = step(case, state)
         if state.status != "flying":
-            return state, state.status
-        reason = gate_reason(case, state)
-        if reason:
-            return _announce(case, state, reason), reason
+            return state, [state.status]
+        reasons = gate_reasons(case, state)
+        if reasons:
+            return _announce(case, state, reasons), reasons
 
 
-def _announce(case: Case, state: State, reason: str) -> State:
-    if reason == "entry":
-        return replace(state, announced_entry=entry_index(case, state))
-    return replace(state, announced_entry=None)
-
+def _announce(case: Case, state: State, reasons: Sequence[str]) -> State:
+    if "ice" in reasons:
+        state = replace(state, ice_gate_done=True)
+    if "entry" in reasons:  # a skipped entry never sets the announced entry
+        state = replace(state, announced_entry=entry_index(case, state))
+    return state
 
 def summary(case: Case, state: State) -> dict:
     """Report numbers for a finished (or running) flight."""

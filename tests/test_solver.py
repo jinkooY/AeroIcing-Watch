@@ -74,7 +74,7 @@ def test_unwinnable_without_anti_ice_is_reported_not_completed_synthetic():
     assert refs["best_no_anti_ice"].completed is False and refs["best_no_anti_ice"].cost_usd is None
     # Best may spend the first segment without anti-ice (index 60 < 100), so it can undercut always-on
     assert refs["best"].completed and refs["best"].cost_usd <= refs["best_always_anti_ice"].cost_usd
-    assert balance(refs)["B2"] is True
+    assert balance(refs, case.params)["B2"] is True
 
 
 PROP = settings(max_examples=40, deadline=None)
@@ -123,7 +123,17 @@ def test_cd_p17_restricted_solvers_are_never_cheaper_than_best(seed):
 
 
 def test_balance_flags_are_computed_synthetic():
-    refs = solve_references(synthetic_case(11, n_steps=24, cloud=0.9, params=synthetic_params(base_gain=20.0)))
-    flags = balance(refs)
-    assert set(flags) == {"B1", "B2", "B3", "antiIceKmInBest"}
-    assert all(isinstance(flags[k], bool) for k in ("B1", "B2", "B3"))
+    case = synthetic_case(11, n_steps=24, cloud=0.9, params=synthetic_params(base_gain=20.0))
+    refs = solve_references(case)
+    flags = balance(refs, case.params)
+    assert set(flags) == {"B1", "B2", "B3", "B5", "antiIceKmInBest"}
+    assert all(isinstance(flags[k], bool) for k in ("B1", "B2", "B3", "B5"))
+
+
+def test_b5_requires_diversion_cost_above_straight_ahead_synthetic():
+    case = synthetic_case(11, n_steps=24, cloud=0.9, params=synthetic_params(base_gain=20.0))
+    refs = solve_references(case)
+    ahead = refs["straight_ahead"].cost_usd
+    assert balance(refs, case.params.replace(diversion_usd=ahead + 1.0))["B5"] is True
+    assert balance(refs, case.params.replace(diversion_usd=ahead))["B5"] is False
+    assert balance(refs, case.params.replace(diversion_usd=0.0))["B5"] is False

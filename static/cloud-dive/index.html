@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cloud Dive</title>
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <!-- Top bar (task 12.2): title, case title, HUD chips, Change case. -->
+  <header class="top">
+    <h1>Cloud Dive</h1>
+    <p class="tagline flight-hide">Fly a real icing day and spend the least fuel. Lower dollar total wins.</p>
+    <h2 id="flight-title" class="flight-title flight-only">Flight</h2>
+
+    <dl id="hud" class="hud flight-only" aria-label="Flight status">
+      <div class="hud-item hud-total">
+        <dt title="Fuel cost (game, illustrative)">Fuel cost (game)</dt>
+        <dd id="hud-total">$0</dd>
+      </div>
+      <div class="hud-item hud-ice">
+        <dt id="hud-ice-label">Ice index (game model)</dt>
+        <dd>
+          <div id="hud-ice-bar" class="ice-bar" role="meter" aria-labelledby="hud-ice-label"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="hud-ice-fill" class="ice-fill"></div>
+          </div>
+          <span id="hud-ice-text">0 / 100</span>
+        </dd>
+      </div>
+      <div class="hud-item">
+        <dt>Anti-ice</dt>
+        <dd id="hud-anti-ice">Off</dd>
+      </div>
+      <div class="hud-item">
+        <dt>Altitude</dt>
+        <dd id="hud-alt">-</dd>
+      </div>
+      <div class="hud-item">
+        <dt>Lane</dt>
+        <dd id="hud-lane">-</dd>
+      </div>
+      <div class="hud-item">
+        <dt>Distance</dt>
+        <dd id="hud-dist">-</dd>
+      </div>
+    </dl>
+    <button type="button" id="back-to-cases" class="flight-only">Change case</button>
+  </header>
+
+  <main id="app" class="app-main" data-fit-box>
+    <!-- Case picker (task 8.1). Filled by game.js from cases/index.json. -->
+    <section id="picker" class="picker" aria-labelledby="picker-title">
+      <h2 id="picker-title">Choose a case</h2>
+      <p id="picker-status" class="status" role="status">Loading case list...</p>
+      <ul id="case-list" class="case-list"></ul>
+    </section>
+
+    <!-- Flight screen (hidden until a case is loaded): two columns, map left, side view and controls right. -->
+    <section id="flight" class="flight" aria-labelledby="flight-title" data-fit-box hidden>
+      <div class="col-left" data-fit-box>
+        <section id="map-section" class="map-section" aria-labelledby="map-title">
+          <h3 id="map-title" class="sr-only">Map view</h3>
+          <div class="map-wrap">
+            <canvas id="map-follow" width="960" height="500" role="img"
+                    aria-label="Map view following the aircraft, north up, with five lanes and evidence patches ahead; an inset in the top-left corner shows the whole route"></canvas>
+            <button type="button" id="map-kind-toggle" class="map-toggle" aria-pressed="false" aria-keyshortcuts="M">
+              Satellite image: IR (M shows phase)
+            </button>
+          </div>
+          <!-- Map key strip (R14.2): four evidence patterns with level labels and the image label. -->
+          <div id="map-key" class="map-key" role="group" aria-label="Map key">
+            <ul id="map-key-levels" class="key-levels"></ul>
+            <p id="map-key-image" class="key-image"></p>
+          </div>
+          <p id="map-text" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        </section>
+      </div>
+
+      <div class="col-right" data-fit-box>
+        <!-- Side view: cross-section renderer (task 8.2). -->
+        <div class="scene-wrap">
+          <h3 id="side-title" class="sr-only">Side view</h3>
+          <canvas id="scene" width="960" height="560" role="img"
+                  aria-label="Side view of the route: altitude against distance along the aircraft's lane">
+            Side view of the route. Your browser does not support canvas; the flight status shows the same position as text.
+          </canvas>
+        </div>
+        <p id="scene-text" class="sr-only"></p>
+
+        <!-- Gate panel and controls plug in here (task 8.3). -->
+        <section id="controls" aria-label="Controls" class="controls"></section>
+      </div>
+    </section>
+
+    <!-- Error panel: never a blank screen. -->
+    <section id="error" class="panel error" role="alert" hidden>
+      <h2>Could not load</h2>
+      <p id="error-text"></p>
+      <button type="button" id="error-retry">Try again</button>
+    </section>
+  </main>
+
+  <!-- Dialogs (task 12.3): native <dialog> opened with showModal() by game.js. Escape and the Close button
+       close them; focus moves to the heading on open and returns to the opener on close. The report opens
+       by itself when the flight ends. -->
+  <dialog id="dlg-report" class="dlg dlg-wide" aria-labelledby="report-title">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <section id="report" aria-label="Report" hidden></section>
+  </dialog>
+
+  <dialog id="dlg-why" class="dlg" aria-label="Why?">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <section id="why" aria-label="Why?" hidden></section>
+  </dialog>
+
+  <!-- Provenance: source, UTC time, attribution (R1.3). -->
+  <dialog id="dlg-sources" class="dlg" aria-labelledby="sources-title">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <section id="sources" class="sources">
+      <h2 id="sources-title" tabindex="-1">Data sources</h2>
+      <dl>
+        <dt>Case type</dt><dd id="src-kind">-</dd>
+        <dt>Satellite</dt><dd id="src-sat">-</dd>
+        <dt>Forecast</dt><dd id="src-fc">-</dd>
+      </dl>
+      <ul id="src-attr" class="attr"></ul>
+      <p id="src-labels" class="small"></p>
+    </section>
+  </dialog>
+
+  <dialog id="dlg-legend" class="dlg dlg-wide" aria-labelledby="legend-title">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <section id="legend">
+      <h2 id="legend-title" tabindex="-1">Legend</h2>
+      <div class="legend-cols">
+        <div>
+          <h3>Side view</h3>
+          <canvas id="legend-canvas" class="legend-canvas" width="290" height="400" role="img"
+                  aria-label="Side view legend: cloud-top phase patterns (liquid, supercooled liquid, mixed, ice, phase unknown), cloud base estimate, candidate band, head wind barbs, 0 C and minus 20 C heights, and the four evidence levels with their patterns"></canvas>
+        </div>
+        <div>
+          <h3>Map view</h3>
+          <div id="map-legend" class="map-legend small"></div>
+          <h3>Keyboard</h3>
+          <div id="legend-keys"></div>
+        </div>
+      </div>
+    </section>
+  </dialog>
+
+  <!-- Bottom bar: game note (R9.3), one-line attribution, Legend, Why?, Sources. -->
+  <footer class="bottom">
+    <p id="game-note" class="game-note">Game model. Not a flight procedure, not an icing severity. Evidence from satellite cloud tops and an ECMWF forecast.</p>
+    <p class="attribution" title="Dollar values, ice index and parameters are illustrative game values.">NOAA GOES-R (public domain) | ECMWF Open Data, CC BY 4.0 | Natural Earth (public domain)</p>
+    <nav class="bottom-buttons" aria-label="Details">
+      <button type="button" id="open-legend" class="flight-only" data-dialog="legend" aria-keyshortcuts="L">Legend (L)</button>
+      <button type="button" id="open-why" class="flight-only" data-dialog="why">Why?</button>
+      <button type="button" id="open-sources" class="flight-only" data-dialog="sources">Sources</button>
+    </nav>
+  </footer>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

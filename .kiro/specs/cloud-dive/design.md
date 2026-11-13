@@ -109,18 +109,39 @@ v in the 2026-11-12 00 UTC +21 h index).
   "rule": {"name": "cloud-dive-evidence-v2", "version": 2, "...thresholds": 0},
   "params": {"aircraft": "E75L", "engine": "CF34-8E6", "massKg": 30340, "fuelUsdPerKg": 0.79,
              "tasKtByAlt": {}, "flowKgHByAlt": {}, "climbExtraKgPer1000Ft": {},
-             "antiIceFactor": 1.08, "speedLossAtFull": 0.12, "dragFlowAtFull": 0.20, "iceExponent": 1.5, "diversionUsd": 0,
+             "antiIceFactor": 1.08, "speedLossAtFull": 0.12, "dragFlowAtFull": 0.20, "iceExponent": 1.5, "diversionUsd": 5000,
              "iceRates": {}, "possibleRateFactor": 0.25},
   "lanesLatLon": [[[0,0]]],
   "evidence": "uint8 array [lane][step][alt]  (0 Not assessed, 1 Not indicated, 2 Possible, 3 Observed)",
   "headwindKt": "int16 array [lane][step][alt]", "temperatureC": "float array [lane][step][alt]",
   "satellite": [{"lane": 0, "step": 0, "topFt": 0, "baseFt": 0, "phase": "liquid", "supercooled": true, "retrieval": "observed"}],
   "references": {"best": {}, "bestNoAntiIce": {}, "bestAlwaysAntiIce": {}, "straightAhead": {}, "wasteful": {}},
-  "balance": {"B1": true, "B2": true, "B3": true, "antiIceKmInBest": 0},
+  "balance": {"B1": true, "B2": true, "B3": true, "B5": true, "antiIceKmInBest": 0},
   "viewerProfile": {"title": "...", "samples": []}
 }
 ```
-Arrays are stored flat with a shape field. Expected size under 300 KB per case.
+Arrays are stored flat in one of two shapes: `{shape, data}` (evidence, headwindKt, ...)
+or a group object with one `shape` and one plain flat array per field (`satellite`,
+`isotherms`). Every reader (engine, renderer, tests) accepts both shapes through one helper.
+Expected size under 300 KB per case.
+
+### 3.5 Map image and basemap (`tools/export_map_images.py`)
+Separate from the case exporter: it writes only the `map` field and the image files, so
+evidence, references and balance stay unchanged (checked by comparing the rest of the file).
+- Image: ABI-L2-CMIPC band 13 (10.3 um brightness temperature) from the case satellite
+  and the scan nearest the case time, greyscale with 180 K white and 310 K black
+  (stated in the legend). Plus ACTPC cloud-top phase as a palette PNG; the palette
+  classes differ in brightness so they stay distinct in greyscale.
+- Grid: local equirectangular projection centred on the route midpoint,
+  x = (lon - lon0) * cos(lat0) * 111.32 km and y = (lat - lat0) * 110.57 km. Extent:
+  all lane points plus 100 km. Pixels are 2 km, sampled nearest-neighbour from the ABI
+  fixed grid (pyproj geos). Missing or off-disk pixels are transparent.
+- Case field: `map: {projection: "equirect-local-v1", lat0, lon0, xMinKm, yMaxKm,
+  pxKm: 2, width, height, images: {ir: "<id>.ir.png", phase: "<id>.phase.png"},
+  scanUtc, product, maxParallaxKm}`. Size budget: 400 KB of images per case.
+- Basemap: Natural Earth 1:50m state lines and coastline (public domain), clipped to the
+  union of the case extents and simplified to 1 km, in `cases/basemap.json` (under 150 KB).
+  Attribution: NOAA GOES, Natural Earth.
 
 ## 4. Evidence rule v2 (per cell: lane, step, altitude)
 
@@ -176,7 +197,8 @@ climb    = climbExtraKgPer1000Ft[a] * (1000 ft climbed this step) * fuelUsdPerKg
 detour   = flow * (extra path hours) * fuelUsdPerKg       # hypot(10, 15) - 10 = 8.0 km per lane change
 ```
 Descending costs no extra and earns no credit. A diversion adds `diversionUsd`
-and ends the flight (not ranked).
+(illustrative, $5,000, set with `tools/tune_params.py --write` so that B5 holds) and ends
+the flight (not ranked).
 
 ### 5.1 Penalty table (both anti-ice choices cost something)
 
@@ -199,6 +221,8 @@ Initial placeholder values, all tunable and labelled illustrative:
 - B2: Best with anti-ice forced off is at least 3 percent costlier than Best, or does not complete.
 - B3: Best with anti-ice forced on is at least 3 percent costlier than Best.
 - B4: Best uses anti-ice for at least 20 km on at least two of the three cases.
+- B5: `diversionUsd` > Straight-ahead cost of the case (every diverted flight costs more
+  than Straight-ahead, because the cost up to the diversion is non-negative).
 
 If a case fails, the allowed levers are the altitude block and the corridor
 width in the manifest, then the parameters in 5.1; the weather data are never
@@ -234,19 +258,25 @@ flight ends (diversion). All gains are integers, so the solver is exact.
 ## 7. Game engine (decision gates)
 
 State: `{step, lane, alt, targetLane, targetAlt, antiIce, ice, cost parts,
-kmPerLevel, minutesAntiIce, status}`.
-
+kmPerLevel, minutesAntiIce, status, lastIcingStep, iceGateDone}`. `lastIcingStep` is the
+index of the last Observed or Possible cell flown (null before any); `iceGateDone` is true
+after the ice gate.
 `step(state, case)` performs one 10 km step: move toward the targets by at most
 one lane and 1,000 ft; read the cell (lane, step, alt); update ice, cost and
 `kmPerLevel`; return the new state and the events.
 
-`runUntilGate(state, case)` repeats `step` and stops when:
-- a lookahead of three steps (simulated with the current targets, anti-ice and
-  positions) enters an Observed or Possible cell from a cell that is neither;
-- the flight is in a cell that is neither Observed nor Possible with anti-ice on,
-  and the previous cell was Observed or Possible (exit gate);
-- the flight ends (arrival or diversion);
-- the player pressed pause (handled by the UI between steps).
+`gateReasons(case, state)` returns the reasons that hold at a boundary, in the order
+`ice`, `exit`, `entry` (constants: ENTRY_LOOKAHEAD 3, MERGE_GAP 5 steps, ICE_GATE 50):
+- `entry`: the cell just flown is neither Observed nor Possible, the 3-step lookahead
+  (current targets) reaches such a cell at index e, e differs from the announced entry,
+  and NOT (anti-ice on AND lastIcingStep is not null AND e - lastIcingStep - 1 < 5);
+- `exit`: anti-ice on, the cell just flown is Observed or Possible, and the 5-step
+  lookahead contains no such cell (fires at the edge of the cloud cluster, once);
+- `ice`: ice >= 50 and not iceGateDone.
+`runUntilGate` stops when the list is non-empty (one gate, all reasons), when the flight
+ends (arrival or diversion), or when the player pressed pause (UI, between steps).
+A skipped entry does not set the announced entry. Merging applies only with anti-ice on,
+and anti-ice changes only at a gate or pause, so CD-P14 is unchanged.
 
 Rendering at a gate: the cross-section along lane 0 and the other lanes, the ECMWF
 wind barbs and forecast-environment shading, the unknown curtain; no costs ahead,
@@ -290,9 +320,56 @@ estimated base, hatched candidate band, wind barbs, forecast-environment shading
 the "Unknown" curtain; a HUD with the running dollar total, ice bar, anti-ice
 switch, altitude, lane and distance; a gate panel (lane, altitude, anti-ice,
 continue); the end-of-flight report (components, references, share of possible
-saving, kilometres per level, personal best, share text without severity words).
+saving from Straight-ahead (0 percent) to Best (100 percent), negative when costlier than Straight-ahead, kilometres per level, personal best, share text without severity words). The gate panel names every reason; the ice reason reads "Ice index (game model) reached 50 of 100" with no severity word.
 Patterns plus text labels distinguish data kinds and levels (R10.1). Keyboard:
 arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
+
+### 9.1 Map view (`static/cloud-dive/map.js`, DOM-free projection helpers)
+- Layout: see 9.2. The overview is an inset in the top-left corner of the follow view
+  (about 28 percent of its width).
+- `mapProject(map, lat, lon)` / `mapUnproject(map, xPx, yPx)` are shared by every drawing
+  call and by the tests.
+- Follow view: about 200 km across, north-up and centred on the aircraft. It draws the
+  image (`imageSmoothingEnabled = false`), state lines, the five lanes at true spacing,
+  the evidence of each cell ahead at the current altitude as lane-wide patches with the
+  side-view patterns, the flown track, the aircraft icon heading along the lane, and a
+  highlight on the side-view lane.
+- Overview: the whole route, the aircraft dot and the follow-view box.
+- Image toggle: key M and a button switch between IR (default) and cloud-top phase.
+- Motion: during fast-forward the icon is interpolated between the last two step positions
+  over the tick interval (display only).
+- Side view: a vertical "now" line at the aircraft's distance.
+- Fallbacks follow R13.7, and the legend carries the R13.3 and R13.4 texts.
+
+### 9.2 One-screen layout (R14)
+- The flight screen is a CSS grid of height 100dvh with no `max-width`:
+  `grid-template-rows: auto 1fr auto` (top bar, main, bottom bar) and in the main area
+  `grid-template-columns: minmax(0, 58fr) minmax(360px, 42fr)`. The left column holds the
+  map. The right column holds the side view (about 55 percent of its height) above the
+  gate panel and the controls.
+- Top bar (about 48 px): title, case title, HUD chips (total, ice bar with number,
+  anti-ice, altitude, lane, distance) and "Change case".
+- Bottom bar (about 28 px): the game note, a one-line attribution, and the buttons
+  Legend (L), Why?, Sources.
+- Map key strip at the bottom of the map column: the four evidence patterns with labels
+  and the image label (R13.3). The R13.4 notes go in the Legend dialog and in the key
+  strip tooltip.
+- Side view: `renderScene(canvas, view, {legend: false})` draws no side legend inside the
+  canvas; that legend moves to the Legend dialog.
+- Gate panel: a fixed-height area above the controls (3 lines, overflow scrolls inside),
+  so a gate never moves the layout.
+- Controls: a compact 2 x 2 grid (lanes, altitude, anti-ice, Start/Continue). Buttons stay
+  at least 44 x 44 px.
+- Canvas sizing: `fitCanvas(canvas)` uses a ResizeObserver and sets
+  `width = clientWidth * devicePixelRatio`, then `ctx.setTransform(dpr, 0, 0, dpr, 0, 0)`.
+  Draw functions use CSS-pixel boxes, as now.
+- Dialogs: native `<dialog>` with `showModal()`. Report, Why and Sources move into
+  dialogs; the report opens when the flight ends.
+- Narrow screens (R14.6): below 1280 px or in portrait, one column (map, side view,
+  controls) with page scroll.
+- Layout check: `?layoutcheck=1` sets `data-fits` on `<body>` to `yes` or `no`
+  (`scrollHeight <= innerHeight` after the first render and at the first gate). This is
+  for headless tests only and is never shown.
 
 ## 10. Correctness properties (Hypothesis and Node)
 
@@ -315,6 +392,11 @@ arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
 | CD-P15 | Case finiteness and viewer validity | R3.4 |
 | CD-P16 | Straight-ahead reference equals the cost of the matching fixed policy | R8.3 |
 | CD-P17 | Restricted solvers: Best <= Best with anti-ice forced off, and Best <= Best with anti-ice forced on (or the restricted flight does not complete) | R4.8 |
+| CD-P18 | Gate merging: with anti-ice on, no entry gate occurs within 5 segments after an Observed or Possible cell; with unchanged targets, an exit gate is followed by at least 5 cells that are neither | R6.2, R6.6 |
+| CD-P19 | Ice gate: a flight that reaches ice index 50 and is still flying has exactly one ice gate, at the first boundary with index >= 50; otherwise none | R6.2 |
+| CD-P20 | Renderer columns: per lane, the number of "Not assessed" curtain columns equals the number of steps whose satellite state is neither observed nor clear, for both array shapes | R10.1, R2.5 |
+| CD-P21 | Map registration: for every lane and step, project then unproject returns the point within half a pixel, and every lane point lies inside the image extent | R13.1, R13.2 |
+| CD-P22 | Map and side view agree: the evidence drawn for a lane cell on the map equals the level of the side-view column for that lane, step and altitude | R13.5 |
 
 Unit tests cover every rule row, the cost formulas with fixed numbers, and the
 parallax correction on a synthetic cloud. A wording test scans `static/cloud-dive/**`
@@ -341,5 +423,5 @@ and case files for the R9.1 terms.
 
 ## 13. Out of scope
 
-3D flight, real icing physics, live data, accounts, an online leaderboard, advice
+3D flight (reconsider after the map view is played), map tiles, animated satellite loops, real icing physics, live data, accounts, an online leaderboard, advice
 on real operations, the Incheon-Haneda demo, Meteosat, Himawari, GK-2A.

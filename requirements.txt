@@ -10,3 +10,4 @@ s3fs
 eccodes
 ecmwflibs
 hypothesis==6.170.15
+pillow==12.1.1

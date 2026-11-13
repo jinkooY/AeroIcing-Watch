@@ -38,6 +38,10 @@ PRODUCTS: dict[str, tuple[str, str, float, str]] = {
     "cod": ("ABI-L2-CODC", "COD", 2.0, "1"),
     "cps": ("ABI-L2-CPSC", "CPS", 2.0, "um"),
 }
+# Band 13 (10.3 um clean IR window) brightness temperature, used only for the map image.
+# ABI-L2-CMIPC holds one file per band in every hour folder, so the band is chosen from the file
+# name: `OR_ABI-L2-CMIPC-M6C13_G19_s...nc` (scan mode `M6`, channel `C13`, two digits).
+BAND13 = {"product": "ABI-L2-CMIPC", "variable": "CMI", "channel": 13, "resolution_km": 2.0, "units": "K"}
 PHASE_NAMES = {0: "clear", 1: "liquid", 2: "supercooled", 3: "mixed", 4: "ice", 5: "unknown"}
 PHASE_FILL = 255
 DEFAULT_MAX_DELTA = timedelta(minutes=10)
@@ -342,6 +346,88 @@ def fetch_scene(satellite: str, at: datetime, *, max_delta: timedelta = DEFAULT_
         keys[name] = matches[0]
     blobs = {name: fs.open(key, "rb").read() for name, key in keys.items()}
     return scene_from_blobs(satellite, blobs, {n: k.rsplit("/", 1)[-1] for n, k in keys.items()})
+
+
+def band_filter(names: Sequence[str], channel: int = BAND13["channel"]) -> list[str]:
+    """Keep only the CMIPC files of one channel (`-M<mode>C<cc>_G<nn>_s` in the file name)."""
+    pattern = re.compile(rf"-M\d+C{int(channel):02d}_G\d+_s\d{{14}}_")
+    return [n for n in names if pattern.search(n.rsplit("/", 1)[-1])]
+
+
+def decode_band13(blob: bytes) -> tuple[Layer, Projection, datetime]:
+    """Band 13 brightness temperature (K, NaN where missing or DQF 3) on its native 2 km grid."""
+    import netCDF4 as nc4
+
+    ds = nc4.Dataset("scene", mode="r", memory=blob)
+    try:
+        var = ds.variables[BAND13["variable"]]
+        var.set_auto_maskandscale(False)
+        raw = np.asarray(var[:])
+        dqf_var = ds.variables["DQF"]
+        dqf_var.set_auto_maskandscale(False)
+        dqf = np.asarray(dqf_var[:])
+        scale = float(getattr(var, "scale_factor", 1.0))
+        offset = float(getattr(var, "add_offset", 0.0))
+        fill = int(getattr(var, "_FillValue", np.iinfo(raw.dtype).max))
+        valid = getattr(var, "valid_range", None)
+        vmax = int(valid[1]) if valid is not None else fill
+        bad = (raw == fill) | (raw > vmax) | (dqf == 3)
+        values = np.where(bad, np.nan, raw.astype(np.float64) * scale + offset).astype(np.float32)
+        x = np.asarray(ds.variables["x"][:], dtype=float)
+        y = np.asarray(ds.variables["y"][:], dtype=float)
+        p = ds.variables["goes_imager_projection"]
+        projection = Projection(
+            lon0=float(p.longitude_of_projection_origin), height_m=float(p.perspective_point_height),
+            semi_major_m=float(p.semi_major_axis), semi_minor_m=float(p.semi_minor_axis),
+            sweep=str(p.sweep_angle_axis),
+        )
+        start = datetime.strptime(str(ds.time_coverage_start)[:21], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=timezone.utc)
+    finally:
+        ds.close()
+    layer = Layer(name="ir", product=BAND13["product"], variable=BAND13["variable"],
+                  resolution_km=BAND13["resolution_km"], units=BAND13["units"], x=x, y=y, values=values, dqf=dqf)
+    return layer, projection, start
+
+
+def fetch_band13(satellite: str, at: datetime, *, max_delta: timedelta = DEFAULT_MAX_DELTA):
+    """Download the band 13 file of the CONUS scan nearest to `at`; returns (layer, projection, start, file name)."""
+    import s3fs
+
+    if satellite not in SATELLITES:
+        raise ValueError(f"unknown satellite {satellite!r}")
+    at = at.astimezone(timezone.utc)
+    bucket = SATELLITES[satellite]["bucket"]
+    fs = s3fs.S3FileSystem(anon=True)
+    names = band_filter([k for h in (-1, 0, 1) for k in _hour_listing(fs, bucket, BAND13["product"], at + timedelta(hours=h))])
+    key = choose_nearest(names, at, max_delta)
+    layer, projection, start = decode_band13(fs.open(key, "rb").read())
+    return layer, projection, start, key.rsplit("/", 1)[-1]
+
+
+def get_band13(satellite: str, at: datetime, *, cache_root: Path | None = None, download: bool = True,
+               max_delta: timedelta = DEFAULT_MAX_DELTA):
+    """Cached band 13 layer nearest to `at` (folder `<cache>/<satellite>_c13/`); downloads when allowed."""
+    root = Path(cache_root) if cache_root else default_cache_root()
+    folder = root / f"{satellite}_c13"
+    at = at.astimezone(timezone.utc)
+    names = [p.name for p in folder.glob("*.npz")] if folder.exists() else []
+    if names:
+        best = min(names, key=lambda n: abs(_cache_start(n) - at))
+        if abs(_cache_start(best) - at) <= max_delta:
+            with np.load(folder / best, allow_pickle=False) as z:
+                meta = json.loads(str(z["meta"].item()))
+                layer = Layer("ir", BAND13["product"], BAND13["variable"], BAND13["resolution_km"], BAND13["units"],
+                              z["x"].astype(float), z["y"].astype(float), z["values"], z["dqf"])
+            return layer, Projection(**meta["projection"]), datetime.fromisoformat(meta["start"]), meta["file"]
+    if not download:
+        raise SceneNotFound(f"no cached {satellite} band 13 within {max_delta} of {at.isoformat()}")
+    layer, projection, start, name = fetch_band13(satellite, at, max_delta=max_delta)
+    folder.mkdir(parents=True, exist_ok=True)
+    meta = {"projection": projection.to_dict(), "start": start.isoformat(), "file": name}
+    tmp = folder / "tmp.npz"
+    np.savez_compressed(tmp, meta=np.array(json.dumps(meta)), x=layer.x, y=layer.y, values=layer.values, dqf=layer.dqf)
+    tmp.replace(folder / _cache_name(start))
+    return layer, projection, start, name
 
 
 def get_scene(

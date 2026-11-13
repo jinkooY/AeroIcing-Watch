@@ -143,58 +143,123 @@ write-up, bonuses, Devpost form) is in
     across the three cases), commit `static/cloud-dive/cases/`
   - _Requirements: R3.5, R4.8_
 
-- [ ] 7. Build the JavaScript engine
-- [ ] 7.1 Write `static/cloud-dive/engine.js`
+- [x] 7. Build the JavaScript engine
+- [x] 7.1 Write `static/cloud-dive/engine.js`
   - DOM-free ES module port of `game_core`
   - _Requirements: R6.1, R6.2, R7.1, R7.2, R7.3_
-- [ ] 7.2 Write the Python-JavaScript parity test (CD-P7)
+- [x] 7.2 Write the Python-JavaScript parity test (CD-P7)
   - pytest runs a Node script over random action sequences on a fixture case
   - _Requirements: R6.1, R5.4_
-- [ ] 7.3 Write Node tests with `node --test`
+- [x] 7.3 Write Node tests with `node --test`
   - Gate placement and no silent entry (CD-P14) on a real exported case
   - _Requirements: R6.2, R6.4_
 
-- [ ] 8. Build the game UI
-- [ ] 8.1 Create `static/cloud-dive/index.html`, `game.css`, `game.js`
+- [x] 8. Build the game UI
+- [x] 8.1 Create `static/cloud-dive/index.html`, `game.css`, `game.js`
   - Case picker from `cases/index.json`, HUD (dollar total, ice bar, anti-ice,
     altitude, lane, distance), persistent game note, error states
   - _Requirements: R9.3, R10.3_
-- [ ] 8.2 Implement the cross-section renderer
+- [x] 8.2 Implement the cross-section renderer
   - Cloud body by phase, dashed estimated base, hatched candidate band, wind
     barbs, forecast-environment shading, "Unknown" curtain, mini top-view map;
     greyscale-safe patterns and text labels
   - _Requirements: R6.5, R10.1_
-- [ ] 8.3 Implement the gate panel, controls and fast-forward
+- [x] 8.3 Implement the gate panel, controls and fast-forward
   - Lane, altitude, anti-ice, continue, pause anywhere; keyboard, pointer, touch;
     no cost preview and no recommendation
   - _Requirements: R6.1, R6.3, R6.5, R7.1, R7.4, R10.2_
-- [ ] 8.4 Implement the end-of-flight report
+- [x] 8.4 Implement the end-of-flight report
   - Components, references, share of the possible saving, kilometres per level,
     browser-only personal best, share text without severity words
   - _Requirements: R8.1, R8.2, R8.3, R8.4, R8.5_
-- [ ] 8.5 Add four "Why?" cards
+- [x] 8.5 Add four "Why?" cards
   - Supercooled water, why a satellite sees only cloud tops, why the base is an
     estimate, why anti-ice costs fuel; no operational advice
   - _Requirements: R9.4_
-- [ ] 8.6 Write `tests/test_wording.py` and a hook that runs it on save under `static/cloud-dive/`
+- [x] 8.6 Write `tests/test_wording.py` and a hook that runs it on save under `static/cloud-dive/`
   - Scan UI files and case files for the terms in R9.1
   - _Requirements: R9.1, R9.2_
-- [ ] 8.7 Checkpoint: pytest, `node --check` and `node --test` all pass
+- [x] 8.7 Checkpoint: pytest, `node --check` and `node --test` all pass
 
-- [ ] 9. Publish the site and keep the dispatcher view working
-- [ ] 9.1 Change `.github/workflows/route-demo-pages.yml` to publish the game
+- [x] 9. Publish the site and keep the dispatcher view working
+- [x] 9.1 Change `.github/workflows/route-demo-pages.yml` to publish the game
   - Root from `static/cloud-dive/`, viewer at `/viewer/`; remove the route demo
     from the published site; check that paths resolve in a signed-out browser
   - _Requirements: R10.3, R10.4_
-- [ ] 9.2 Apply decision D1 (replace) to the dispatcher view
+- [x] 9.2 Apply decision D1 (replace) to the dispatcher view
   - Evidence levels and kilometres per level instead of the risk badge and
     altitude suggestions
   - _Requirements: R11.2, R9.1_
-- [ ] 9.3 Write API compatibility tests
+- [x] 9.3 Write API compatibility tests
   - Every existing `/api/icing/*` field keeps its type; `validProfile()` rules pass
   - _Requirements: R11.1_
-- [ ] 9.4 Final checkpoint: full test suite, wording test and Node checks pass
+- [x] 9.4 Final checkpoint: full test suite, wording test and Node checks pass
 
+- [x] 10. Playtest fixes (2026-11-13)
+- [x] 10.1 Read both array shapes in the renderer
+  - One `column(group, field, idx)` helper for `{shape,data}` and group objects with a
+    shared `shape`; export a DOM-free `curtainColumns(file, c, lane)`; Node test CD-P20 on
+    the three real cases and a synthetic case in each shape
+  - _Requirements: R2.5, R10.1_
+- [x] 10.2 Measure the saving share from Straight-ahead to Best
+  - `savingSharePercent(player, best, straightAhead)`, not clamped at 0, at most 100, null
+    when Straight-ahead <= Best or the flight is not ranked; update the report text; Node
+    tests: always-on run above Straight-ahead gives a negative share
+  - _Requirements: R8.2_
+- [x] 10.3 Set a non-zero diversion cost through `tools/tune_params.py`
+  - Add `--write` (updates `params` and `balance` in the case files, never weather data);
+    add B5 to `balance()` and to the exporter refusal; set `diversionUsd` 5000; rerun the
+    tuner, keep B1 to B5 passing; log the change in `docs/kiro-usage-log.md`
+  - _Requirements: R4.7, R4.8, R5.5_
+- [x] 10.4 Merge gates in `game_core.py` and `engine.js`
+  - `gateReasons`, `lastIcingStep`, 5-step merge gap, 5-step exit lookahead; one gate per
+    boundary with all reasons; update the gate panel; property test CD-P18; CD-P14 and
+    CD-P7 parity still pass; record gate counts per case before and after in the usage log
+    (KJFK-KBNA always-on: fewer than the current 16)
+  - _Requirements: R6.2, R6.4, R6.6, R6.7_
+- [x] 10.5 Add the ice gate at index 50
+  - `iceGateDone` in both engines and the parity test; gate panel text; property test CD-P19
+  - _Requirements: R6.2, R9.1_
+- [x] 10.6 Checkpoint: pytest, wording test, `node --check` and `node --test` pass
+
+- [x] 11. Map view with the satellite image
+- [x] 11.1 Add ABI-L2-CMIPC band 13 to `goes_conus.py` and write `tools/export_map_images.py`
+  - Local equirectangular grid, 2 km nearest-neighbour, IR and phase PNGs, `map` field only,
+    `maxParallaxKm` from the lane samples; refuse to write if any other field would change;
+    tests on a synthetic ABI grid (registration, transparency, size budget, attribution)
+  - _Requirements: R13.3, R13.4, R13.8, R1.3_
+- [x] 11.2 Write `tools/build_basemap.py`
+  - Natural Earth 1:50m state lines and coastline, clipped and simplified, `cases/basemap.json`
+  - _Requirements: R13.1, R13.8_
+- [x] 11.3 Write `static/cloud-dive/map.js`
+  - Projection helpers; overview and follow view; image without smoothing; lanes, evidence
+    patches, track, aircraft, side-view lane mark; fallbacks; Node tests CD-P21 and CD-P22
+  - _Requirements: R13.1, R13.2, R13.5, R13.6, R13.7, R10.1_
+- [x] 11.4 Change the layout and wire the map view
+  - Map above the side view; "now" line on the side view; smooth motion during fast-forward;
+    IR/phase toggle (key M); text alternative; legend texts of R13.3 and R13.4
+  - _Requirements: R13.1, R13.3, R13.4, R13.6, R13.9, R13.10, R10.2_
+- [x] 11.5 Run the image export for the three cases and commit the images and basemap
+  - _Requirements: R13.3, R3.5_
+- [x] 11.6 Checkpoint: pytest, wording test, `node --check` and `node --test` pass
+- [x] 12. One-screen layout
+- [x] 12.1 Size canvases to their boxes
+  - `fitCanvas` with ResizeObserver and devicePixelRatio; `renderScene` option
+    `legend: false`; overview drawn as an inset by `drawFollowView`; Node tests on the
+    DOM-free size helper; existing render and map tests still pass
+  - _Requirements: R13.2, R14.5_
+- [x] 12.2 Build the grid layout, top bar, bottom bar, map key strip and compact controls
+  - _Requirements: R14.1, R14.2, R9.3, R10.1, R10.2_
+- [x] 12.3 Move the report, Why cards, sources and full legend into dialogs
+  - Report opens at the end of the flight; Escape, close button, focus return; key L
+  - _Requirements: R14.2, R14.3, R14.4, R8.1_
+- [x] 12.4 Check the layout in a headless browser
+  - Edge or Chrome headless (whichever is installed) at 1280x720, 1366x768 and
+    1920x1080, at the start of a flight and at the first gate; `?layoutcheck=1` must give
+    `data-fits="yes"`; save screenshots under `docs/screens/`; also one 800x1000 run for
+    the stacked layout
+  - _Requirements: R14.1, R14.6_
+- [x] 12.5 Checkpoint: pytest, wording test, `node --check`, `node --test` and the layout check pass
 ## Notes
 
 - F1 to F6 are approved (`requirements.md` 5.6; F3 amended with the two-sided anti-ice penalty and the balance criteria).
@@ -223,7 +288,13 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 10, "tasks": ["8.2", "8.3"] },
     { "wave": 11, "tasks": ["8.4", "8.5", "8.6"] },
     { "wave": 12, "tasks": ["8.7", "9.1"] },
-    { "wave": 13, "tasks": ["9.2", "9.3", "9.4"] }
+    { "wave": 13, "tasks": ["9.2", "9.3", "9.4"] },
+    { "wave": 14, "tasks": ["10.1", "10.2", "10.3"] },
+    { "wave": 15, "tasks": ["10.4", "10.5", "10.6"] },
+    { "wave": 16, "tasks": ["11.1", "11.2", "11.3"] },
+    { "wave": 17, "tasks": ["11.4", "11.5", "11.6"] },
+    { "wave": 18, "tasks": ["12.1", "12.2", "12.3"] },
+    { "wave": 19, "tasks": ["12.4", "12.5"] }
   ]
 }
 ```

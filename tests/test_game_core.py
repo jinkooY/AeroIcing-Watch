@@ -131,36 +131,36 @@ def test_diversion_cost_is_added_but_unranked_synthetic():
 def test_entry_gate_three_steps_ahead_synthetic():
     case = flat_case(level_at={(2, 5, 1): OBSERVED, (2, 6, 1): OBSERVED})
     state, reason = run_until_gate(case, initial_state(case))
-    assert reason == "entry" and state.step == 3  # cell 5 is within steps 3..5
+    assert reason == ["entry"] and state.step == 3  # cell 5 is within steps 3..5
     assert lookahead_levels(case, state) == [NOT_INDICATED, NOT_INDICATED, OBSERVED]
 
 
 def test_no_gate_without_cloud_reaches_arrival_synthetic():
     case = flat_case()
     state, reason = run_until_gate(case, initial_state(case))
-    assert reason == "arrived" and state.status == "arrived"
+    assert reason == ["arrived"] and state.status == "arrived"
 
 
 def test_gate_at_flight_start_when_cloud_is_already_ahead_synthetic():
     case = flat_case(level_at={(2, 1, 1): POSSIBLE})
     state, reason = run_until_gate(case, initial_state(case))
-    assert reason == "entry" and state.step == 0
+    assert reason == ["entry"] and state.step == 0
 
 
 def test_continue_does_not_regate_for_the_same_cloud_and_exit_gate_fires_with_anti_ice_synthetic():
     case = flat_case(level_at={(2, s, 1): OBSERVED for s in (5, 6)})
     state, reason = run_until_gate(case, initial_state(case))
-    assert reason == "entry"
+    assert reason == ["entry"]
     state = set_targets(case, state, anti_ice=True)
     state, reason = run_until_gate(case, state)
-    assert reason == "exit" and state.step == 8 and state.ice == 0  # first cell after the cloud
+    assert reason == ["exit"] and state.step == 7 and state.ice == 0  # boundary after the last cloud cell (6), none within 5 ahead
 
 
 def test_no_exit_gate_with_anti_ice_off_synthetic():
     case = flat_case(level_at={(2, s, 1): POSSIBLE for s in (5, 6)})
     state, _ = run_until_gate(case, initial_state(case))
     state, reason = run_until_gate(case, state)
-    assert reason == "arrived"
+    assert reason == ["arrived"]
 
 
 def test_lookahead_follows_current_targets_synthetic():
@@ -171,3 +171,38 @@ def test_lookahead_follows_current_targets_synthetic():
     # lane 2 -> 1 (step 0) -> 0 (step 1) -> 0 (step 2): the third cell is the Observed one
     assert lookahead_levels(case, moving) == [NOT_INDICATED, NOT_INDICATED, OBSERVED]
     assert gate_reason(case, moving) == "entry"
+
+
+def test_last_icing_step_tracks_the_last_possible_or_observed_cell_synthetic():
+    case = flat_case(level_at={(2, 2, 1): POSSIBLE, (2, 4, 1): OBSERVED})
+    state = initial_state(case)
+    assert state.last_icing_step is None
+    for expected in (None, None, 2, 2, 4, 4):
+        state = step(case, state)
+        assert state.last_icing_step == expected
+
+
+def test_entry_gates_merge_with_anti_ice_on_but_not_off_synthetic():
+    # cluster at 5, gap of 3 cells, next cluster at 9 (gap < 5 steps)
+    case = flat_case(n_steps=30, level_at={(2, 5, 1): OBSERVED, (2, 9, 1): OBSERVED})
+    on = set_targets(case, initial_state(case), anti_ice=True)
+    on, reasons = run_until_gate(case, on)
+    assert reasons == ["entry"]
+    on, reasons = run_until_gate(case, on)
+    # the entry for cell 9 is merged and no exit fires at cell 5 (cell 9 is within 5 ahead): the next gate is the exit after cell 9\n    assert reasons == ["exit"] and on.step == 10
+    off = initial_state(case)
+    off, reasons = run_until_gate(case, off)
+    assert reasons == ["entry"] and off.announced_entry == 5
+    off, reasons = run_until_gate(case, off)
+    assert reasons == ["entry"] and off.announced_entry == 9
+
+
+def test_exit_gate_then_far_entry_is_not_merged_synthetic():
+    case = flat_case(n_steps=30, level_at={(2, 4, 1): OBSERVED, (2, 12, 1): OBSERVED})
+    state = set_targets(case, initial_state(case), anti_ice=True)
+    state, reasons = run_until_gate(case, state)
+    assert reasons == ["entry"]
+    state, reasons = run_until_gate(case, state)
+    assert reasons == ["exit"] and state.step == 5
+    state, reasons = run_until_gate(case, state)
+    assert reasons == ["entry"] and state.announced_entry == 12  # gap 7 >= 5: not merged

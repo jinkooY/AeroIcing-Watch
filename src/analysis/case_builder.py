@@ -266,7 +266,7 @@ def dumps_strict(case_file: Mapping) -> str:
 
 
 def refusal_reasons(flags: Mapping, refs: Mapping[str, Reference]) -> list[str]:
-    reasons = [f"{k} failed" for k in ("B1", "B2", "B3") if not flags.get(k)]
+    reasons = [f"{k} failed" for k in ("B1", "B2", "B3", "B5") if not flags.get(k)]
     if not refs["best"].completed:
         reasons.append("Best does not complete")
     return reasons

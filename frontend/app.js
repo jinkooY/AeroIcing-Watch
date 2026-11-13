@@ -68,7 +68,6 @@ async function populateFrames() {
   }
 }
 
-// ── Risk badge ──────────────────────────────────────────────────────────────
 // ── Satellite source labels (G5) and retrieval states ──────────────────────
 const SOURCE_LABELS = {
   gk2a: "GK-2A (KMA/NMSC)",
@@ -93,32 +92,30 @@ function sourceLabel(code) {
   return code ? (SOURCE_LABELS[code] || code) : "None";
 }
 
-const RISK_ICONS = { HIGH: "⚠", MODERATE: "⚡", LOW: "✓", NONE: "—", SIM: "◇", NA: "?" };
-const RISK_LABELS = { HIGH: "HIGH icing risk", MODERATE: "MODERATE icing risk", LOW: "LOW icing risk", NONE: "No icing detected", SIM: "Simulated data", NA: "Not assessed" };
+// ── Evidence levels (decision D1: replaces the legacy risk badge and altitude suggestions) ──
+const EVIDENCE_ORDER = [
+  ["Observed supercooled layer at planned altitude", "observed"],
+  ["Possible (forecast only)", "possible"],
+  ["Not indicated", "not-indicated"],
+  ["Not assessed", "not-assessed"],
+];
 
-function renderRiskBadge(risk, dataKind) {
-  const badge = document.getElementById("risk-badge");
-  const level = dataKind === "simulated" ? "SIM" : (risk || "NA");
-  badge.dataset.level = level;
-  badge.textContent = `${RISK_ICONS[level] || "—"} ${RISK_LABELS[level] || level}`;
-  badge.setAttribute("aria-label", `Icing risk: ${RISK_LABELS[level] || level}`);
-}
-
-// ── Altitude suggestions ────────────────────────────────────────────────────
-function renderAltSuggestions(suggestions) {
-  const container = document.getElementById("alt-suggestions");
-  container.innerHTML = "";
-  if (!suggestions || suggestions.length === 0) return;
-  for (const s of suggestions) {
-    const card = document.createElement("div");
-    card.className = `suggestion-card ${s.band}`;
-    const fl = Math.round(s.alt_ft / 100);
-    const dir = s.band === "above" ? "↑ Above" : "↓ Below";
-    card.innerHTML = `<strong>${dir} FL${String(fl).padStart(3, "0")}</strong><span>${s.note}</span>`;
-    container.appendChild(card);
+function renderEvidence(profile) {
+  const list = document.getElementById("evidence-list");
+  list.innerHTML = "";
+  const km = profile.dataKind === "simulated" ? null : profile.evidenceKm;
+  for (const [name, key] of EVIDENCE_ORDER) {
+    const li = document.createElement("li");
+    li.dataset.level = key;
+    const label = document.createElement("span");
+    label.textContent = name;
+    const value = document.createElement("strong");
+    const v = km && Number.isFinite(km[name]) ? km[name] : null;
+    value.textContent = v === null ? "—" : `${v.toFixed(0)} km`;
+    li.append(label, value);
+    list.appendChild(li);
   }
 }
-
 // ── UI helpers ──────────────────────────────────────────────────────────────
 function showOfflineNotice(visible) {
   document.getElementById("offline-notice").classList.toggle("visible", visible);
@@ -163,21 +160,8 @@ function updateExtendedReadout(sample) {
   tempEl.textContent = sample.cloudTopTemperatureC !== undefined && sample.cloudTopTemperatureC !== null
     ? `${sample.cloudTopTemperatureC} °C`
     : "Unavailable";
-  if (sample.icingExposure === true) {
-    expEl.textContent = `YES · ${sample.icingLevel || ""}`;
-    expEl.style.color = sample.icingLevel === "HIGH" ? "#ff8080"
-      : sample.icingLevel === "MODERATE" ? "#ffb84d"
-      : "#69db7c";
-  } else if (sample.icingLevel === null) {
-    expEl.textContent = "Not assessed";
-    expEl.style.color = "";
-  } else if (sample.icingExposure === false) {
-    expEl.textContent = "No";
-    expEl.style.color = "";
-  } else {
-    expEl.textContent = "—";
-    expEl.style.color = "";
-  }
+  expEl.style.color = "";
+  expEl.textContent = sample.evidenceLevel || "Not assessed";
 }
 
 // Patch viewer.js selectSample to also update extended fields.
@@ -213,10 +197,6 @@ function renderProfileNotices(profile) {
         && Math.abs(s.latitude) > 70);
     polar.classList.toggle("visible", hasPolar);
   }
-  const partial = (profile.samples || []).some((s) => s.icingLevel === null)
-    && profile.dataKind !== "simulated";
-  const badge = document.getElementById("risk-badge");
-  if (badge && partial) badge.textContent += " · partial route";
   const list = document.getElementById("source-list");
   if (list) {
     const codes = profile.satelliteSources || (profile.satelliteSource ? [profile.satelliteSource] : []);
@@ -264,8 +244,7 @@ async function submit() {
     const profile = await res.json();
     window._currentProfile = profile;
     loadProfile(profile);
-    renderRiskBadge(profile.icingRisk, profile.dataKind);
-    renderAltSuggestions(profile.altitudeSuggestions);
+    renderEvidence(profile);
     renderProfileNotices(profile);
     if (profile.dataKind === "simulated") showOfflineNotice(true);
   } catch (err) {

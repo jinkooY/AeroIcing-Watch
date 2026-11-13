@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
+from src.analysis import evidence as _evidence
 from src.analysis.cloud_base import apparent_latlon, is_gk2a_daytime, estimate_base, view_zenith_deg
 from src.analysis.satellite_router import (
     SUB_LON, is_polar, load_best_field, sources_for_point,
@@ -238,6 +239,42 @@ def _sample(
     )
 
 
+def attach_evidence(profile: dict) -> dict:
+    """Add the evidence-rule v2 level per sample and kilometres per level (decision D1).
+
+    Additive fields: samples[i].evidenceLevel / evidenceReason, profile.evidenceKm and
+    profile.evidenceRule. The dispatcher path has no forecast, so `Possible (forecast only)`
+    does not occur here. Legacy fields stay unchanged for API compatibility (R11.1).
+    """
+    samples = profile.get("samples") or []
+    alt = profile.get("flightAlt_ft")
+    for s in samples:
+        top = s.get("topFt")
+        sat = {
+            "state": s.get("retrievalState"),
+            "top_ft": top,
+            "base_ft": s.get("baseFt"),
+            "supercooled": s.get("supercooled"),
+        }
+        iso = _evidence.isotherm_heights_from_cloud_top(top, s.get("cloudTopTemperatureC"))
+        cell = _evidence.evaluate_cell(sat, None, alt, iso)
+        s["evidenceLevel"] = cell.level
+        s["evidenceReason"] = cell.reason
+    levels = [s["evidenceLevel"] for s in samples]
+    summary = None
+    if len(levels) >= 2:
+        total = float(samples[-1]["distanceKm"])
+        step = total / (len(levels) - 1)
+        if total > 0:
+            # Each leg takes the level of its starting sample; the last sample has no leg.
+            summary = _evidence.route_summary(levels[:-1], step, total)
+    if summary is None:
+        summary = _evidence.route_summary([], 1.0)
+    profile["evidenceKm"] = {name: round(v["km"], 1) for name, v in summary.items()}
+    profile["evidenceRule"] = {"name": _evidence.RULE_NAME, "version": _evidence.RULE_VERSION}
+    return profile
+
+
 _RISK_ORDER = {"HIGH": 3, "MODERATE": 2, "LOW": 1, "NONE": 0}
 
 def _route_risk(samples: list[dict]) -> str | None:
@@ -283,7 +320,7 @@ def build_profile(
     source_label = _SOURCE_LABEL.get(source, source)
     obs_time = frame_time or at
 
-    return {
+    return attach_evidence({
         "title": "Satellite cloud cross-section",
         "source": f"{source_label} · Estimated cloud base (Noh et al. 2017)",
         "dataKind": "observation",
@@ -298,7 +335,7 @@ def build_profile(
         "disclaimer": DISCLAIMER,
         "coverage": dict(Counter(p["retrievalState"] for p in samples)),
         "samples": samples,
-    }
+    })
 
 
 VIEW_EDGE_DEG = 60.0   # beyond this view zenith angle parallax/limb effects dominate
@@ -385,7 +422,7 @@ def build_global_profile(
     newest = max(s["observedAt"] for s in samples if s.get("observedAt"))
     source_labels = " + ".join(_SOURCE_LABEL.get(s, s) for s in sorted(used_sources))
 
-    return {
+    return attach_evidence({
         "title": "Global satellite cloud cross-section",
         "source": f"{source_labels} · Estimated cloud base (Noh et al. 2017)",
         "dataKind": "observation",
@@ -400,7 +437,7 @@ def build_global_profile(
         "disclaimer": DISCLAIMER,
         "coverage": dict(Counter(p["retrievalState"] for p in samples)),
         "samples": samples,
-    }
+    })
 
 
 def _fallback_profile(altitude: int) -> dict:

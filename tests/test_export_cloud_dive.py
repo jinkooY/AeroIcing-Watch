@@ -99,9 +99,9 @@ def test_dumps_strict_rejects_nan_infinity_and_leaks_synthetic():
 def test_refusal_reasons_synthetic():
     ok = Reference("best", True, 100.0)
     refs = {"best": ok}
-    assert cb.refusal_reasons({"B1": True, "B2": True, "B3": True}, refs) == []
-    assert cb.refusal_reasons({"B1": False, "B2": True, "B3": False}, refs) == ["B1 failed", "B3 failed"]
-    assert "Best does not complete" in cb.refusal_reasons({"B1": True, "B2": True, "B3": True}, {"best": Reference("best", False, None)})
+    assert cb.refusal_reasons({"B1": True, "B2": True, "B3": True, "B5": True}, refs) == []
+    assert cb.refusal_reasons({"B1": False, "B2": True, "B3": False, "B5": False}, refs) == ["B1 failed", "B3 failed", "B5 failed"]
+    assert "Best does not complete" in cb.refusal_reasons({"B1": True, "B2": True, "B3": True, "B5": True}, {"best": Reference("best", False, None)})
 
 
 # -- simulated end to end -------------------------------------------------------------------------
@@ -176,7 +176,7 @@ def test_committed_case_is_clean_attributed_and_valid(path):
     assert "NOAA" in attribution and "ECMWF" in attribution and "OpenAP" in attribution and "Noh" in attribution
     assert d["sources"]["satellite"]["scanStartUtc"].endswith("Z") and d["sources"]["forecast"]["runUtc"]
     assert contract.valid_profile(d["viewerProfile"]) and d["viewerProfile"]["observedAt"].endswith("Z")
-    assert d["balance"]["B1"] and d["balance"]["B2"] and d["balance"]["B3"]
+    assert d["balance"]["B1"] and d["balance"]["B2"] and d["balance"]["B3"] and d["balance"]["B5"]
     assert d["params"]["aircraft"] == "E75L" and d["params"]["massKg"] == 30340
     assert path.stat().st_size < 300 * 1024
     assert d["labels"]["gameModel"].startswith("Game model")

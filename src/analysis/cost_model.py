@@ -31,7 +31,7 @@ DEFAULTS = {
     "speedLossAtFull": 0.12,
     "dragFlowAtFull": 0.20,
     "iceExponent": 1.5,
-    "diversionUsd": 0.0,
+    "diversionUsd": 5000.0,
     "baseGain": 7.0,
     "possibleRateFactor": 0.25,
     "minGroundSpeedKt": 120.0,

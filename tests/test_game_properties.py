@@ -3,8 +3,9 @@ import numpy as np
 from hypothesis import given, settings, strategies as st
 
 from src.analysis.game_core import (
-    OBSERVED, POSSIBLE, cost_components, initial_state, run_until_gate, set_targets, step, summary,
+    ICE_GATE, MERGE_GAP, OBSERVED, POSSIBLE, EXIT_LOOKAHEAD, cost_components, entry_index, gate_reasons, initial_state, run_until_gate, set_targets, step, summary,
 )
+from src.analysis.game_core import _announce
 from tests.game_synthetic import synthetic_case
 
 PROP = settings(max_examples=120, deadline=None)
@@ -124,7 +125,7 @@ def test_cd_p14_no_silent_entry_into_observed_cells_with_anti_ice_off(seed, choi
         state = set_targets(case, state, lane, alt, ai)
         before = state
         state, reason = run_until_gate(case, state, check_start=(len(stops) == 1 and state.step == 0))
-        if reason in ("entry", "exit"):
+        if reason[0] in ("ice", "entry", "exit"):
             stops.append(state.step)
         # replay the segment range to find entries (cells flown between the stops)
         replay = before
@@ -137,3 +138,58 @@ def test_cd_p14_no_silent_entry_into_observed_cells_with_anti_ice_off(seed, choi
             replay = nxt
         flown_states.append(state)
         assert len(flown_states) < 200
+
+
+@PROP
+@given(seed=seeds, acts=actions)
+def test_cd_p18_gate_merging_synthetic(seed, acts):
+    """With anti-ice on, an entry gate never occurs within 5 segments after a Possible/Observed
+    cell; with unchanged targets an exit gate is followed by at least 5 cells that are neither.
+
+    **Validates: Requirements 6.2, 6.6**
+    """
+    case = case_for(seed, n_steps=40)
+    icing = (POSSIBLE, OBSERVED)
+    for state in play(case, acts):
+        reasons = gate_reasons(case, state)
+        assert reasons == [r for r in ("ice", "exit", "entry") if r in reasons]  # order: ice, exit, entry
+        if "entry" in reasons and state.anti_ice and state.last_icing_step is not None:
+            e = entry_index(case, state)
+            assert e - state.last_icing_step - 1 >= MERGE_GAP
+        if "exit" in reasons:
+            assert state.anti_ice and state.prev_level in icing
+            fly = state
+            for _ in range(EXIT_LOOKAHEAD):
+                if fly.status != "flying":
+                    break
+                fly = step(case, fly)
+                assert fly.prev_level not in icing
+
+
+@PROP
+@given(seed=seeds, acts=actions)
+def test_cd_p19_ice_gate_once_at_first_boundary_synthetic(seed, acts):
+    """A flight that reaches ice index 50 and is still flying has exactly one ice gate, at the first
+    boundary with index >= 50; otherwise none. A jump to 100 diverts and has no ice gate.
+
+    **Validates: Requirements 6.2**
+    """
+    case = case_for(seed, n_steps=40)
+    state = initial_state(case)
+    ice_gates = []
+    first_boundary = None
+    for lane, alt, ai in acts:
+        if state.status != "flying":
+            break
+        state = step(case, set_targets(case, state, lane, alt, ai))
+        if state.status != "flying":
+            assert "ice" not in gate_reasons(case, state)
+            break
+        if first_boundary is None and state.ice >= ICE_GATE:
+            first_boundary = state.step
+        reasons = gate_reasons(case, state)
+        if "ice" in reasons:
+            ice_gates.append(state.step)
+        state = _announce(case, state, reasons)
+    assert ice_gates == ([] if first_boundary is None else [first_boundary])
+    assert state.ice_gate_done == (first_boundary is not None)
