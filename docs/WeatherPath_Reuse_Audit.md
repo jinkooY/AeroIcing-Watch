@@ -63,7 +63,7 @@ Line overlap of 7 percent or less and no same-name function above 40 percent:
   (`gk2a_cloud.py`, `cloud_base.py`, `route_sampler.py`, `route_weather.py`,
   `aircraft_performance.py`, `route_review.py`, `flight_lookup.py`,
   `ifs_grid.py`, original `icing.py`, tests, tools) was written by another
-  agent, Codex or Claude. Git does not say which; the owner specifies per file.
+  agent. Git does not say which; the owner states that it was Claude (2026-11-13).
 - Codex branch `codex/kiroween-route-demo` (`6df6f98`, `32c93f5`) holds the
   route comparison demo, which leaves the submission scope (decision W2).
 - The WeatherPath repository has no license file at its HEAD (earlier

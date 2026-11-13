@@ -13,15 +13,13 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 ## Eligibility and provenance
 
 - [x] C1 Read the full official rules (2026-11-13; digest in `requirements.md` section 6).
-- [ ] C2 Confirm F1 to F6 in `requirements.md` section 5.6 and decision D1. Owner.
+- [ ] C2 Confirm F1 to F6 in `requirements.md` section 5.6. Owner. (D1 decided: replace.)
 - [ ] C3 Submit the Kiro Credit Request Form by **Tue Dec 1, 12:00 pm PT
       (Dec 2 05:00 KST)**; redeem the code by Dec 4. Owner.
-- [ ] C4 Disclosure: draft exists (`docs/Preexisting_Work_Disclosure.md`,
-      `docs/WeatherPath_Reuse_Audit.md`). Owner replaces "Codex or Claude
-      (unrecorded in git)" for 33 files with the right name. Add
-      `THIRD_PARTY_NOTICES.md` (ECMWF CC BY 4.0, NOAA GOES, IEM PIREP, Noh et al.
-      2017, CIRA as referenced work, OpenAP LGPL build-time only). Link both from
-      the README. Kiro drafts, owner confirms.
+- [ ] C4 Disclosure: attribution settled (files git cannot attribute = Claude, owner
+      statement 2026-11-13). Remaining: add `THIRD_PARTY_NOTICES.md` (ECMWF CC BY 4.0, NOAA
+      GOES, IEM PIREP, Noh et al. 2017, CIRA as referenced work, OpenAP LGPL build-time
+      only), link the disclosure and audit from the README, owner reads the final table.
 - [x] C5 Legacy components marked in the README and the disclosure (nothing deleted).
 
 ## Data (runs, not coding)
