@@ -180,14 +180,32 @@ wins; section 4 and `design.md` are rewritten after the three items marked
 | J3 (D3) | Leaderboard ranks presets by lowest and highest score, shows both, and never ranks airlines. Best and worst reference scores are shown only after play. |
 | J4 | Wording: "supercooled cloud-top observation", never "icing confirmed". PIREP icing reports are used to choose and label cases and are shown as reports, not as validation. |
 
-### 5.3 Pending
+### 5.3 Resolved on 2026-11-13
 
-| Id | Question | Kiro recommendation |
-|---|---|---|
-| W1 | Confirm J1 (index in game units, guardrail amended). | Confirm. |
-| W2 | The Incheon-Haneda route comparison with fuel (`/route-demo/`) needs US rework. Rework, or retire from the submission? | Retire it from the submission scope, keep it in git history, and drop OpenAP and the fuel model. The US game already carries the ECMWF wind and icing background. This removes a licence item and about a week of rework. |
-| W3 | Run the case check now: for each candidate, fetch the GOES CONUS frames, confirm that supercooled pixels lie on a feasible route at the PIREP times, and pick the airport pair. | Yes. |
+| Id | Outcome |
+|---|---|
+| W1 | **Approved.** Ice build-up index in game units (J1). `science-guardrails.md` is amended when it is imported. |
+| W2 | **Excluded.** The Incheon-Haneda fuel comparison (`/route-demo/`), OpenAP, the fuel model, flight lookup and `route_review` leave the submission scope. They stay in git history and are marked legacy in the README. |
+| W3 | **Done.** Results in 5.4. |
 
+### 5.4 Case check results (W3)
+
+Method: GOES-19 CONUS cloud-top phase (ACTPC, 2 km) sampled every 10 km along the great circle at five lanes (-30, -15, 0, 15, 30 km), hourly 14-21 UTC; icing PIREPs (IEM archive, FL080-FL300) within 100 km of the route and 2 h of the frame. This is a screening pass: no data-quality filter, no parallax correction, GOES-East only, PIREPs are reports and not validation.
+
+| Case | Route | Hours (UTC) | Supercooled cloud top, any lane | Lanes disagree | PIREPs (median level) | Supercooled cloud-top height |
+|---|---|---|---|---|---|---|
+| A 2026-11-02 | KDEN-KSLC, 629 km | 15-20 | 43-67 percent | 27-38 percent | 9-26 (FL130-180) | 10.3-19.0 kft, median 11.9 kft (17Z) |
+| B 2026-11-07 | KBOS-KDTW 1017 km (alt. KBOS-KCLE 905 km) | 14-16 | 86-93 percent | 51-64 percent | 10-17 (FL107-115) | 2.4-14.6 kft, median 6.2 kft (15Z) |
+| C 2026-11-01 | KORD-KCLE, 508 km | 15 | 25 percent (centre lane 6 percent) | 25 percent | 13 (FL170) | about 21 kft, thin (optical depth about 5) |
+
+Inputs at these hours: cloud-top height, optical depth and particle size are valid on 100 percent of the supercooled samples in A, B and C (daytime), so the Noh cloud-base method can run.
+
+Consequences for the design:
+1. **Altitude range is per case**, not 10,000-35,000 ft. Supercooled cloud tops sit below airline cruise level, so the game covers regional and climb or descent altitudes (A about 8-25 kft, B about 2-20 kft). The pitch says so.
+2. **Terrain floor** is needed for A (Rocky Mountains). Source and limit are not yet checked.
+3. **Case C is a low-exposure contrast case only.** A stronger third case needs a scan of Nov 3-6 and 9-11.
+4. Lane spacing of 15 km is justified: lanes disagree on 27-64 percent of samples, so avoidance changes the score.
+5. Whether GOES cloud-top height is above mean sea level or above ground is not verified and must be checked before the height is drawn against terrain.
 ## 6. Official rules digest (read in full on 2026-11-13)
 
 | Rule | Value or text | Consequence |
