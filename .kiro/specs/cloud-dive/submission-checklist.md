@@ -1,65 +1,89 @@
 # Submission Checklist - Cloud Dive
 
 Non-coding work for the Kiroween 2026 entry. Coding tasks are in
-[`tasks.md`](tasks.md). Deadline 2026-12-04 (time zone to confirm in C1).
+[`tasks.md`](tasks.md). Decisions are in `requirements.md` section 5; the
+official rules digest is in section 6.
 
-Milestones: M0 Nov 14 (C1-C3) - M1 Nov 22 (C4, coding tasks 1-5) -
-M2 Nov 28 (C5-C9) - M3 Dec 2 (C10-C12) - submit Dec 3.
+Deadline: **Dec 4 2026, 2:00 pm Pacific = Dec 5 07:00 KST**. Submit by
+**Dec 3 (KST evening)**. Owner = only the owner can do it. Kiro = done in Kiro.
 
-## Eligibility (blocking)
+Milestones: M0 Nov 14 (C1-C5) - M1 Nov 22 (C6-C8, coding tasks 1-5) -
+M2 Nov 28 (C9-C14) - M3 Dec 2 (C15-C17) - submit Dec 3.
 
-- [ ] C1 Read the full official rules; record in `requirements.md` section 5:
-      pre-existing work clause (D5), start date, deadline time zone, video
-      limit, Kiro Crew link format.
-- [ ] C2 Decide D1-D4 with the owner and record the answers.
-- [ ] C3 Bring over from `origin/claude/kiro-research-direction-review-b971c3`:
-      `docs/Preexisting_Work_Disclosure.md`,
-      `docs/License_And_Data_Access_Check.md`, `docs/kiro-usage-log.md`.
-      Fill the "to confirm" rows and commit hashes; add
-      `THIRD_PARTY_NOTICES.md`; link both from the README (R1.1, R1.2).
-      Start the usage log with the Kiro work already in history
-      (spec `8745bb8`, hooks `556f8cc`, cloud-dive spec `5cb4032`).
+## Eligibility and provenance
+
+- [x] C1 Read the full official rules (done 2026-11-13; digest in
+      `requirements.md` section 6).
+- [ ] C2 Answer W1, W2, W3 in `requirements.md` section 5.3. Owner.
+- [ ] C3 Submit the Kiro Credit Request Form by **Tue Dec 1, 12:00 pm PT
+      (Dec 2 05:00 KST)**; redeem the code by Dec 4. Owner.
+- [ ] C4 Rewrite `docs/Preexisting_Work_Disclosure.md` (decisions P8, P9):
+      per file, origin = WeatherPath / Codex / Claude / Kiro; use branch and
+      commit history (`claude/*`, `codex/*`, Kiro commits). Owner confirms
+      every "to confirm" row. Add `THIRD_PARTY_NOTICES.md` (ECMWF Open Data
+      CC BY 4.0, NOAA GOES, IEM/NWS PIREP, Noh et al. 2017, CIRA as a
+      referenced product, OpenAP only if kept). Link both from the README.
+- [ ] C5 Mark code outside the new scope (GK-2A reader, WeatherPath importer,
+      Meteosat and Himawari sources, fuel route review) as legacy in the
+      README so judges know what the entry is. Do not delete. Owner approves.
 
 ## Data
 
-- [ ] C4 Collect real frames with a supercooled cloud-top signal for at least
-      three routes (Korea-Japan, a US-Japan Pacific route, one GOES route)
-      with `tools/collect_goes.py` and `tools/collect_himawari.py`. If none by
-      Nov 22, use the simulated case from task 3.6 (R3.4, R3.5).
-- [ ] C5 Run the exporter on the collected frames and commit the case files.
+- [ ] C6 Case check (W3): per candidate (2026-11-02 Colorado, 2026-11-01 Ohio,
+      2026-11-07 New York area), daytime hour, GOES-West or GOES-East frame,
+      supercooled pixels on a feasible route, PIREP icing reports within the
+      window. Pick airport pairs. Kiro.
+- [ ] C7 Collect for each chosen case: GOES ACHAC, ACTPC, CODC, CPSC;
+      IFS run via `tools/collect_ifs.py --source aws` with 700 hPa added;
+      PIREPs from IEM for the case window. Kiro.
+- [ ] C8 Export and commit the case JSON (coding task 3). Kiro.
 
-## Kiro depth
+## Kiro depth (every item in the rules' write-up list)
 
-- [ ] C6 Add a browser MCP server (verify the current package name first) and
-      use it to check the game and site on a narrow viewport. Log findings.
-- [ ] C7 Try one Kiro power relevant to the stack; keep it only if it changed
+- [ ] C9 Surfaces: use at least one surface besides the IDE (CLI for scripts or
+      a GitHub Action, Web for a pull request) and record how it differed.
+      Check regional availability first (rules: Regional Restrictions).
+- [ ] C10 Custom agent: create one with the custom agent creator
+      (candidates: a wording guardian that reviews text against the
+      guardrails; a case curator that scores candidate cases). Log the impact.
+- [ ] C11 Browser MCP server in `.kiro/settings/mcp.json` (verify the current
+      package name); check the game and site on a narrow viewport. Log findings.
+- [ ] C12 One Kiro power relevant to the stack; keep it only if it changed
       something.
-- [ ] C8 Optional: Kiro CLI review step in GitHub Actions, after confirming
-      the surface is available.
+- [ ] C13 Log at least one real PBT counterexample (coding task 2.6).
+- [ ] C14 Keep `docs/kiro-usage-log.md`: one row per completed task.
 
 ## Presentation
 
-- [ ] C9 Narrated video under 3:00 (R9.1):
-      0:00-0:25 problem and audience - 0:25-1:30 a dive into a real cloud,
-      then the dispatcher view - 1:30-2:30 how Kiro built it (spec,
-      properties, a PBT counterexample, hooks, a guardrail catching banned
-      wording, MCP check) - 2:30-3:00 what is new and what the satellite
-      cannot see.
-- [ ] C10 Rewrite `docs/AeroIcing_Watch_Submission_Package.md`: one section per
-      Kiro question in the rules, written only from the usage log; state the
-      parts built with other AI tools (R9.2, R9.3).
+- [ ] C15 Video, recorded after the system is complete (P6):
+      English AI voice, captions, under 3:00, public on YouTube, shows the app
+      running on its device, no third-party logos or music (no CIRA or NOAA
+      screenshots). Check that the voice service allows public use.
+      0:00-0:25 problem and audience - 0:25-1:30 a dive into a real cloud -
+      1:30-2:30 how Kiro built it (spec, properties, counterexample, hooks,
+      steering catching banned wording, custom agent, MCP check, surfaces) -
+      2:30-3:00 what is new and what the satellite cannot see.
+- [ ] C16 Rewrite `docs/AeroIcing_Watch_Submission_Package.md`: one section
+      per question in the rules (surfaces, custom agents, hooks, specs,
+      steering, MCP, PBT, powers), written only from the usage log; state
+      which code came from Codex and Claude (P8).
+- [ ] C17 Fill the English Devpost form: category Frankenstein, no bonus
+      categories except those done in C18-C20, demo URL, repository URL,
+      testing instructions, disclosure link. Save a draft early.
 
-## Bonuses
+## Bonuses (optional)
 
-- [ ] C11 Blog post on a third-party platform mentioning "Kiroween Hackathon 2026".
-- [ ] C12 Social post starting with `#KiroweenHackathon26` with a dive clip.
-- [ ] C13 Optional Kiro Crew app that refreshes the leaderboard cases, only if
-      C1 confirms the link format and coding tasks 1-6 are done.
+- [ ] C18 Blog post on a third-party platform, published before the deadline,
+      stating that it is written as part of the Kiroween 2026 hackathon. Owner.
+- [ ] C19 Social post that starts with `#KiroweenHackathon26`, with your
+      favourite thing about Kiro and how it changed your approach; add the link
+      in the form. Owner.
+- [ ] C20 Kiro Crew app in a separate GitHub repo, newly created in the period.
+      Only after coding tasks 1-6 are done.
 
 ## Submit (Dec 3)
 
-- [ ] C14 Upload the video (public) and add the URL to Devpost.
-- [ ] C15 Fill the English Devpost form: category (D4), demo URL, repo URL,
-      testing instructions, disclosure link, data attribution.
-- [ ] C16 Final check: `.kiro/` present and not git-ignored, Apache-2.0
-      visible, public demo works signed out, all tests pass.
+- [ ] C21 Final check: Pages site up and kept up through **Jan 29 2027**, free
+      and without login; Apache-2.0 visible in the repository About section;
+      `/.kiro` present and not ignored; all tests pass; draft saved; submitted
+      by Dec 3 KST evening.

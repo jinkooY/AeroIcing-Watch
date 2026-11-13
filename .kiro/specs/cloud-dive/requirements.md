@@ -150,12 +150,59 @@ specs, steering, MCP, property-based testing, powers), using only entries in
 `docs/kiro-usage-log.md`.
 9.3 THE WRITE-UP SHALL state which parts were built with other AI tools.
 
-## 5. Open decisions
+## 5. Decision log (2026-11-13)
 
-| Id | Question | Recommendation | Status |
-|---|---|---|---|
-| D1 | Legacy `icingRisk` HIGH/MODERATE/LOW badge, altitude suggestions, "No icing detected" label: keep, or replace with evidence levels in the dispatcher view? | Replace in the UI with evidence levels and km per level; keep the API fields for backward compatibility but stop displaying them. Required to satisfy R7 and the guardrails. | Open (user) |
-| D2 | Is an ice meter driven by observed km acceptable under guardrail "no numeric severity score"? | Yes, if R4.3 and R4.7 hold: it measures distance at an evidence level, not severity. | Open (user) |
-| D3 | Is a leaderboard ranking cases by observed km acceptable? | Yes, because it ranks evidence distance, shows `Not assessed` km beside it, and never ranks airlines. | Open (user) |
-| D4 | Category | Frankenstein (GK-2A + GOES + Himawari + Noh 2017 + a game on one pipeline). Costume Contest only if the game becomes the whole product. | Open (user) |
-| D5 | Pre-existing work clause in the official rules | Read the full rules before P1 work. Blocking. | Open (user) |
+Sections 1-4 above predate these decisions. Where they conflict, this log
+wins; section 4 and `design.md` are rewritten after the three items marked
+"Pending".
+
+### 5.1 Decided by the owner
+
+| Id | Decision |
+|---|---|
+| D4 | Category: **Frankenstein**. |
+| P1 | Game cases are presets: a fixed date, US departure and arrival airports, daytime only. Dates and routes are chosen from PIREP icing clusters. Candidates: 2026-11-02 Colorado front range, 2026-11-01 Ohio and Great Lakes, 2026-11-07 New York area. |
+| P2 | Background layers come from ECMWF IFS: forecast icing environment and wind. Satellite evidence is extracted along the route in the manner of the CIRA cloud cross-section (GOES-West and GOES-East). Cases are archived, not real time. |
+| P3 | Player controls: altitude, plus left, right, up and down avoidance inside a corridor around the great-circle route, chosen before entering a cloud. |
+| P4 | Two score types per case: lowest and highest ice build-up. |
+| P5 | Score is an accumulated ice build-up that reflects severity (see D1/D2 conditions). |
+| P6 | Video: recorded after the system is complete, English AI voice narration. |
+| P7 | Student and startup bonuses do not apply. |
+| P8 | All remaining coding is done in Kiro only. Code that came from other tools is labelled "Codex" or "Claude" in the disclosure. |
+| P9 | The WeatherPath-derived code is re-inventoried in `docs/Preexisting_Work_Disclosure.md`. |
+
+### 5.2 Kiro judgements (owner may veto)
+
+| Id | Judgement |
+|---|---|
+| J1 (D1, D2) | **Ice build-up index (game model).** A transparent, deterministic, uncalibrated index in game units, computed per kilometre flown at the `Observed supercooled layer` level from: supercooled-layer membership (satellite), temperature band (ECMWF), and cloud water proxy (GOES cloud optical depth and particle size, daytime). It is labelled "Game model. Not a severity forecast." The words light, moderate, severe, likely and unlikely stay banned. The dispatcher view does not show the index. `science-guardrails.md` is amended to allow a labelled numeric game index and to forbid reuse of it as a risk label. Reason: the data has no liquid water content or droplet size at flight level, so a real severity cannot be supported. |
+| J2 (GOES resolution) | Use native CONUS arrays, not the shared 500x620 grid (about 25-30 km per cell). Phase, cloud optical depth and particle size are 2 km (ACTPC, CODC, CPSC, verified on 2026-11-13). Cloud-top height is 10 km (ACHAC, 300x500). Lane spacing 15 km (5 lanes, plus or minus 30 km), along-track step 10 km. Height is shown at 10 km resolution and is labelled so. Parallax at 10 km cloud height is about 15 km at these latitudes (estimate), so the correction is tested. No claim finer than one satellite pixel. |
+| J3 (D3) | Leaderboard ranks presets by lowest and highest score, shows both, and never ranks airlines. Best and worst reference scores are shown only after play. |
+| J4 | Wording: "supercooled cloud-top observation", never "icing confirmed". PIREP icing reports are used to choose and label cases and are shown as reports, not as validation. |
+
+### 5.3 Pending
+
+| Id | Question | Kiro recommendation |
+|---|---|---|
+| W1 | Confirm J1 (index in game units, guardrail amended). | Confirm. |
+| W2 | The Incheon-Haneda route comparison with fuel (`/route-demo/`) needs US rework. Rework, or retire from the submission? | Retire it from the submission scope, keep it in git history, and drop OpenAP and the fuel model. The US game already carries the ECMWF wind and icing background. This removes a licence item and about a week of rework. |
+| W3 | Run the case check now: for each candidate, fetch the GOES CONUS frames, confirm that supercooled pixels lie on a feasible route at the PIREP times, and pick the airport pair. | Yes. |
+
+## 6. Official rules digest (read in full on 2026-11-13)
+
+| Rule | Value or text | Consequence |
+|---|---|---|
+| Submission period | Oct 30 - Dec 4 2026, 2:00 pm Pacific (22:00 UTC; Dec 5 07:00 KST) | Submit by Dec 3 (KST evening). No extensions. |
+| Credits | Request form due Tue Dec 1 12:00 pm PT (Dec 2 05:00 KST); redeem by Dec 4 | Owner action. |
+| New projects only | Newly created during the period; pre-existing code or work must be disclosed | First commit is 2026-11-11 23:13, inside the period. WeatherPath-derived code is disclosed (P9). |
+| Stage One | Pass/fail: fits the theme, reasonably applies Kiro. "Insufficient use of Kiro will result in disqualification" | Keep real Kiro work visible (P8). |
+| Judging | Five criteria at 20 percent each: Potential Impact, Technological Implementation, Design, Innovation/Idea, Presentation | Plan maps tasks to criteria. |
+| Video | Under 3 minutes, public on YouTube, shows the project working on its device, no third-party trademarks or copyrighted music | No CIRA, NOAA or other logos on screen. Use a voice service whose terms allow public use. |
+| Repository | Public GitHub, open source licence visible in the About section, `/.kiro` at root and not git-ignored, all source and instructions | Verified today: Apache-2.0 file present, `.kiro` tracked and not ignored. |
+| Access | Working app link, free, available until the judging period ends (Jan 29 2027) | The Pages site must stay up through Jan 29 2027. |
+| Language | All materials in English | Already the case. |
+| Third-party data | Entrant must be authorised under the data terms | ECMWF Open Data (CC BY 4.0), NOAA GOES (public), IEM/NWS PIREP; record in `THIRD_PARTY_NOTICES.md`. |
+| Write-up | Kiro IDE, CLI, Web, Crew: how did they differ. Custom agents. Hooks. Specs. Steering. MCP. PBT. Powers | Two items were missing from the earlier plan: surfaces and custom agents. Added to the checklist. |
+| Bonus: blog | Public post on a third-party platform, published in the period, must say it is written as part of the Kiroween 2026 hackathon | Optional. |
+| Bonus: social | Post starting with `#KiroweenHackathon26`, favourite thing about Kiro and how it changed your approach, link in the form | Optional. |
+| Bonus: Kiro Crew app | Separate GitHub repo for a Kiro Crew app, newly created in the period | Optional, after core work. |
