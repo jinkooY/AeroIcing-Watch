@@ -34,3 +34,6 @@ Thumbs.db
 
 # Hypothesis example database
 .hypothesis/
+
+# Small committed test fixtures (real cropped GOES scan, see tools/make_goes_fixture.py)
+!tests/fixtures/*.npz

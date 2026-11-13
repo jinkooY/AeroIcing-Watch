@@ -60,24 +60,24 @@ write-up, bonuses, Devpost form) is in
   - _Requirements: R2.3, R2.5, R2.6, R8.1_
 - [x] 2.7 Checkpoint: run the full test suite and fix failures
 
-- [ ] 3. Build the GOES CONUS lane sampler
-- [ ] 3.1 Write `src/integration/goes_conus.py`
+- [x] 3. Build the GOES CONUS lane sampler
+- [x] 3.1 Write `src/integration/goes_conus.py`
   - Anonymous S3 read of ACTPC, ACHAC, CODC, CPSC for one satellite and hour;
     keep native arrays and projection; cache under git-ignored `data/`
   - _Requirements: R3.1_
-- [ ] 3.2 Write `src/analysis/lanes.py` and its tests
+- [x] 3.2 Write `src/analysis/lanes.py` and its tests
   - Great circle, five lanes at -30, -15, 0, 15, 30 km, 10 km steps (pyproj
     Geod); property test CD-P13 (starts at 0, strictly increasing, lanes parallel)
   - _Requirements: R3.1_
-- [ ] 3.3 Implement parallax-corrected pixel lookup
+- [x] 3.3 Implement parallax-corrected pixel lookup
   - Use `apparent_latlon` with the chosen satellite's sub-satellite longitude,
     three iterations; test on a synthetic cloud at a known height
   - _Requirements: R3.2_
-- [ ] 3.4 Implement cloud water and base per sample
+- [x] 3.4 Implement cloud water and base per sample
   - `LWP = 2/3 * COD * re` (ice factor 0.917), Noh base via `cloud_base`, null
     where the method gives none; DQF and solar-zenith gate set `quality_rejected`
   - _Requirements: R3.3_
-- [ ] 3.5 Write sampler tests
+- [x] 3.5 Write sampler tests
   - Synthetic arrays plus one small real fixture (under 200 KB) from a GOES hour
   - _Requirements: R3.2, R3.3_
 
