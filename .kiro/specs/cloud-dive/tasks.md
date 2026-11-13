@@ -3,7 +3,7 @@
 ## Overview
 
 Coding tasks for the Cloud Dive entry (US routes, fuel-cost score, decision-gate
-flow), in build order. Each task names the requirements it implements (`R*` in
+flow, and from revision b the 3D cockpit view, groups 13 to 20), in build order. Each task names the requirements it implements (`R*` in
 `requirements.md`) and, where relevant, the correctness properties it tests
 (`CD-P*` in `design.md` section 10).
 
@@ -117,7 +117,7 @@ write-up, bonuses, Devpost form) is in
   - _Requirements: R4.8, R8.2, R8.3_
 - [x] 5.5 Write property tests CD-P12, CD-P16 and CD-P17 and `tools/tune_params.py`
   - The tuning report prints Best, the two forced-anti-ice variants and Straight-ahead per
-    case and checks balance criteria B1 to B4; levers are the altitude block, corridor
+    case and checks balance criteria B1 to B5; levers are the altitude block, corridor
     width and the parameters, never the weather data
   - _Requirements: R4.8, R8.2, R8.3_
 - [x] 5.6 Checkpoint: run the full test suite and fix failures
@@ -260,6 +260,184 @@ write-up, bonuses, Devpost form) is in
     the stacked layout
   - _Requirements: R14.1, R14.6_
 - [x] 12.5 Checkpoint: pytest, wording test, `node --check`, `node --test` and the layout check pass
+
+## Revision b: 3D cockpit game
+
+Groups: (a) 13, (b) 14, (c) 15, (d) 16, (e) 17 (departure and climb), (f) 18 (hot-seat),
+(g) 19 (chase view), 20 (documentation).
+Build order, so that no cuttable or optional task runs before a required one: 13, 14, 15,
+16.1, 16.3, 16.5, 16.6, 17 without 17.5, 18, then 16.2, 16.4, 17.5, 16.7, then 19, then 20.
+The plan can stop after any checkpoint and still ship.
+Required: groups 13 to 16 except 16.2, 16.4 and 16.7, and 17.1 to 17.4, 17.6 to 17.8 and 18.
+Cuttable before 2026-12-04: 17.5 (arrival and diversion cinematics), 16.2 (shake), 16.4
+(wind streaks) and 19 (chase view). Optional: 16.7 (cost pop-up). Cut order, first to go
+first: 19, 16.4, 16.2, 17.5, 16.7 (decision G2). Feature freeze 2026-11-28 (G9). The 3D view
+reads the case and the engine state and never changes them; `engine.js`, `game_core.py`, the
+cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
+
+- [ ] 13. (a) Playtest fixes on the 2D game
+- [ ] 13.1 Re-verify R21 on the current build (re-verify only)
+  - The five fixes exist as tasks 10.1 to 10.5 (decision G3); the owner confirmed the playtest
+    was on a build from before group 10. Run `pytest -q` and `node --test`; check CD-P20 in
+    both array shapes, the saving share sign, `diversionUsd` 5000 with B1 to B5 passing, gate
+    counts per case (KJFK-KBNA always-on was 16 before 10.4 and is 10 now; the playtest saw
+    17), and one ice gate per flight. Add a test only where a gap is found, and record the gap
+    list in the usage log. No new behaviour.
+  - _Requirements: R21.1, R21.2, R21.3, R21.4, R21.5_
+- [ ] 13.2 Checkpoint: pytest, wording test, `node --check`, `node --test` pass
+
+- [ ] 14. (b) Scene description and tests
+- [ ] 14.1 Create `static/cloud-dive/scene.js` with the frame, constants and schema
+  - DOM-free ES module; named constants `VEX`, `LATK`, `LEAD_IN_KM`, `CLOUD_FADE_S`,
+    `MAX_CLOUD_VOLUMES`, `MAX_EVIDENCE_BANDS`, `MAX_TRIANGLES`, `VIEW_KM`, `SHAKE_MAX_DEG`;
+    `buildScene(file, state, pose, opts)` returns camera, lanes, airports (with the "Top of
+    climb" marker), ground, sky and `cloudAlpha`; one string table; no clock, no random; only
+    the scene is scaled, engine distances stay true
+  - _Requirements: R19.5, R16.4, R16.10, R16.12, R15.14_
+- [ ] 14.2 Build cloud volumes with merging and caps
+  - From the satellite group through the shared array helper (both shapes); fixed merge
+    tolerance; no volume starts before x = 0; Observed evidence never dropped
+  - _Requirements: R16.6, R19.3, R15.15_
+- [ ] 14.3 Build evidence bands
+  - Four-level mapping through `engine.levelAt`; runs merged along track; priority Observed,
+    Possible, Not assessed when the cap binds
+  - _Requirements: R16.7, R16.8_
+- [ ] 14.4 Build effects and panel data
+  - Frost, shake amplitude, wing lamp, at most 12 wind streaks, head-wind, text line, level
+    here and ahead, legend strip names
+  - _Requirements: R16.2, R16.9, R18.1, R18.2, R18.3_
+- [ ] 14.5 Write Node tests CD-P23 to CD-P26 and extend the wording test
+  - Real cases (three) and synthetic cases in both array shapes; deep-frozen inputs; scene z
+    equals true z x `LATK`; `tests/test_wording.py` scans scene and panel strings and skips
+    `static/cloud-dive/vendor/`
+  - _Requirements: R19.5, R16.6, R16.7, R16.12, R9.1_
+- [ ] 14.6 Checkpoint: pytest, wording test, `node --check`, `node --test` pass
+
+- [ ] 15. (c) Cockpit cruise view with gates
+- [ ] 15.1 Vendor the 3D library
+  - Choose and verify an exact release of three.js (version exists, MIT licence), copy one
+    module file to `static/cloud-dive/vendor/three/`, record version, licence and SHA-256 in
+    `THIRD_PARTY_NOTICES.md` (create it if missing, see C4); no CDN; check the Pages workflow
+    publishes the folder
+  - _Requirements: R19.4, R1.2_
+- [ ] 15.2 Write `cockpit3d.js`
+  - Draws a scene description only: sky, flat ground, lane guides, airport markers, cloud
+    volumes, evidence bands, windshield frame and low-poly panel built from primitives;
+    WebGL context test; tune `VEX`, `LATK`, field of view and eye height together; `LATK` may go down
+    to 0.2 if the side lanes are not readable from the cockpit
+  - _Requirements: R16.1, R16.4, R16.6, R16.7, R16.12, R19.5_
+- [ ] 15.3 Write the panel overlay `panel.js` and `cockpit.css`
+  - Fuel counter, ice gauge ("Ice index (game model)"), anti-ice switch with lamp, altitude
+    tape, panel map, legend strip, text line (with the head-wind number), game note, source
+    line; real text, focusable controls, greyscale labels
+  - _Requirements: R16.2, R16.3, R16.5, R16.8, R16.10, R9.3, R1.3, R10.1_
+- [ ] 15.4 Map gate choices to the controller and add the gate inset
+  - "Fly through", "Climb over", "Descend", "Go left", "Go right", anti-ice, Continue,
+    Pause; arrows, A, Space; 44 px touch buttons; 2D side-view inset at gates; no cost preview
+    and no recommendation; property test CD-P27
+  - _Requirements: R17.1, R17.2, R17.3, R17.4, R17.5, R17.6, R6.5_
+- [ ] 15.5 Cruise camera, fast-forward, gate stop, 2D toggle, fallback and Why cards
+  - Camera follows `motionFrac`, eases to a stop at a gate within 1.5 s; key V and button
+    open the 2D view; fallback when WebGL or the import fails; "Why?" cards for cruise level
+    (below airline cruise), the flat-ground limit, and the display scales (vertical
+    exaggeration and lateral compression of lane spacing)
+  - _Requirements: R15.4, R15.8, R16.4, R16.12, R19.1, R19.2_
+- [ ] 15.6 Check layout and frame rate in a headless browser
+  - Extend `tools/layout_check.mjs` for the cockpit view at 1280x720, 1366x768, 1920x1080 and
+    one phone size (390x844); `data-fits`; screenshots under `docs/screens/`; frame rate with
+    `?perf=1` on this laptop, recorded as measured; tune the caps of design 14.9
+  - _Requirements: R14.1, R14.6, R19.3_
+- [ ] 15.7 Checkpoint (shippable: a playable 3D cruise game): pytest, wording test,
+  `node --check`, `node --test`, layout check pass
+
+- [ ] 16. (d) Feedback effects (16.1 and 16.3 required; 16.2 and 16.4 cuttable; 16.7 optional)
+- [ ] 16.1 Frost on the windshield edges
+  - Opacity = ice / 100 from the scene description; generated texture
+  - _Requirements: R18.1_
+- [ ] 16.2 Airframe shake with reduced-motion handling (cuttable; built after group 18)
+  - Amplitude from the scene; none under `prefers-reduced-motion`; add the shake clause of
+    CD-P28 (zero unless anti-ice is off, the cell is Observed or Possible, ice > 0 and reduced
+    motion is off); run all suites
+  - _Requirements: R18.2, R15.12_
+- [ ] 16.3 Wing-heat lamp and fuel-counter rate
+  - Lamp from the switch; counter interpolates the engine's per-step cost
+  - _Requirements: R18.3_
+- [ ] 16.4 Wind streaks (cuttable; built after group 18)
+  - At most 12 streaks; the head-wind number already stays in the text line (15.3); add a test
+    for the streak cap; run all suites
+  - _Requirements: R16.9_
+- [ ] 16.5 Write property test CD-P28 for frost and the wing-heat lamp, and a check that the effects change no engine value
+  - Covers 16.1 and 16.3 only; the shake clause is added in 16.2 and the streak cap test in
+    16.4, so 16.5 and 16.6 do not depend on them
+  - _Requirements: R18.1, R18.2, R18.3, R18.4_
+- [ ] 16.6 Checkpoint (shippable): all test suites and the layout check pass
+- [ ] 16.7 Cost pop-up "+$N this segment" (optional; built after 16.2, 16.4 and 17.5)
+  - Shown at a gate, a pause, after a single step and at the end, from the component
+    differences between two stops; never before a choice; property test CD-P32
+  - _Requirements: R18.5, R6.5_
+
+- [ ] 17. (e) Departure and climb (17.1 to 17.4, 17.6 to 17.8 required; 17.5 cuttable)
+- [ ] 17.1 Add the departure climb constant and airport elevations
+  - `tools/tune_params.py --write` (or a small exporter step) adds `params.departureClimbUsd`,
+    `params.departureClimbNote` and `airports` only, and refuses to change anything else;
+    elevations are `elev_ft` from `airports.json`; check the source of `airports.json` (the
+    OurAirports CSV used by `tools/build_airports.py`) and its licence, then record it in
+    `THIRD_PARTY_NOTICES.md`; `withDeparture` in Python and JavaScript; references and the
+    report show "Departure climb"; B1 to B5 stay on engine totals; local best key `v2`;
+    property test CD-P29
+  - _Requirements: R15.5, R4.6, R8.1, R8.2, R19.6_
+- [ ] 17.2 Write `phases.js`
+  - Pure `phaseStep`, `phasePose`; transitions of design 14.6; durations 5 s, 10 to 15 s, 10 s,
+    4 s; camera x in [-`LEAD_IN_KM`, 0] before cruise; property test CD-P30
+  - _Requirements: R15.1, R15.2, R15.3, R15.6, R15.7, R15.13, R15.14_
+- [ ] 17.3 Runway scene and takeoff
+  - Runway at x = -`LEAD_IN_KM`, departure airport marker, "Top of climb" marker at x = 0, one
+    button or key to start, about 5 s roll and lift-off
+  - _Requirements: R15.1, R15.2, R15.14_
+- [ ] 17.4 Automatic climb with the labels, cloud fade and lead-in tuning
+  - About 10 to 15 s from the runway to x = 0 on the centre lane; tune `LEAD_IN_KM` and the
+    display speed; no evidence drawn and `cloudAlpha` 0 in takeoff and climb, fade-in over the
+    last 1.5 s; panel reads "Not assessed (below the game's altitude block)" or "Not assessed
+    (departure climb)"; hand-over to step 0 at the "Top of climb"; the display-scale Why text
+    adds the lead-in
+  - _Requirements: R15.3, R15.4, R15.6, R15.7, R15.14, R15.15_
+- [ ] 17.5 Arrival and diversion cinematics, then the report (cuttable; built after group 18)
+  - Uses the skip and reduced-motion handling of 17.6; about 10 s descent and landing; about 4 s turn-away; report opens after; unscored. If cut,
+    the report opens directly at arrival or diversion
+  - _Requirements: R15.9, R15.10_
+- [ ] 17.6 Skip and reduced motion
+  - Skip button and Space; each cinematic at most 2 s under reduced motion
+  - _Requirements: R15.11, R15.12_
+- [ ] 17.7 Show the departure climb as a status card in the 2D fallback
+  - _Requirements: R19.1, R15.5_
+- [ ] 17.8 Checkpoint (shippable): all test suites and the layout check pass
+
+- [ ] 18. (f) Hot-seat (required)
+- [ ] 18.1 Write `static/cloud-dive/hotseat.js` and property test CD-P31
+  - _Requirements: R20.1, R20.2, R20.3_
+- [ ] 18.2 Setup dialog and hand-over dialog between flights
+  - _Requirements: R20.1, R20.4_
+- [ ] 18.3 Results table dialog with Best and Straight-ahead
+  - _Requirements: R20.2, R20.3, R8.5_
+- [ ] 18.4 Checkpoint: all test suites and the layout check pass
+
+- [ ] 19. (g) Chase view (cuttable before 2026-12-04; first to be cut)
+- [ ] 19.1 Add the chase camera (key C) and a generic aircraft model built from primitives
+  - No livery, logo or registration; instruments and gate controls stay usable
+  - _Requirements: R16.11, R16.1_
+- [ ] 19.2 Test and check: scene mode field, wording scan, frame rate in chase view
+  - _Requirements: R16.11, R19.3_
+- [ ] 19.3 Checkpoint: all test suites pass
+
+- [ ] 20. Documentation for revision b
+- [ ] 20.1 Update README, the disclosure, `THIRD_PARTY_NOTICES.md` and the submission checklist
+  - New files attributed to Kiro; three.js row and the `airports.json` source row; flat-ground
+    limit; the video (C15) uses KJFK-KBNA with the cockpit; KDEN-KLAX keeps the flat-ground card
+    and its block is not changed; the MCP browser check (C11) covers the cockpit on a narrow
+    viewport
+  - _Requirements: R1.1, R1.2, R12.2, R16.4_
+- [ ] 20.2 Final checkpoint: full test suites, wording test, layout check, Pages path check
+
 ## Notes
 
 - F1 to F6 are approved (`requirements.md` 5.6; F3 amended with the two-sided anti-ice penalty and the balance criteria).
@@ -268,6 +446,10 @@ write-up, bonuses, Devpost form) is in
   them only through `tools/tune_params.py` and record changes in the usage log.
 - Add one row to `docs/kiro-usage-log.md` per completed task.
 - Decision D1 is settled (replace), so task 9.2 is not conditional.
+- Revision b (decisions G1 to G14): groups 13 to 20. Cuttable: 17.5, 16.2, 16.4, 19; optional: 16.7.
+  Required: the rest, including 17.1 to 17.4 (departure constant, phases, runway, climb) and 18.
+  If 17.5 is cut, the report opens directly at arrival or diversion.
+- Frame rates are measured in task 15.6 and 18.2 and recorded as measured, not as targets met.
 
 ## Task Dependency Graph
 
@@ -294,7 +476,26 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 16, "tasks": ["11.1", "11.2", "11.3"] },
     { "wave": 17, "tasks": ["11.4", "11.5", "11.6"] },
     { "wave": 18, "tasks": ["12.1", "12.2", "12.3"] },
-    { "wave": 19, "tasks": ["12.4", "12.5"] }
+    { "wave": 19, "tasks": ["12.4", "12.5"] },
+    { "wave": 20, "tasks": ["13.1", "14.1", "15.1"] },
+    { "wave": 21, "tasks": ["13.2", "14.2", "14.3", "14.4"] },
+    { "wave": 22, "tasks": ["14.5", "14.6"] },
+    { "wave": 23, "tasks": ["15.2", "15.3"] },
+    { "wave": 24, "tasks": ["15.4", "15.5"] },
+    { "wave": 25, "tasks": ["15.6", "15.7"] },
+    { "wave": 26, "tasks": ["16.1", "16.3"] },
+    { "wave": 27, "tasks": ["16.5", "16.6"] },
+    { "wave": 28, "tasks": ["17.1", "17.2"] },
+    { "wave": 29, "tasks": ["17.3", "17.4"] },
+    { "wave": 30, "tasks": ["17.6", "17.7"] },
+    { "wave": 31, "tasks": ["17.8", "18.1"] },
+    { "wave": 32, "tasks": ["18.2", "18.3"] },
+    { "wave": 33, "tasks": ["18.4"] },
+    { "wave": 34, "tasks": ["16.2", "16.4", "17.5"] },
+    { "wave": 35, "tasks": ["16.7"] },
+    { "wave": 36, "tasks": ["19.1"] },
+    { "wave": 37, "tasks": ["19.2", "19.3"] },
+    { "wave": 38, "tasks": ["20.1", "20.2"] }
   ]
 }
 ```
