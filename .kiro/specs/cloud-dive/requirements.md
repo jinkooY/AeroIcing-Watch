@@ -75,9 +75,10 @@ SHALL treat the satellite evidence as missing and SHALL keep the reason code.
 2.3 WHEN the sample is observed, the supercooled flag is true and the altitude
 is inside the candidate layer, THE SYSTEM SHALL set `Observed supercooled layer
 at planned altitude`.
-2.4 WHEN the cell is not Observed and the ECMWF temperature is between -25 and 0 C
-and the relative humidity is at least 85 percent, THE SYSTEM SHALL set
-`Possible (forecast only)` and SHALL NOT label it observed.
+2.4 WHEN the satellite state is not `clear`, the cell is not Observed, the altitude is not
+above an observed cloud top, and the ECMWF temperature is between -25 and 0 C and the
+relative humidity is at least 85 percent, THE SYSTEM SHALL set `Possible (forecast only)` and
+SHALL NOT label it observed.
 2.5 WHEN satellite and forecast evidence are both missing for a cell, THE
 SYSTEM SHALL set `Not assessed`, never `Not indicated`.
 2.6 THE SYSTEM SHALL estimate the 0 C and -20 C heights from the ECMWF
@@ -86,6 +87,8 @@ with a fixed lapse rate, and SHALL record which method was used.
 2.7 THE SYSTEM SHALL echo the rule name, version and every threshold in each
 case file.
 2.8 THE EVIDENCE PATH SHALL use no language model, random number or network call.
+2.9 WHEN the satellite state is `clear`, or an observed cloud top is below the altitude, THE
+SYSTEM SHALL set `Not indicated` whatever the forecast says.
 
 ### R3 Case export and the cube
 

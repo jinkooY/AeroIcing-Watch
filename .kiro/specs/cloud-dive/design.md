@@ -107,28 +107,42 @@ Arrays are stored flat with a shape field. Expected size under 300 KB per case.
 
 ## 4. Evidence rule v2 (per cell: lane, step, altitude)
 
-Inputs: satellite retrieval state, top, base, supercooled flag; ECMWF temperature
-and humidity at the altitude; isotherm heights; altitude.
+Implemented in `src/analysis/evidence.py` (`evaluate_cell`). Inputs: satellite retrieval
+state, top, base, supercooled flag; ECMWF temperature and humidity at the altitude;
+isotherm heights; altitude. NaN and infinity count as missing. An observed cloud without a
+top is incomplete evidence and is treated like an unusable satellite state.
 
 | # | Condition (first match wins) | Level | reason |
 |---|---|---|---|
-| 1 | satellite `observed`, supercooled true, base known, altitude in [max(base, zeroC), min(top, minus20C)] | Observed supercooled layer at planned altitude | `inside_candidate_layer` |
-| 2 | satellite `observed`, supercooled true, base null, altitude in [zeroC, min(top, minus20C)] and altitude <= top | Not assessed | `cloud_base_unknown` |
-| 3 | forecast criterion met (T in [-25, 0] C, RH >= 85 %) and rows 1-2 did not match | Possible (forecast only) | `forecast_criterion_met` |
-| 4 | forecast available, criterion not met, and the satellite state is `observed` or `clear` | Not indicated | `forecast_criterion_not_met` or `satellite_clear` |
-| 5 | forecast available, criterion not met, satellite state not usable | Not indicated | `no_supercooled_signal_forecast_dry` |
-| 6 | forecast missing and satellite `clear` or supercooled false | Not indicated | `no_supercooled_signal` |
-| 7 | otherwise | Not assessed | the missing-evidence reason |
+| 1 | satellite `clear` | Not indicated | `satellite_clear` |
+| 2 | satellite `observed`, top known, altitude above the top | Not indicated | `above_cloud_top` |
+| 3 | satellite `observed`, supercooled, top known, an isotherm height missing | Not assessed | `isotherm_unavailable` |
+| 4 | as 3, base known, altitude in [max(base, zeroC), min(top, minus20C)] | Observed supercooled layer at planned altitude | `inside_candidate_layer` |
+| 5 | as 3, base unknown, altitude in [zeroC, min(top, minus20C)] | Not assessed | `cloud_base_unknown` |
+| 6 | forecast available and T in [-25, 0] C and RH >= 85 percent | Possible (forecast only) | `forecast_criterion_met` |
+| 7 | forecast available, criterion not met | Not indicated | `forecast_criterion_not_met` (satellite observed) or `no_supercooled_signal_forecast_dry` |
+| 8 | forecast missing, satellite `observed`, supercooled false | Not indicated | `no_supercooled_signal` |
+| 9 | otherwise | Not assessed | `satellite_unavailable`, the retrieval state, or `forecast_unavailable` |
 
-Row 5 is deliberate: a dry forecast with no satellite signal is not evidence of
-icing, but it is evidence of absence only as far as the forecast goes; the reason
-code keeps the difference. The rule never returns `Possible` when the satellite
-says Observed.
+Why this order:
+- Row 1 comes before the forecast: a clear-sky pixel has no cloud, so a humid forecast must
+  not produce `Possible`.
+- Row 2 needs no isotherms: nothing is above the highest observed cloud top.
+- Row 3 stops a satellite-supercooled cell with unknown isotherms from falling through to
+  the forecast rows and ending as `Not indicated`.
+- Rows 6 and 7 apply when the altitude is below the observed base or outside the candidate
+  layer: the satellite sees only the top layer, so the forecast has the say there.
+- Row 8 is a limited negative signal; the reason code keeps that nuance. `Not indicated`
+  means "no indication", not "no icing".
+- The rule never returns `Possible` when the cell qualifies as Observed.
 
-Isotherms: from the IFS temperature profile at the lane and step when 925 to 250 hPa
-are present (`ifs_profile`); otherwise from cloud-top temperature and a lapse rate of
-1.98 C per 1,000 ft (`cloud_top_lapse_rate_estimate`). The method is stored.
-
+Isotherms: from the IFS temperature profile when levels 925 to 250 hPa are present
+(`isotherm_heights_from_profile`: lowest freezing crossing, then the lowest -20 C crossing
+above it; extrapolated with the lapse rate when the profile does not reach them, method
+`ifs_profile_extrapolated`); otherwise from the cloud-top temperature and a lapse rate of
+1.98 C per 1,000 ft (`cloud_top_lapse_rate_estimate`). The method is stored. The -20 C
+height is never below the 0 C height; this is checked by property CD-P4 and by 200,000
+random profiles.
 ## 5. Cost model
 
 Per step of length d (10 km, plus the extra path of a lane change) at altitude

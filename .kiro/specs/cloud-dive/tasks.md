@@ -34,31 +34,31 @@ write-up, bonuses, Devpost form) is in
 - [x] 1.5 Point the session-start and progress hooks at this plan
   - _Requirements: R12.2_
 
-- [ ] 2. Implement evidence rule v2 in `src/analysis/evidence.py`
-- [ ] 2.1 Add `hypothesis` to `requirements.txt` and create the module skeleton
+- [x] 2. Implement evidence rule v2 in `src/analysis/evidence.py`
+- [x] 2.1 Add `hypothesis` to `requirements.txt` and create the module skeleton
   - Constants: rule name `cloud-dive-evidence-v2`, version 2, the four level
     strings, reason codes; `rule_metadata()` echoes every threshold
   - _Requirements: R2.1, R2.7_
-- [ ] 2.2 Implement isotherm heights and the candidate layer
+- [x] 2.2 Implement isotherm heights and the candidate layer
   - `isotherm_heights_from_profile(levels)` from IFS temperature against height
   - `isotherm_heights_from_cloud_top(top_ft, ctt_c)` with lapse 1.98 C per 1,000 ft
   - `candidate_layer(base, top, zero_c, minus20_c)`; record the method
   - _Requirements: R2.6_
-- [ ] 2.3 Implement `evaluate_cell(satellite, forecast, alt_ft, isotherms)`
-  - Rows 1-7 of design section 4, first match wins; returns level and reason
+- [x] 2.3 Implement `evaluate_cell(satellite, forecast, alt_ft, isotherms)`
+  - Rows 1-9 of design section 4, first match wins; returns level and reason
   - No randomness, clock, network or model call
   - _Requirements: R2.2, R2.3, R2.4, R2.5, R2.8_
-- [ ] 2.4 Implement `route_summary(cells, step_km)`
+- [x] 2.4 Implement `route_summary(cells, step_km)`
   - Kilometres per level, all four keys present
   - _Requirements: R8.1_
-- [ ] 2.5 Write unit tests in `tests/test_evidence.py`
+- [x] 2.5 Write unit tests in `tests/test_evidence.py`
   - One test per rule row with fixed synthetic numbers (name contains `synthetic`)
   - _Requirements: R2.2, R2.3, R2.4, R2.5, R2.6_
-- [ ] 2.6 Write property tests CD-P1 to CD-P5 in `tests/test_evidence_properties.py`
+- [x] 2.6 Write property tests CD-P1 to CD-P5 in `tests/test_evidence_properties.py`
   - Strategies cover all retrieval states, nulls, temperatures -80 to +30 C,
     altitudes 0-45,000 ft; log any counterexample in `docs/kiro-usage-log.md`
   - _Requirements: R2.3, R2.5, R2.6, R8.1_
-- [ ] 2.7 Checkpoint: run the full test suite and fix failures
+- [x] 2.7 Checkpoint: run the full test suite and fix failures
 
 - [ ] 3. Build the GOES CONUS lane sampler
 - [ ] 3.1 Write `src/integration/goes_conus.py`
