@@ -170,6 +170,8 @@ wins; section 4 and `design.md` are rewritten after the three items marked
 | P7 | Student and startup bonuses do not apply. |
 | P8 | All remaining coding is done in Kiro only. Code that came from other tools is labelled "Codex" or "Claude" in the disclosure. |
 | P9 | The WeatherPath-derived code is re-inventoried in `docs/Preexisting_Work_Disclosure.md`. |
+| P10 | The owner releases the copied and adapted WeatherPath code under Apache-2.0 (confirmed 2026-11-13). |
+| P11 | Legacy components are marked in the README and the disclosure; nothing is deleted. Files are attributed to Kiro, Claude or Codex in the disclosure; files git cannot attribute are listed for the owner to resolve. |
 
 ### 5.2 Kiro judgements (owner may veto)
 
@@ -206,6 +208,36 @@ Consequences for the design:
 3. **Case C is a low-exposure contrast case only.** A stronger third case needs a scan of Nov 3-6 and 9-11.
 4. Lane spacing of 15 km is justified: lanes disagree on 27-64 percent of samples, so avoidance changes the score.
 5. Whether GOES cloud-top height is above mean sea level or above ground is not verified and must be checked before the height is drawn against terrain.
+### 5.5 Wider case scan (2026-11-01 to 11-12, 2026-11-13)
+
+Same screening method as 5.4, extended to 53 US hubs (584 airport pairs of 450-1500 km), hourly 14-21 UTC, GOES-19 only, icing PIREPs at FL080-FL300 within 100 km and 2 h. PIREP counts depend on traffic and reporting, so they show where icing was reported, not how much ice formed.
+
+**Worst days** (all CONUS icing PIREPs FL080-300 that day; MOD/SEV = reports with moderate or severe icing):
+
+| Day | Icing PIREPs | MOD/SEV | Median level | Domain share of supercooled cloud tops (mean 14-21Z) |
+|---|---|---|---|---|
+| 2026-11-12 | 707 | 99 | FL120 | 8.6 percent |
+| 2026-11-01 | 508 | 85 | FL190 | 5.9 percent |
+| 2026-11-02 | 427 | 47 | FL180 | 3.9 percent |
+| 2026-11-07 | 179 | 29 | FL130 | 6.0 percent |
+
+Mildest in the period: Nov 3-4, 8-11 (no case chosen from them).
+
+**Strongest routes** (best hour; cloud-top heights are for supercooled samples on the centre line):
+
+| Case | Route | Hour (UTC) | Supercooled, any lane | Lanes differ | PIREPs / MOD+SEV | Cloud tops (p50 / max) |
+|---|---|---|---|---|---|---|
+| 11-12 | KJFK-KBNA, 1232 km | 19-20 | 69-75 percent | 42-50 percent | 26-39 / 5-9 | 12.2 / 13.5 kft |
+| 11-01 | KDEN-KLAX, 1387 km | 21 (west route: re-check with GOES-18) | 43 percent | 40 percent | 30 / 10 | 14.8 / 21.5 kft |
+| 11-07 | KBUF-KPWM, 688 km | 19 | 81 percent | 54 percent | 26 / 8 | 11.0 / 14.1 kft |
+| 11-09 | KBOS-KBWI, 594 km | 18 | 90 percent | 68 percent | 12 / 3 | not measured |
+
+Findings:
+1. **11-12 is the worst day in the period** and the best candidate for the headline case. Use 19-20 UTC: at 21 UTC the sun is too low at the New York end (solar zenith 84 degrees, project limit 80), so cloud water retrievals may degrade there.
+2. **Cloud tops stay at or below about 21 kft** in every strong case, so the pitch remains regional and climb or descent altitudes.
+3. **11-01 reaches the highest tops** (21 kft) with less coverage: a good case for avoiding by climbing. The western route needs GOES-West; the scan used GOES-East.
+4. All strong cases have cloud-top height, optical depth and particle size on 100 percent of the supercooled samples.
+5. Caveats unchanged: no data-quality filter, no parallax correction, 11-12 is a partial and very recent day, PIREPs are reports and not validation.
 ## 6. Official rules digest (read in full on 2026-11-13)
 
 | Rule | Value or text | Consequence |
