@@ -4,11 +4,11 @@
     {
       "name": "Task Progress Tracker",
       "trigger": "PostFileSave",
-      "description": "On any tasks.md save, reports progress for the active cloud-dive plan",
+      "description": "On any tasks.md save, reports progress for the active cloud-dive plan by task group",
       "matcher": "tasks\\.md$",
       "action": {
         "type": "agent",
-        "prompt": "A `tasks.md` file was just saved. Report progress for the active plan `.kiro/specs/cloud-dive/tasks.md` (read it even if a different tasks.md was saved; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline and only needs a one-line count).\n\n1. Count `[x]` and `[ ]` per section: P0 Eligibility, P1 Scored product and video, P2 Kiro depth, P3 Bonuses, Submission.\n2. Active section = first section with an open task. Next task = first open task in it.\n3. Note tasks newly checked since the previous report, if known.\n4. Remind: every completed task needs a row in `docs/kiro-usage-log.md`.\n\nFormat:\n## 📊 Cloud Dive — Task Progress\n**Overall:** X / Y (N%) · **Days to deadline (2026-12-04):** D\n| Section | Status | Done / Total |\n**Active section:** ... **Next task:** ...\n**Baseline (aeroicing-watch):** X / Y\n> ✅ **Just completed:** ... (only if something was newly checked)\nKeep it short. Do not invent completions."
+        "prompt": "A tasks.md file was just saved. Report progress for the active plan `.kiro/specs/cloud-dive/tasks.md`. Read that file even if a different tasks.md was saved; `.kiro/specs/aeroicing-watch/tasks.md` is the completed baseline and needs only a one-line count.\n\n1. Count subtasks written as `- [x] N.M` (done) and `- [ ] N.M` (open) for each top-level group 1 to 9. Use the group titles from the file.\n2. Active group = first group with an open subtask. Next task = its first open subtask.\n3. Name subtasks newly checked since the previous report, if known.\n4. Count the C items in `.kiro/specs/cloud-dive/submission-checklist.md` the same way and list the open items that only the owner can do.\n5. Remind: every completed task needs a row in `docs/kiro-usage-log.md`.\n\nFormat (plain text, no emoji):\nCloud Dive - Task Progress\nOverall: X / Y (N percent). Days to deadline (2026-12-04, 2 pm Pacific): D\nGroup table: group, title, done / total\nActive group: ... Next task: ...\nChecklist: X / Y done. Owner items open: ...\nBaseline (aeroicing-watch): X / Y\nJust completed: ... (only if something was newly checked)\nKeep it short. Do not invent completions."
       }
     }
   ]
