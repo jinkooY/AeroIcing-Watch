@@ -122,23 +122,23 @@ write-up, bonuses, Devpost form) is in
   - _Requirements: R4.8, R8.2, R8.3_
 - [x] 5.6 Checkpoint: run the full test suite and fix failures
 
-- [ ] 6. Build the case exporter
-- [ ] 6.1 Write `tools/check_viewer_contract.py` and tests
+- [x] 6. Build the case exporter
+- [x] 6.1 Write `tools/check_viewer_contract.py` and tests
   - Python port of every rule in `validProfile()`; property test CD-P15
   - _Requirements: R3.4_
-- [ ] 6.2 Write `tools/export_cloud_dive.py`
+- [x] 6.2 Write `tools/export_cloud_dive.py`
   - Manifest-driven: satellite lanes, IFS cube, evidence, params, references, balance
     results, embedded centre-lane viewer profile, provenance, attribution; fails on
     non-finite values, secrets, absolute paths, or a case that fails B1 to B3
   - _Requirements: R1.3, R1.4, R2.7, R3.1, R3.4, R4.2, R4.8_
-- [ ] 6.3 Add manifests for the three cases and a `--simulated` mode
+- [x] 6.3 Add manifests for the three cases and a `--simulated` mode
   - 2026-11-12 JFK-BNA 19:30 UTC (GOES-19), 2026-11-01 DEN-LAX 21 UTC (GOES-18),
     2026-11-07 BUF-PWM 19 UTC (GOES-19); simulated case labelled "Simulated"
   - _Requirements: R3.5, R3.6_
-- [ ] 6.4 Write exporter tests in `tests/test_export_cloud_dive.py`
+- [x] 6.4 Write exporter tests in `tests/test_export_cloud_dive.py`
   - Fixtures in `tmp_path`; attribution present; no paths or keys in the output
   - _Requirements: R1.4, R3.4_
-- [ ] 6.5 Run the real export and commit the cases
+- [x] 6.5 Run the real export and commit the cases
   - Collect the GOES hours and the IFS run, export, run `tune_params.py` (B4 is checked
     across the three cases), commit `static/cloud-dive/cases/`
   - _Requirements: R3.5, R4.8_
