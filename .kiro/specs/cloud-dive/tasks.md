@@ -184,7 +184,7 @@ write-up, bonuses, Devpost form) is in
   - Root from `static/cloud-dive/`, viewer at `/viewer/`; remove the route demo
     from the published site; check that paths resolve in a signed-out browser
   - _Requirements: R10.3, R10.4_
-- [ ] 9.2 Apply decision D1 to the dispatcher view (only if D1 is accepted)
+- [ ] 9.2 Apply decision D1 (replace) to the dispatcher view
   - Evidence levels and kilometres per level instead of the risk badge and
     altitude suggestions
   - _Requirements: R11.2, R9.1_
@@ -195,12 +195,12 @@ write-up, bonuses, Devpost form) is in
 
 ## Notes
 
-- Open confirmations F1 to F6 (`requirements.md` 5.6) must be answered before task 5.
+- Confirmations F1 to F6 (`requirements.md` 5.6) must be answered before task 5.
 - Task 6.5 and the real data runs need network access; the rest runs offline.
 - Parameter values (price, anti-ice factor, drag, ice rates) are illustrative; tune
   them only through `tools/tune_params.py` and record changes in the usage log.
 - Add one row to `docs/kiro-usage-log.md` per completed task.
-- Task 9.2 is conditional on decision D1.
+- Decision D1 is settled (replace), so task 9.2 is not conditional.
 
 ## Task Dependency Graph
 

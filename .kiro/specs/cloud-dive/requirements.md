@@ -198,8 +198,8 @@ by pattern and text label.
 
 11.1 THE SYSTEM SHALL keep `/api/icing/*`, the `validProfile()` contract and the
 standalone viewer working.
-11.2 THE HANDLING of the legacy risk badge and altitude suggestions SHALL follow
-decision D1 (pending).
+11.2 THE DISPATCHER VIEW SHALL show evidence levels and kilometres per level instead of
+the legacy risk badge and altitude suggestions (decision D1, replace).
 
 ### R12 Submission package
 
@@ -231,6 +231,8 @@ wins; section 4 and `design.md` are rewritten after the three items marked
 | P9 | The WeatherPath-derived code is re-inventoried in `docs/Preexisting_Work_Disclosure.md`. |
 | P10 | The owner releases the copied and adapted WeatherPath code under Apache-2.0 (confirmed 2026-11-13). |
 | P11 | Legacy components are marked in the README and the disclosure; nothing is deleted. Files are attributed to Kiro, Claude or Codex in the disclosure; files git cannot attribute are listed for the owner to resolve. |
+| P12 | **D1 decided (2026-11-13): replace.** The dispatcher view shows evidence levels and kilometres per level instead of the risk badge and the altitude suggestions. The API fields stay for compatibility. |
+| P13 | **Attribution decided (2026-11-13):** every file git cannot attribute was written by Claude (owner statement). LICENSE and the one-line README.md of the initial commit come from repository creation. |
 
 ### 5.2 Kiro judgements (owner may veto)
 
