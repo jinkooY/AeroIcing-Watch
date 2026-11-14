@@ -127,6 +127,13 @@ test("labels: airport codes, Top of climb, and 'estimated' on the nearest estima
     clouds: Array.from({ length: 10 }, (_, i) => ({ lane: 1, step: i, x0Km: i * 10, x1Km: i * 10 + 10, zKm: 0, halfWidthKm: 3, topFt: 20000, baseFt: null, bottomFt: 19650, baseEstimated: true })),
   });
   assert.equal(G.pickLabels(many).filter((l) => l.kind === "base").length, G.MAX_BASE_LABELS);
+  // 21.7: the base label sits at the far end and lane edge of its volume, width 4.5, never at the centre.
+  const b = G.pickLabels(many).find((l) => l.kind === "base");
+  const cl = many.clouds.find((c) => c.x1Km === b.x);
+  assert.ok(cl, "label x is the far end of a volume");
+  assert.equal(b.z, cl.zKm + cl.halfWidthKm);
+  assert.equal(b.width, 4.5);
+  assert.notEqual(b.x, (cl.x0Km + cl.x1Km) / 2);
 });
 
 test("lane sheets, airport markers and the frame are finite and non-empty", () => {
@@ -216,6 +223,20 @@ test("draw plan on the real cases (via buildScene): finite, under budget, Observ
   }
 });
 
+test("CD-P34 evidence box alpha is scaled by weight and geometryKey mixes it (synthetic)", () => {
+  const a = synthetic();
+  const full = G.evidenceBoxes(a);
+  const faint = G.evidenceBoxes({ ...a, evidence: a.evidence.map((b) => ({ ...b, weight: 0.25 })) });
+  assert.equal(full.length, faint.length);
+  full.forEach((b, i) => {
+    assert.ok(Math.abs(faint[i].alpha - b.alpha * 0.25) < 1e-12);
+    assert.equal(faint[i].level, b.level);
+    assert.equal(faint[i].y0, b.y0);
+  });
+  assert.notEqual(G.geometryKey({ ...a, evidence: a.evidence.map((b) => ({ ...b, weight: 1 })) }),
+    G.geometryKey({ ...a, evidence: a.evidence.map((b) => ({ ...b, weight: 0.25 })) }));
+});
+
 test("geometryKey: stable for equal scenes, changes with geometry, ignores camera and cloudAlpha", () => {
   const a = synthetic();
   assert.equal(G.geometryKey(a), G.geometryKey(synthetic()));
@@ -248,8 +269,30 @@ test("cockpit3d.js loads in Node and re-exports the WebGL test", async () => {
   assert.equal(mod.EYE_HEIGHT_KM, G.EYE_HEIGHT_KM);
 });
 
-test("frost: opacity = effects.frost, clamped, zero when absent (R18.1)", () => {
-  assert.equal(G.frostOpacity({ effects: { frost: 0.37 } }), 0.37);
+test("frost: opacity = min(1, 2 x effects.frost) at ice 0, 25, 50, 100 (R22.6)", () => {
+  const at = (ice) => G.frostOpacity({ effects: { frost: ice / 100 } });
+  assert.equal(at(0), 0);
+  assert.equal(at(25), 0.5);
+  assert.equal(at(50), 1);
+  assert.equal(at(100), 1);
+});
+
+test("lane guides: one thin dashed strip per lane, dash texture generated (R22.7)", () => {
+  const g = G.guideBoxes(synthetic());
+  assert.equal(g.length, 3);
+  for (const b of g) {
+    assert.ok(b.z1 - b.z0 <= 0.07 && b.z1 - b.z0 > 0, "thin strip");
+    assert.ok(b.tile > 0, "dash tile set");
+  }
+  const d = G.dashData(32);
+  assert.equal(d.length, 32 * 32 * 4);
+  const alphas = new Set(Array.from(d).filter((_, i) => i % 4 === 3));
+  assert.deepEqual([...alphas].sort((a, b) => a - b), [0, 255]);
+  assert.deepEqual(Array.from(G.dashData(32)), Array.from(d));
+});
+
+test("frost: opacity is clamped, doubled, zero when absent (R18.1)", () => {
+  assert.equal(G.frostOpacity({ effects: { frost: 0.37 } }), 0.74);
   assert.equal(G.frostOpacity({ effects: { frost: 2 } }), 1);
   assert.equal(G.frostOpacity({ effects: { frost: -1 } }), 0);
   assert.equal(G.frostOpacity({ effects: { frost: NaN } }), 0);

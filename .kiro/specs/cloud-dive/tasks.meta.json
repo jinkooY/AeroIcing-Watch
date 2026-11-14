@@ -1263,6 +1263,171 @@
         "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
         "timestamp": 1794573147390
       }
+    ],
+    "21.1 Record the \"before\" screenshots (before any code change)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616629706
+      },
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616635462
+      },
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794619844706
+      }
+    ],
+    "21.2 Slim overlay panel, large windshield and bottom-bar texts (design 15.1)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630346
+      },
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794619844864
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794625699984
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626251437
+      }
+    ],
+    "21.3 Sky gates (design 15.2)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630484
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626255538
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626598466
+      }
+    ],
+    "21.4 Evidence emphasis near the aircraft altitude (design 15.3)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630545
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626602850
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626733426
+      }
+    ],
+    "21.5 Stronger frost curve and thin dashed lane guides (design 15.4)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630595
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626738436
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626887853
+      }
+    ],
+    "21.6 Report headline with the dollar gaps (design 15.5)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630641
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794626893058
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627071624
+      }
+    ],
+    "21.7 Post-climb status text and \"base estimated\" label (design 15.6)": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630682
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627076867
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627284474
+      }
+    ],
+    "21.8 Wording test, unchanged-engine check and scene purity": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630741
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627290013
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627496220
+      }
+    ],
+    "21.9 Checkpoint: \"after\" screenshots and full test run": [
+      {
+        "executionId": "7fc0a5de-4715-409e-8b57-edb2265638f0",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794616630792
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627502977
+      },
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627978712
+      }
+    ],
+    "21. (h) Visual polish (revision c)": [
+      {
+        "executionId": "3cf73194-e3ee-4980-8485-824791f044cc",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794627978798
+      }
     ]
   }
 }

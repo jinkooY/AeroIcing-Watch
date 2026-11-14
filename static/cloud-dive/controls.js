@@ -4,7 +4,10 @@
 // Space = continue or pause. Buttons are at least 44 px high for pointer and touch.
 
 import { createController } from "./controller.js";
-import { keyAction, dispatchAction } from "./gate-controls.js";
+import { keyAction, dispatchAction, GATE_LABELS } from "./gate-controls.js";
+
+// The one label of the button that starts or resumes the flight; the status text names the same constant.
+const goLabel = GATE_LABELS.continue;
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -146,7 +149,7 @@ export function initControls(deps) {
     aiBtn.setAttribute("aria-label", `Anti-ice switch, currently ${st.antiIce ? "on" : "off"}`);
     aiBtn.disabled = !active;
 
-    goBtn.textContent = mode === "running" ? "Pause" : st.step === 0 && mode === "paused" ? "Start" : "Continue";
+    goBtn.textContent = mode === "running" ? GATE_LABELS.pause : goLabel;
     goBtn.disabled = !active;
 
     const km = Math.round(st.step * c.stepKm);
@@ -155,7 +158,7 @@ export function initControls(deps) {
     else if (mode === "ended" || !active) {
       message = st.status === "diverted" ? "Flight ended: forced diversion (not ranked)." : "Flight ended: arrived.";
     } else if (mode === "running") message = "Fast-forwarding. Press Pause to stop between steps.";
-    else message = st.step === 0 ? "Ready at the start. Set the targets, then press Start." : `Paused at ${km} km.`;
+    else message = st.step === 0 ? `Ready at the start. Set the targets, then press ${goLabel}.` : `Paused at ${km} km.`;
 
     gatePanel.classList.toggle("is-gate", mode === "gate");
     gateTitle.textContent = mode === "gate" ? gateHeading(reasons.length ? reasons : [why]) : "Flight status";

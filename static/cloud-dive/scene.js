@@ -186,6 +186,14 @@ export function buildClouds(file, c, step, lanes, viewKm = VIEW_KM) {
 // (as the 2D curtain). When MAX_EVIDENCE_BANDS binds, Observed is kept first, then Possible, then Not assessed,
 // nearest steps first inside one level. Nothing is drawn in takeoff and climb (R15.15, handled in buildScene).
 export const NA_NEAR_FT = 2000;
+export const NEAR_EVIDENCE_FT = 2000;
+export const FAR_EVIDENCE_WEIGHT = 0.25;
+// Design 15.3: display emphasis only. 1 within NEAR_EVIDENCE_FT of the band interval, else FAR_EVIDENCE_WEIGHT.
+export function evidenceWeight(loFt, hiFt, altFt) {
+  const a = num(altFt);
+  const d = a < loFt ? loFt - a : a > hiFt ? a - hiFt : 0;
+  return d <= NEAR_EVIDENCE_FT ? 1 : FAR_EVIDENCE_WEIGHT;
+}
 
 export function levelName(file, level) {
   const names = file && file.rule && Array.isArray(file.rule.levels) ? file.rule.levels : null;
@@ -238,11 +246,50 @@ export function buildEvidence(file, c, step, lanes, altFt, viewKm = VIEW_KM) {
   }
   return list.map((b) => ({
     ...b,
+    weight: evidenceWeight(b.loFt, b.hiFt, altFt),
     x0Km: round6(Math.max(0, b.step0 * c.stepKm)),
     x1Km: round6(Math.min(c.distanceKm, (b.step1 + 1) * c.stepKm)),
     zKm: lanes[b.lane].zKm,
     halfWidthKm: round6((c.lanesKm.length > 1 ? Math.abs(c.lanesKm[1] - c.lanesKm[0]) : DEFAULT_LANE_WIDTH_KM) / 2 * LATK),
   }));
+}
+
+// Sky gates (design 15.2, R22.4, R22.11). Five frames, one per lane, at the target altitude, only in the gate phase.
+// Evidence only: no cost field, no recommendation, no ranking between lanes (R6.5, R9.4). Display only.
+export const GATE_AHEAD_KM = 18; // frame distance ahead of the boundary (far enough that all five frames fit in the windshield)
+export const GATE_HALF_FT = 1000; // frame half height around the target altitude
+export const GATE_LOOKAHEAD_CELLS = 3;
+// Worst first: Observed, Possible, Not assessed, Not indicated. Not assessed outranks Not indicated, so a missing
+// cell is never read as clear (guardrails).
+const GATE_RANK = { [engine.OBSERVED]: 4, [engine.POSSIBLE]: 3, [engine.NOT_ASSESSED]: 2, [engine.NOT_INDICATED]: 1 };
+
+// Worst level of the next three cells of a lane at an altitude index; Not assessed when no cell remains.
+export function gateLevel(c, lane, step, altIdx) {
+  const first = Math.max(0, Math.floor(num(step)));
+  let worst = null;
+  for (let s = first; s < first + GATE_LOOKAHEAD_CELLS && s <= c.nSteps - 1; s++) {
+    const lv = engine.levelAt(c, lane, s, altIdx);
+    if (worst === null || (GATE_RANK[lv] || 0) > (GATE_RANK[worst] || 0)) worst = lv;
+  }
+  return worst === null ? engine.NOT_ASSESSED : worst;
+}
+
+export function buildGates(file, c, st, lanes, phase) {
+  if (phase !== "gate") return [];
+  const altIdx = clamp(Math.floor(num(st.targetAlt, st.alt)), 0, c.nAlts - 1);
+  const altFt = c.altsFt[altIdx];
+  const spacing = c.lanesKm.length > 1 ? Math.abs(c.lanesKm[1] - c.lanesKm[0]) : DEFAULT_LANE_WIDTH_KM;
+  const halfWidthKm = round6(spacing / 2 * LATK);
+  const xKm = round6(clamp(num(st.step) * c.stepKm + GATE_AHEAD_KM, 0, Math.max(c.distanceKm, 0)));
+  return lanes.map((l) => {
+    const levelIndex = gateLevel(c, l.index, st.step, altIdx);
+    const name = levelName(file, levelIndex);
+    return {
+      lane: l.index, zKm: l.zKm, xKm, altFt, yKm: ftToDisplayKm(altFt),
+      halfWidthKm, halfHeightKm: ftToDisplayKm(GATE_HALF_FT),
+      levelIndex, level: name, label: name, isCurrent: l.isCurrent, isTarget: l.isTarget,
+    };
+  });
 }
 
 // Effects and panel data (design 14.8, R16.2, R16.8, R16.9, R18.1 to R18.3). Reads the engine state only.
@@ -310,8 +357,8 @@ export function buildEffects(file, c, st, phase, altFt, opts) {
   const km = Math.round(num(engine.stateDistanceKm(st)));
   const wind = headwindKt >= 0 ? `head-wind ${headwindKt} kt` : `tail-wind ${-headwindKt} kt`;
   const textLine = lead
-    ? `${levelHere} | ${sourceText(file)}`
-    : `Lane ${st.lane + 1} of ${c.nLanes} | ${km} km | ${wind} | here: ${levelHere} | ahead: ${levelAhead} | ${sourceText(file)}`;
+    ? `${levelHere}`
+    : `Lane ${st.lane + 1} of ${c.nLanes} | ${km} km | ${wind} | here: ${levelHere} | ahead: ${levelAhead}`;
   return { effects, levelHere, levelAhead, textLine };
 }
 
@@ -391,6 +438,7 @@ export function buildScene(file, state, pose, opts) {
     cloudAlpha: cloudAlphaFor(phase, p),
     clouds: buildClouds(file, c, st.step, lanes),
     evidence: LEAD_PHASES.has(phase) ? [] : buildEvidence(file, c, st.step, lanes, altFt),
+    gates: buildGates(file, c, st, lanes, phase),
     effects: fx.effects,
     panel: {
       totalUsd: num(engine.totalUsd(c, st)),

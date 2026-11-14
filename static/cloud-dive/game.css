@@ -247,6 +247,9 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 }
 
 /* End-of-flight report (task 8.4) */
+.report-lead { margin: 8px 0 12px; line-height: 1.4; }
+.report-lead-main { font-size: 1.35rem; font-weight: 700; }
+.report-lead-best { font-size: 1rem; color: var(--muted); }
 .report-total { font-size: 1.2rem; font-weight: 600; }
 .report-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
 .report-table caption { text-align: left; color: var(--muted); padding-bottom: 4px; }
@@ -266,11 +269,9 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
   position: relative; min-width: 0; min-height: 0; overflow: hidden;
   background: #0c1015; border: 1px solid var(--line); border-radius: 8px;
 }
-/* Task 15.6: the view is a column. The canvas (the windshield) takes the space above the panel, so the panel never
-   covers the scene; the 3D frame is drawn at the canvas aspect. */
-.cockpit-view { display: flex; flex-direction: column; }
-.cockpit-canvas { position: relative; display: block; flex: 1 1 0; width: 100%; height: 0; min-height: 160px; }
-#cockpit-panel { flex: 0 0 auto; }
+/* Task 21.2 (design 15.1): the canvas (the windshield) fills the view; the panel is a slim overlay on top of it. */
+.cockpit-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; min-height: 160px; }
+#cockpit-panel { position: absolute; inset: 0; pointer-events: none; }
 .view-notice {
   margin: 0 0 6px; padding: 6px 10px; font-size: 0.85rem;
   border: 1px solid var(--warn); border-radius: 6px; background: #2a2218;
@@ -278,12 +279,16 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
 body.view-cockpit .col-left,
 body.view-cockpit .scene-wrap,
-body.view-cockpit #controls .ctl-row,
-body.view-cockpit .src-line { display: none; }
+body.view-cockpit #controls .ctl-row { display: none; }
 body.view-cockpit .col-right { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
 body.view-cockpit .gate-panel { height: auto; min-height: 88px; max-height: 150px; flex: 0 0 auto; }
 body.view-cockpit .gate-inset { height: 140px; }
+/* Stacked layouts (narrow or portrait): the overlay cockpit needs its own height, because the page scrolls. */
+@media (max-width: 1279px), (orientation: portrait) {
+  body.view-cockpit .cockpit-view { height: auto; aspect-ratio: 16 / 10; min-height: 330px; }
+}
 @media (max-width: 760px) {
-  body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+  body.view-cockpit .cockpit-view { aspect-ratio: auto; min-height: 420px; }
   body.view-cockpit .col-right { max-height: 45dvh; }
 }

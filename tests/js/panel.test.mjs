@@ -71,3 +71,20 @@ for (const n of names) {
     assert.match(sc.panel.textLine, /head-wind|tail-wind/);
   });
 }
+
+// Task 21.2 (design 15.1, R22.1 and R22.3): the source line lives only in the bottom bar, the panel no longer
+// builds the game note or source nodes, and the drawn dashboard is lower so the windshield opening is larger.
+test("21.2: scene text line carries no source text; the panel has no note or source nodes", async () => {
+  const f = load(names[0]);
+  const c = E.loadCase(f);
+  for (const phase of ["ready", "climb", "cruise"]) {
+    const sc = S.buildScene(f, { ...E.initialState(c), step: 2 }, { phase }, {});
+    assert.ok(!/UTC|GOES|ECMWF/.test(sc.panel.textLine), `${phase}: ${sc.panel.textLine}`);
+  }
+  const src = readFileSync(path.resolve(casesDir, "../panel.js"), "utf8");
+  assert.ok(!src.includes("cp-game-note") && !src.includes("cp-source"));
+  assert.ok(!src.includes("fitCanvas(tapeCanvas"), "altitude tape is not mounted in the cockpit");
+  const G = await import("../../static/cloud-dive/cockpit-geometry.js");
+  assert.ok(G.FRAME.panelTop <= -0.7);
+  assert.ok(G.openingFraction() >= 0.7, `opening ${G.openingFraction()}`);
+});

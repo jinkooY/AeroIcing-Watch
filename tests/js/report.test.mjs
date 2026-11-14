@@ -151,6 +151,52 @@ test("share text and report labels avoid R9.1 words and ranking claims", () => {
   assert.match(texts[0], /not a flight procedure/);
 });
 
+// Feature: cloud-dive, Property 35 (CD-P35): report headline. Synthetic report numbers; fast-check is not
+// installed, so a seeded generator draws the totals.
+function fakeReport(total, straight, best, ranked = true) {
+  return { ranked, totalUsd: total, references: { straight_ahead: straight, best } };
+}
+
+test("CD-P35 headline: amount, more/less, gap to Best (synthetic numbers, seeded draws)", () => {
+  let s = 12345;
+  const rnd = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
+  for (let i = 0; i < 200; i++) {
+    const best = 1000 + rnd() * 5000;
+    const straight = best + rnd() * 3000;
+    const total = best + (rnd() * 4000 - 500);
+    const h = R.reportHeadline(fakeReport(total, straight, best));
+    const d = total - straight;
+    assert.equal(h.vsStraight.usd, Math.round(Math.abs(d)));
+    if (h.vsStraight.usd > 0) {
+      const word = d > 0 ? "more" : "less";
+      assert.equal(h.vsStraight.text, `${R.formatUsdWhole(h.vsStraight.usd)} ${word} than Straight-ahead`);
+    } else assert.equal(h.vsStraight.text, "The same as Straight-ahead");
+    assert.equal(h.aboveBest.usd, Math.max(0, Math.round(total - best)));
+    assert.ok(h.aboveBest.usd >= 0);
+  }
+});
+
+test("headline examples: dearer, cheaper, equal to Straight-ahead, equal to Best, missing reference, diverted", () => {
+  let h = R.reportHeadline(fakeReport(5300, 5000, 4000));
+  assert.equal(h.vsStraight.text, "$300 more than Straight-ahead");
+  assert.equal(h.aboveBest.text, "$1,300 above Best");
+  h = R.reportHeadline(fakeReport(4200, 5000, 4000));
+  assert.equal(h.vsStraight.text, "$800 less than Straight-ahead");
+  assert.equal(h.aboveBest.text, "$200 above Best");
+  h = R.reportHeadline(fakeReport(5000.2, 5000, 4000));
+  assert.equal(h.vsStraight.text, "The same as Straight-ahead");
+  h = R.reportHeadline(fakeReport(4000, 5000, 4000));
+  assert.equal(h.aboveBest.usd, 0);
+  assert.equal(h.aboveBest.text, "The same as Best");
+  h = R.reportHeadline(fakeReport(3999.9, 5000, 4000));
+  assert.equal(h.aboveBest.usd, 0);
+  h = R.reportHeadline(fakeReport(4500, null, null));
+  assert.equal(h.vsStraight, null);
+  assert.equal(h.aboveBest, null);
+  assert.equal(R.reportHeadline(fakeReport(4500, 5000, 4000, false)), null);
+  assert.equal(R.reportHeadline(null), null);
+});
+
 test("personal best key is v2 and an old v1 value is ignored", () => {
   assert.equal(R.STORAGE_PREFIX, "cloud-dive:best:v2:");
   const store = fakeStorage();

@@ -415,16 +415,19 @@ arrow keys for lane and altitude, A for anti-ice, Space to continue or pause.
 | CD-P20 | Renderer columns: per lane, the number of "Not assessed" curtain columns equals the number of steps whose satellite state is neither observed nor clear, for both array shapes | R10.1, R2.5 |
 | CD-P21 | Map registration: for every lane and step, project then unproject returns the point within half a pixel, and every lane point lies inside the image extent | R13.1, R13.2 |
 | CD-P22 | Map and side view agree: the evidence drawn for a lane cell on the map equals the level of the side-view column for that lane, step and altitude | R13.5 |
-| CD-P23 | Scene purity: same (case, engine state, phase pose, options) gives a deep-equal scene; deep-frozen inputs are not mutated; the scene holds only finite numbers | R19.5 |
+| CD-P23 | Scene purity: same (case, engine state, phase pose, options) gives a deep-equal scene; deep-frozen inputs are not mutated; the scene holds only finite numbers; revision c: this includes `gates[]` and the band `weight` (section 15) | R19.5, R22.4, R22.5 |
 | CD-P24 | Cloud truth: every cloud volume lies on a lane and step whose retrieval is `observed` with a finite top; none where `clear`; top and base equal the case numbers within the merge tolerance; a null base gives a faded, "estimated" volume | R16.6 |
-| CD-P25 | Evidence mapping: every evidence band has the level the engine reports (`levelAt`) for each cell it covers; `Not indicated` produces no band; every Observed cell in the view window is covered by a band | R16.7, R16.8 |
+| CD-P25 | Evidence mapping: every evidence band has the level the engine reports (`levelAt`) for each cell it covers; `Not indicated` produces no band; every Observed cell in the view window is covered by a band; revision c: the band `weight` never changes a band's level, count or extent, and every gate level agrees with `levelAt` (CD-P33) | R16.7, R16.8, R22.4, R22.5 |
 | CD-P26 | Budgets: for every case, step and altitude, volumes <= `MAX_CLOUD_VOLUMES`, bands <= `MAX_EVIDENCE_BANDS`, estimated triangles <= `MAX_TRIANGLES` | R19.3 |
 | CD-P27 | Gate-choice equivalence: any sequence of panel actions gives the same engine targets and the same flight as the matching 2D actions; targets stay inside the corridor and the block | R17.2, R7.2 |
-| CD-P28 | Effects: frost = ice / 100 and never decreases over a flight; shake is 0 unless anti-ice is off, the cell is Observed or Possible, ice > 0 and reduced motion is off; the wing-heat lamp equals the anti-ice switch | R18.1, R18.2, R18.3, R15.12 |
+| CD-P28 | Effects: `effects.frost` = ice / 100 and never decreases over a flight; revision c: the drawn frost opacity `frostOpacity(scene)` = min(1, 2 x frost), so it is 0.5 at ice 25, 1.0 from ice 50, non-decreasing in ice, and never decreases over a flight; shake is 0 unless anti-ice is off, the cell is Observed or Possible, ice > 0 and reduced motion is off; the wing-heat lamp equals the anti-ice switch | R18.1, R18.2, R18.3, R15.12 |
 | CD-P29 | Departure constant: for any action sequence the departure climb component is the same number; displayed total = engine total + constant; engine state and balance B1 to B5 are unchanged by it | R15.5 |
 | CD-P30 | Phase machine: only the transitions of section 14.6 occur; the engine steps only in cruise and gate; the engine state at the start of cruise is the initial state; skipping a cinematic changes no value; in takeoff and climb the camera x is in [-`LEAD_IN_KM`, 0], no volume has x0 < 0, no evidence band is drawn and `cloudAlpha` is 1 only after the fade | R15.6, R15.7, R15.11, R15.13, R15.15 |
 | CD-P31 | Hot-seat: the table has one row per player, ranked flights ordered by total, diverted flights marked "not ranked", nothing written to storage except the per-case local best | R20.2, R20.3 |
 | CD-P32 | Cost pop-up: N equals the sum of the component differences between two consecutive stops, is never negative, and is not shown before any choice at a gate | R18.5, R6.5 |
+| CD-P33 | Sky gate level (revision c): in the gate phase `gates` has exactly five entries, one per lane in order, each at the target altitude; its level is the worst, in the order Observed, Possible, Not assessed, Not indicated, of `levelAt` over the next three cells of that lane at the target altitude; replacing one of those cells by a higher-ranked level never lowers the gate level; a gate is never `Not indicated` when any of its cells is `Not assessed`; outside the gate phase `gates` is empty; no gate field carries a cost or a recommendation | R22.4, R22.11, R6.5, R2.5 |
+| CD-P34 | Evidence emphasis (revision c): every band `weight` is 1 when the aircraft altitude is within 2,000 ft of the band interval and 0.25 otherwise; the weight depends only on the band interval and the aircraft altitude; it changes no level, count, extent or label | R22.5 |
+| CD-P35 | Report headline (revision c): for any ranked report with finite Straight-ahead and Best references, the headline dollar amount is the rounded absolute difference to Straight-ahead, the words "more" or "less" match its sign, the gap to Best is the rounded total minus Best (not below 0), and the saving share of R8.2 is unchanged | R22.8, R8.2 |
 
 Unit tests cover every rule row, the cost formulas with fixed numbers, and the
 parallax correction on a synthetic cloud. A wording test scans `static/cloud-dive/**`
@@ -622,3 +625,199 @@ Straight-ahead as the last two rows. It is held in memory only (CD-P31).
 Display-scale Why text: vertical exaggeration, lateral compression of lane spacing, and the lead-in before "Top of climb". Cost pop-up text: "+$N this segment". Button labels: "Fly through", "Climb over", "Descend", "Go left", "Go right", "Anti-ice",
 "Continue", "Pause", "2D view", "Skip". Panel lamp text says "lamp". Scene strings, panel
 strings and Why-card text are scanned by `tests/test_wording.py` for the terms of R9.1.
+
+## 15. Visual polish (revision c)
+
+Covers R22 and decision G15. This is a presentation change over the revision b cockpit. The engine
+(`engine.js`, `game_core`), the cost model, the case files, the evidence rule and all evidence values are
+unchanged (R22.11). No new file is introduced, so the module table in section 2 and section 13 stay as they are.
+Files touched: `static/cloud-dive/scene.js`, `cockpit-geometry.js`, `cockpit3d.js`, `panel.js`, `cockpit.css`,
+`game.css`, `index.html`, `report.js`, `report-view.js`, `controls.js`, `takeoff.js`, `game.js`.
+
+What the code does today (read 2026-11-13) and what is wrong with it:
+- `#cockpit-view` is a flex column: `.cockpit-canvas` (`flex: 1 1 0`) above `#cockpit-panel`. The panel is a
+  five-column grid with a legend row, a text row, and a note and source row (`.cockpit-panel`), so it takes a large
+  share of the height. The drawn dashboard (`FRAME.panelTop = -0.52` in `cockpit-geometry.js`) takes a further quarter of
+  the canvas.
+- `createPanel()` in `panel.js` writes the game note (`.cp-game-note`, from `GAME_NOTE`) and the source line
+  (`.cp-source`) again, although `index.html` already shows both in `<footer class="bottom">` (`#game-note`,
+  `#src-line`, filled by `game.js`). The scene text line (`buildEffects` in `scene.js`) also ends with `sourceText(file)`.
+- Gate choice shows only lane guides (`guideBoxes`, one 0.5 km wide sheet per lane) and the evidence bands.
+- `frostOpacity(scene)` returns `effects.frost` (= ice / 100) unchanged, so frost is faint until about ice 50.
+- `report-view.js` shows the total, a components table, the references table and the saving share, with no
+  dollar difference to the references in the lead.
+
+### 15.1 Layout (R22.1 to R22.3, R22.10)
+The windshield canvas fills the cockpit view and the panel becomes a slim overlay on top of it.
+
+```
++-------------------------------------------------------------+
+| level strip (4 names, patterns)            [panel map inset] |
+| text line (one small line)                                   |
+|                                                              |
+|                 windshield (WebGL canvas)                    |
+|                                                              |
+| [Fuel $]  [Ice index (game model) ####  n of 100]  [Anti-ice: off (lamp)]  [Altitude ft] |
++-------------------------------------------------------------+
+| bottom bar: game note (once) | attribution + source line (once) | buttons |
+```
+
+- `.cockpit-view` keeps `position: relative` and drops its column layout. `.cockpit-canvas` is `position: absolute;
+  inset: 0`. `#cockpit-panel` is positioned over the bottom edge and holds one row: `.cp-fuel`, `.cp-ice`
+  (label, `<meter>`, number; the `.cp-help` sentence moves into the `title` attribute), `.cp-switch` (button plus lamp
+  and lamp text) and the altitude. The altitude is a numeric readout (`formatFeet`). `drawAltitudeTape` is no longer
+  mounted in the cockpit; the function and its tests stay in `panel.js` for now (an optional later clean-up).
+- The legend becomes a compact strip at the top of the windshield: `legendItems(p.legend)` renders swatch plus exact
+  level name; the pattern word moves into `title` and `aria-label`. The swatch patterns stay (R10.1). At widths
+  below about 900 px the strip wraps to two rows.
+- The text line (`.cp-text-line`, `aria-live`) stays as one small line under the strip with ellipsis overflow.
+  `buildEffects` stops appending `sourceText(file)` to `textLine`; the source line lives in the bottom bar only.
+  The `ANNOUNCE_MS` throttle is unchanged.
+- The panel map (`.cp-map`, R16.5) becomes a small inset in the top-right corner of the windshield (about 150 x 84
+  CSS pixels). Its text alternative stays.
+- Duplicates removed: `.cp-game-note` and `.cp-source` and their grid areas in `cockpit.css`, the `gameNote` and
+  `sourceEl` nodes and the `sourceEl.textContent = ...` line in `createPanel`. `GAME_NOTE` stays exported for the
+  existing tests and for the text of `#game-note`, so the string has one source. The bottom bar
+  (`index.html` `footer.bottom`) is the one place for the game note (R9.3) and the source line (R1.3). A DOM check
+  confirms that, in the cockpit view, the note text and the `sourceLine()` text each occur once.
+- The drawn dashboard shrinks: `FRAME.panelTop` moves from -0.52 to about -0.72 (starting value, tuned), so the
+  `openingFraction()` of the frame rises from about 0.69 to about 0.79 of the canvas height. With the top bar
+  (about 48 px) and the bottom bar (about 28 px) at 1280 x 720 the canvas is about 640 px, which gives a windshield
+  of about 500 px, about 70 percent of the flight screen height. These numbers are estimates and are checked in
+  15.7, not assumed.
+- Measurement hook: `?layoutcheck=1` (existing, `game.js` `layoutFits`) also sets `data-windshield` on `<body>` to the
+  ratio of the frame opening height (canvas `clientHeight` x `openingFraction()`) to `innerHeight`. Headless only.
+- The 2D view, the one-screen rules of 9.2 and the narrow-screen stacking (R14.6) are unchanged. In the cockpit
+  view the gate inset (`.gate-inset`) and the gate buttons stay in `#gate-choices`.
+
+### 15.2 Sky gates (R22.4, R22.11)
+Scene description (`scene.js`, pure, tested in Node). `buildScene` adds `gates`:
+
+```json
+"gates": [{"lane": 0, "zKm": -15, "xKm": 0, "altFt": 0, "yKm": 0, "halfWidthKm": 3.75, "halfHeightKm": 0,
+           "levelIndex": 3, "level": "Observed supercooled layer at planned altitude",
+           "label": "Observed supercooled layer at planned altitude", "isCurrent": false, "isTarget": false}]
+```
+
+- `buildGates(file, c, st, lanes, phase)` returns `[]` unless `phase === "gate"`, otherwise exactly five entries
+  (one per lane, in lane order). If a pause does not put the game into the `gate` phase, no frames are shown at a
+  pause; this is confirmed against `phases.js` during the task and not assumed.
+- Position: `zKm` and `halfWidthKm` come from the same `lanes` and `LATK` rule as `buildEvidence`; `xKm` is the
+  camera x at the boundary plus `GATE_AHEAD_KM` (new constant, starting value 6); `altFt = c.altsFt[st.targetAlt]`
+  and `yKm = ftToDisplayKm(altFt)`; the frame is `GATE_HALF_FT` (starting value 1,000 ft) high above and below
+  that altitude.
+- Level: the worst of the next three cells of that lane at the target altitude index,
+  `engine.levelAt(c, lane, s, st.targetAlt)` for `s = st.step .. st.step + 2`, cut at `c.nSteps - 1`. Rank order
+  (highest first): Observed, Possible, Not assessed, Not indicated. If no cell remains, the level is `Not assessed`,
+  never `Not indicated` (guardrails). `Not assessed` therefore outranks `Not indicated`, so a mix of missing and
+  clear cells reads as missing.
+- Label: `levelName(file, levelIndex)` (the exact name from the case file `rule.levels`, falling back to
+  `STRINGS.levels`). No new text is invented, so the wording test needs no new rows for the label itself.
+- Evidence only: no cost field, no recommendation, no ranking between lanes (R6.5, R9.4). `panel.gate` stays `null`.
+
+Drawing (`cockpit-geometry.js` and `cockpit3d.js`):
+- `gateBoxes(scene)` returns, per gate, four thin outline bars and one fill quad (about 60 triangles per gate, 300 in
+  all) in the same box format as `evidenceBoxes`. The outline is drawn for every level, so the `Not indicated` frame
+  is an empty frame with no fill (R22.4).
+- Fills use four patterns that differ by shape, not by hue alone: Observed, orange with dense diagonal lines
+  (`diagonalData`, new texture generator); Possible, blue dots (existing `stippleData`); Not assessed, grey vertical
+  stripes (`stripeData`, new; distinct from the diagonal hatch used by the evidence bands); Not indicated, none.
+  Colours reuse `EVIDENCE_STYLE`.
+- `pickLabels(scene)` adds one `kind: "gate"` label per gate (text = `gate.label`, placed at the top edge of the
+  frame, `width` about 7). `setLabels` and `labelTexture` in `cockpit3d.js` draw it unchanged. At most five gate labels
+  exist in addition to the airport and base labels.
+- `buildDrawPlan` gets a `gates` group (new slot `gates` in `createCockpit`, `renderOrder` above the evidence
+  slots, `depthTest` on so clouds can hide a distant frame). `geometryKey(scene)` mixes the gate levels, lanes and
+  `yKm` so buffers rebuild only when they change. Gate triangles count toward `MAX_TRIANGLES`; the cap order in
+  `buildDrawPlan` drops the gates last (they are the decision aid) and CD-P26 gains "gates <= 5".
+- Frames are display only: the engine targets change only through `gate-choices` as before (CD-P27).
+
+### 15.3 Evidence emphasis (R22.5)
+- `buildEvidence` (`scene.js`) adds `weight` to every band: 1 when the aircraft altitude `altFt` is inside the band
+  interval widened by `NEAR_EVIDENCE_FT` (2,000 ft, the value `NA_NEAR_FT` already has), otherwise
+  `FAR_EVIDENCE_WEIGHT` (0.25). The band interval is `[loFt, hiFt]`; the distance is 0 inside it and the distance to the
+  nearer edge outside it. Bands are merged by `level|lo|hi`, which does not involve the weight, so one run has one weight.
+- `evidenceBoxes(scene)` multiplies `alpha` by `weight`. The band list, levels, extents and labels are unchanged
+  (CD-P25, CD-P34). `Not assessed` bands exist only within 2,000 ft already (`NA_NEAR_FT`), so their weight is 1.
+- `geometryKey` mixes the weight, so a change of altitude by 1,000 ft rebuilds the evidence buffers (it already
+  rebuilds when the band set changes).
+- Display only; the engine and the evidence rule never read the weight.
+
+### 15.4 Frost curve and lane guides (R22.6, R22.7)
+- Scene data stays `effects.frost = ice / 100` (R18.1, unchanged and tested by CD-P28). The curve is a drawing
+  decision, so it lives in `frostOpacity(scene)` (`cockpit-geometry.js`):
+  `opacity = min(1, 2 x frost)`. Ice 0 gives 0, ice 25 gives 0.5, ice 50 and above gives 1.0. It is piecewise
+  linear and non-decreasing in ice. The ice index never decreases (R5.4), so the drawn frost never recedes.
+  `frostData` keeps its texture; the heavy look at full opacity comes from the existing edge-weighted texture. The
+  cap of `0.5` at 25 is the target of G15; the texture alpha is checked by eye in the screenshots of 15.7.
+- Lane guides: `guideBoxes(scene, viewKm)` replaces the 0.5 km wide sheet per lane with one thin strip per lane:
+  half width `GUIDE_HALF_WIDTH_KM` drops from 0.25 to about 0.03, and the strip carries a repeating dash texture
+  (`dashData`, new, drawn with `alphaTest`, `tile` about 0.4 km per dash). One box per lane keeps the cost at 12
+  triangles per lane. The current and target lane emphasis (alpha 0.55, 0.45, else 0.22; amber for the target) stays.
+  At a gate the sky-gate frames of 15.2 are the main aid and the dashed guides stay faint.
+  `mats.guide` gets the dash `map`; `EYE_HEIGHT_KM` is unchanged.
+
+### 15.5 Report headline (R22.8)
+- `report.js` adds `reportHeadline(report)`, a pure function. For a ranked report with finite
+  `references.straight_ahead` it returns `{vsStraight: {usd, text}, aboveBest: {usd, text}}`:
+  `d = report.totalUsd - references.straight_ahead`; `text` is `"$N more than Straight-ahead"` when `d > 0`,
+  `"$N less than Straight-ahead"` when `d < 0`, with `N = formatUsdWhole(Math.abs(d))`; when `N` rounds to 0 the text is
+  `"The same as Straight-ahead"`. `aboveBest` is `"$N above Best"` with `N = max(0, totalUsd - references.best)`
+  rounded (the solver is exact, so a negative value would only be rounding). A missing reference gives `null` for that
+  entry and the view prints "not available".
+  All inputs are the existing `buildReport` numbers (totals already include `departureUsd` and so do the references,
+  `referenceCosts`), so the differences stay comparable (section 8). Nothing new is computed from the engine.
+- `report-view.js` `render()` leads, directly under the heading, with a `<p class="report-lead">` holding the
+  Straight-ahead line (large) and the Best line, then the existing "Saving share" paragraph (the percentage, unchanged
+  and now below them), then the total line and the tables as before. Diverted flights keep the not-ranked text
+  (R5.6) and show no headline. The share text (`shareText`) is unchanged.
+- The words "more" and "less" refer to dollars only. They are not weather words and are not in the R9.1 list.
+
+### 15.6 Texts (R22.9, R22.10)
+- Status after the climb: the lead status line must name the button the player really sees. At step 0 in the
+  cockpit view the button is "Continue" (`gate-controls.js`), while `controls.js` line 158 prints "press Start" and the
+  2D button reads "Start" (line 149). `controls.js` builds the label once (`goLabel`) and the message from it, and the
+  cockpit passes "Continue"; the status string cannot name a button that does not exist. `leadStatusText` in
+  `takeoff.js` gets a `"cruise"` reading after the engine starts: "At the top of climb. Press Continue to fly the route."
+  (built from the same label constant).
+- `pickLabels` places the "base estimated" label (`kind: "base"`) at the lower corner of its cloud volume instead of
+  its centre: `x` at the far end of the volume (`x1Km`),
+  `z` at the lane edge (`zKm + halfWidthKm`), `y` at the base height, and `width` drops from 6 to 4.5. The label
+  can no longer sit on the line of sight of the centre lane. At most `MAX_BASE_LABELS` stay.
+- All new strings go into `STRINGS` (`scene.js`) or the report module, so `tests/test_wording.py` scans them.
+
+### 15.7 Correctness, tests and screenshots
+Properties (Node, `fast-check` as for CD-P23 to CD-P28; 100 iterations or more; tagged
+`Feature: cloud-dive, Property N`): CD-P23 (extended to `gates` and `weight`), CD-P25 (extended), CD-P28 (new curve),
+and the new CD-P33 (sky gate level), CD-P34 (evidence emphasis) and CD-P35 (report headline). Section 10 holds the
+statements and the requirement mapping. CD-P26 gets the extra bound "gates <= 5, and gate triangles are counted".
+
+Examples and unit tests:
+- `gates` empty in `cruise`, `climb`, `ready`; five entries in `gate`; the label of each is one of the four names.
+- A fixed three-cell case for each of the four gate levels and for the "no cell left" case (Not assessed).
+- `frostOpacity` at ice 0, 25, 50, 100; `guideBoxes` returns one thin box per lane with the dash texture flag.
+- `reportHeadline` for a cheaper, a dearer and an equal flight; a missing reference.
+- DOM check in the cockpit view: the game note and the source line occur once; no `.cp-game-note` or `.cp-source`
+  node exists; the status text names `#ctl-go` or the gate "Continue" button label.
+- Wording: `tests/test_wording.py` scans the new strings (gate labels reuse existing names; headline, status and
+  label text are new).
+- Unchanged, and re-run as the regression gate: CD-P1 to CD-P22, CD-P24, CD-P26, CD-P27, CD-P29 to CD-P32, the
+  solver and the case-export tests. A case-file diff must show no change (R22.11).
+- Layout: `?layoutcheck=1` at 1280 x 720 gives `data-fits="yes"` and `data-windshield` of at least 0.6, at the first
+  render and at the first gate, for KJFK-KBNA.
+- Rendering (WebGL) is not property-testable; it is checked by the screenshots below and by the geometry functions
+  (`gateBoxes`, `evidenceBoxes`, `guideBoxes`), which are pure and have example tests.
+
+Screenshots (before and after, 1280 x 720, KJFK-KBNA 2026-11-12, headless Chrome as in earlier groups): `docs/screens/21.*`
+(for example `21.before-cruise.png`, `21.after-cruise.png`, `21.before-gate.png`, `21.after-gate.png`,
+`21.after-frost-25.png`, `21.after-frost-50.png`, `21.before-report.png`, `21.after-report.png`). Each is recorded as a
+row in `docs/kiro-usage-log.md`. The "before" images are taken first, from the current build.
+
+Risks specific to this revision:
+| Risk | Mitigation |
+|---|---|
+| Overlay hides the windshield bottom or the gate frames | The panel is one row of about 64 px; frames sit at the lane altitude, near the horizon; checked in the gate screenshots |
+| Legend names are long and wrap | Two rows allowed below about 900 px; the exact names are never shortened |
+| More geometry at a gate | About 300 triangles for gates plus 60 for guides, against the 40,000 cap; measured in the usual `?perf=1` check |
+| Gate frames read as advice | Evidence only, no colour ranking of lanes by cost, no cost field; R6.5 test CD-P33 and the wording scan |
+| Frost at full opacity hides the view | Opacity reaches 1 only through the edge-weighted texture; checked in the 25 and 50 screenshots; the clear centre stays |

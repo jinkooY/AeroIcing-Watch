@@ -164,3 +164,10 @@ test("status text names the airport and the keys while ready; no weather words",
   assert.match(text, /Space or Enter/);
   assert.equal(T.START_LABEL, "Start takeoff");
 });
+
+test("status after the climb names the real button, built from the gate label constant", async () => {
+  const { GATE_LABELS } = await import("../../static/cloud-dive/gate-controls.js");
+  const text = T.leadStatusText({ phase: "cruise" }, "KDEN");
+  assert.equal(text, `At the top of climb. Press ${GATE_LABELS.continue} to fly the route.`);
+  assert.equal(text, "At the top of climb. Press Continue to fly the route.");
+});

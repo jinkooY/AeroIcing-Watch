@@ -3,7 +3,7 @@
 // browser (localStorage) and is never sent anywhere (R8.4). No ranking is claimed (R8.5).
 
 import {
-  REFERENCE_LABELS, browserStorage, buildReport, formatUsdWhole, recordPersonalBest, shareText,
+  REFERENCE_LABELS, browserStorage, buildReport, formatUsdWhole, recordPersonalBest, reportHeadline, shareText,
 } from "./report.js";
 
 function el(tag, text, cls) {
@@ -70,7 +70,23 @@ export function initReport(deps) {
     root.setAttribute("aria-labelledby", "report-title");
     kids.push(h);
 
+    const headline = reportHeadline(report);
+    if (headline) {
+      const lead = el("p", null, "report-lead");
+      lead.appendChild(el("span", headline.vsStraight ? headline.vsStraight.text : "Straight-ahead: not available",
+        "report-lead-main"));
+      lead.appendChild(document.createElement("br"));
+      lead.appendChild(el("span", headline.aboveBest ? headline.aboveBest.text : "Best: not available",
+        "report-lead-best"));
+      kids.push(lead);
+    }
+
     if (report.ranked) {
+      kids.push(el("p", report.savingSharePercent === null
+        ? "Saving share from Straight-ahead to Best: not available for this case."
+        : `Saving share from Straight-ahead to Best: ${Math.round(report.savingSharePercent)} percent ` +
+          `(0 percent = Straight-ahead cost, 100 percent = Best cost; a negative value means ` +
+          `a higher cost than Straight-ahead). The Wasteful extreme is shown as a reference only.`));
       kids.push(el("p", `Total fuel cost: ${formatUsdWhole(report.totalUsd)}`, "report-total"));
     } else {
       kids.push(el("p", `Not ranked. The ice index reached 100 and the flight ended in a diversion. ` +
@@ -97,14 +113,6 @@ export function initReport(deps) {
     ]);
     kids.push(table("Game references for this case (shown after play, not procedures)",
       ["Reference", "Cost", "Definition"], refRows));
-
-    if (report.ranked) {
-      kids.push(el("p", report.savingSharePercent === null
-        ? "Saving share from Straight-ahead to Best: not available for this case."
-        : `Saving share from Straight-ahead to Best: ${Math.round(report.savingSharePercent)} percent ` +
-          `(0 percent = Straight-ahead cost, 100 percent = Best cost; a negative value means ` +
-          `a higher cost than Straight-ahead). The Wasteful extreme is shown as a reference only.`));
-    }
 
     let bestText;
     if (hot) bestText = "Hot-seat flight: the personal best is not updated.";

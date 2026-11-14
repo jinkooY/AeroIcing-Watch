@@ -328,3 +328,78 @@ def test_chase_strings_scanned_task_19_2():
     assert "Chase view (C)" in texts["index.html"]
     for s in texts["chase.js"] + texts["index.html"]:
         assert not violations(s), s
+
+
+def _node_json(script: str):
+    import shutil
+    import subprocess
+    import pytest
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node not available")
+    r = subprocess.run([node, "--input-type=module", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)
+
+
+def test_group21_strings_scanned_task_21_8():
+    """Task 21.8 (R22.11, R9.1): gate labels, report headline, status texts and the panel legend strip."""
+    script = (
+        "import * as E from './static/cloud-dive/engine.js';"
+        "import * as S from './static/cloud-dive/scene.js';"
+        "import * as R from './static/cloud-dive/report.js';"
+        "import * as T from './static/cloud-dive/takeoff.js';"
+        "import {readFileSync,readdirSync} from 'node:fs';"
+        "const out={gate:[],headline:[],status:[],strip:[]};const d='static/cloud-dive/cases/';"
+        "for(const n of readdirSync(d).filter(x=>/^\\d.*\\.json$/.test(x))){"
+        "const f=JSON.parse(readFileSync(d+n,'utf8'));const c=E.loadCase(f);"
+        "for(let step=0;step<=c.nSteps;step+=2){const st={...E.initialState(c),step,targetAlt:step%c.nAlts};"
+        "const s=S.buildScene(f,st,{phase:'gate'},{});"
+        "for(const g of s.gates)out.gate.push(g.label,g.level);"
+        "out.strip.push(...s.panel.legend,...S.legendNames(f));"
+        "if(s.panel.gate)out.strip.push(JSON.stringify(s.panel.gate));}}"
+        "for(const t of [-300,-1,0,0.4,1,250,5000])for(const sa of [1000,null])for(const b of [900,1000,null]){"
+        "const h=R.reportHeadline({ranked:true,totalUsd:1000+t,references:{straight_ahead:sa,best:b}});"
+        "if(h){if(h.vsStraight)out.headline.push(h.vsStraight.text);if(h.aboveBest)out.headline.push(h.aboveBest.text);}}"
+        "for(const ph of ['ready','takeoff','climb','cruise','arrival','diversion'])for(const ic of ['','KJFK'])"
+        "out.status.push(T.leadStatusText({phase:ph},ic),T.endingStatusText({phase:ph},ic));"
+        "console.log(JSON.stringify(out));"
+    )
+    out = _node_json(script)
+    assert out["gate"] and out["headline"] and out["status"] and out["strip"]
+    assert any("more than Straight-ahead" in s for s in out["headline"])
+    assert any("less than Straight-ahead" in s for s in out["headline"])
+    # gate labels are exactly the four evidence levels
+    assert set(out["gate"]) <= {"Not assessed", "Not indicated", "Possible (forecast only)",
+                                "Observed supercooled layer at planned altitude"}
+    for group, strings in out.items():
+        bad = [(s, violations(s)) for s in set(strings) if s and violations(s)]
+        assert not bad, (group, bad)
+    # source files: scene.js, report.js, takeoff.js, panel.js strings are scanned and clean
+    texts = ui_texts()
+    for name in ("scene.js", "report.js", "report-view.js", "takeoff.js", "panel.js", "controls.js"):
+        assert name in texts, name
+        for s in texts[name]:
+            assert not violations(s), (name, s)
+
+
+# Commit before group 21 (task 21.1 "before" screenshots). Engine, cost model, solver and case files must not differ.
+GROUP21_BASE = "1565153"
+UNCHANGED = ["static/cloud-dive/engine.js", "src/analysis/game_core.py", "src/analysis/cost_model.py",
+             "src/analysis/solver.py", "static/cloud-dive/cases/"]
+
+
+def test_engine_costs_and_data_unchanged_since_group_21_base():
+    """Task 21.8 (R22.11): git diff of the engine, cost model, solver and case files is empty."""
+    import shutil
+    import subprocess
+    import pytest
+    git = shutil.which("git")
+    if git is None:
+        pytest.skip("git not available")
+    probe = subprocess.run([git, "cat-file", "-t", GROUP21_BASE], cwd=ROOT, capture_output=True, text=True)
+    if probe.returncode != 0:
+        pytest.skip(f"commit {GROUP21_BASE} not available (shallow clone)")
+    r = subprocess.run([git, "diff", GROUP21_BASE, "--", *UNCHANGED], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert r.stdout == "", "R22.11: engine, costs or data changed:\n" + r.stdout[:2000]
