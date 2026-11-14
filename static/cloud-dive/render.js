@@ -53,7 +53,7 @@ export const FILLS = {
 // Satellite phase code -> fill (codes follow src/analysis/case_builder.py PHASE_NAMES).
 const PHASE_FILL = { 1: "liquid", 2: "supercooled", 3: "mixed", 4: "ice", 5: "unknownPhase" };
 
-const SAT_OBSERVED = 0;
+export const SAT_OBSERVED = 0;
 const SAT_CLEAR_SKY = 1;
 
 const finite = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
@@ -198,13 +198,13 @@ function niceStep(totalKm, maxTicks) {
   return 1000;
 }
 
-function satIndex(c, lane, s) {
+export function satIndex(c, lane, s) {
   return lane * (c.nSteps + 1) + s;
 }
 
 // Value at flat index idx. Two shapes exist in case files: {shape, data} (field omitted) and a
 // group object whose fields are plain arrays sharing one `shape` (satellite, isotherms).
-function column(group, field, idx) {
+export function column(group, field, idx) {
   if (!group) return undefined;
   const arr = field === undefined || field === null ? group : group[field];
   if (Array.isArray(arr)) return arr[idx];

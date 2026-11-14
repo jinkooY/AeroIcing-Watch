@@ -4,6 +4,7 @@
 // Space = continue or pause. Buttons are at least 44 px high for pointer and touch.
 
 import { createController } from "./controller.js";
+import { keyAction, dispatchAction } from "./gate-controls.js";
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -187,15 +188,9 @@ export function initControls(deps) {
     if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented || !inFlight()) return;
     if (!gameKeysAllowed(e)) return;
     if (typing(e.target) || outsideButton(e.target)) return;
-    switch (e.key) {
-      case "ArrowLeft": controller.moveLane(-1); break;
-      case "ArrowRight": controller.moveLane(1); break;
-      case "ArrowUp": controller.moveAlt(1); break;
-      case "ArrowDown": controller.moveAlt(-1); break;
-      case "a": case "A": controller.toggleAntiIce(); break;
-      case " ": case "Spacebar": if (!e.repeat) controller.toggle(); break;
-      default: return;
-    }
+    const action = keyAction(e.key);
+    if (!action) return;
+    if (!(action === "toggleRun" && e.repeat)) dispatchAction(controller, () => getStore().state, action);
     e.preventDefault();
   });
   // A focused button would also click on Space key-up; the keydown already handled it.

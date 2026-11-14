@@ -32,6 +32,7 @@ jobs:
           set -euo pipefail
           for f in index.html game.js game.css engine.js render.js controls.js \
                    report-view.js why.js cases/index.json \
+                   vendor/three/three.module.min.js vendor/three/LICENSE \
                    viewer/index.html viewer/viewer.js viewer/sample.js viewer/styles.css; do
             test -s "_site/$f" || { echo "missing: $f"; exit 1; }
           done

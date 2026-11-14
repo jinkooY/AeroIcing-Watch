@@ -1,0 +1,81 @@
+/* Cockpit panel overlay (task 15.3). Uses the colour variables of game.css. Every control is at least 44 px
+   high and has a visible focus ring; every drawing has a text label, so nothing relies on colour alone (R10.1). */
+.cockpit-panel {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(120px, auto) 90px minmax(220px, 2fr);
+  grid-template-rows: auto auto auto auto;
+  grid-template-areas:
+    "fuel ice switch tape map"
+    "legend legend legend legend legend"
+    "text text text text text"
+    "note note note source source";
+  gap: 6px 12px;
+  padding: 8px 12px;
+  background: rgba(16, 21, 28, 0.96);
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.cp-fuel { grid-area: fuel; display: flex; flex-direction: column; }
+.cp-ice { grid-area: ice; display: flex; flex-direction: column; gap: 2px; }
+.cp-switch { grid-area: switch; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.cp-tape { grid-area: tape; margin: 0; display: flex; flex-direction: column; }
+.cp-map { grid-area: map; margin: 0; display: flex; flex-direction: column; min-width: 0; }
+.cp-legend { grid-area: legend; display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; }
+.cp-text-line { grid-area: text; margin: 0; }
+.cp-game-note { grid-area: note; margin: 0; color: var(--muted); }
+.cp-source { grid-area: source; margin: 0; color: var(--muted); font-size: 0.8rem; }
+.cp-label { color: var(--muted); }
+.cp-help { color: var(--muted); font-size: 0.78rem; }
+.cp-fuel-value { font-size: 1.6rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cp-ice-meter { width: 100%; height: 14px; }
+.cp-ice-value { font-variant-numeric: tabular-nums; }
+.cp-antiice { min-height: 44px; min-width: 44px; padding: 2px 14px; }
+.cp-antiice[aria-checked="true"] { border-color: var(--warn); border-width: 2px; font-weight: 600; }
+.cp-lamp {
+  display: inline-block; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--muted); background: transparent;
+}
+.cp-lamp-on { background: var(--warn); border-color: #ffffff; }
+.cp-lamp-text { color: var(--text); }
+.cp-tape-canvas { width: 100%; height: 84px; display: block; border: 1px solid var(--line); }
+.cp-tape-value { font-variant-numeric: tabular-nums; }
+.cp-map-canvas { width: 100%; height: 84px; display: block; border: 1px solid var(--line); }
+.cp-map-text { color: var(--muted); font-size: 0.78rem; }
+.cp-legend-item { display: flex; align-items: center; gap: 6px; }
+.cp-swatch { width: 18px; height: 14px; border: 1px solid var(--muted); display: inline-block; }
+.cp-level-0 .cp-swatch { background: repeating-linear-gradient(90deg, #9aa3ad 0 1px, transparent 1px 5px); }
+.cp-level-1 .cp-swatch { background: transparent; }
+.cp-level-2 .cp-swatch { background: radial-gradient(#74d4ff 1px, transparent 1.5px) 0 0 / 5px 5px; }
+.cp-level-3 .cp-swatch { background: repeating-linear-gradient(45deg, #ffb347 0 2px, transparent 2px 6px); border-color: var(--orange); }
+
+@media (max-width: 760px) {
+  .cockpit-panel {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "fuel ice" "switch tape" "map map" "legend legend" "text text" "note note" "source source";
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cockpit-panel * { transition: none !important; animation: none !important; }
+}
+/* Frost (task 16.1) is drawn in the WebGL overlay by cockpit3d.js (generated texture, opacity = ice / 100);
+   there is no CSS frost layer. The ice gauge text above stays the label, so the effect is never the only cue. */
+
+/* Cost pop-up (task 16.7) */
+.cp-cost-pop { display: inline-block; margin-left: 0.5rem; padding: 0.1rem 0.5rem; border-radius: 4px; background: #24313f; color: #ffd84d; font-weight: 600; }
+.cp-cost-pop[hidden] { display: none; }
+
+/* Runway and takeoff (task 17.3). The box replaces the controls until the climb ends. */
+.lead-box { padding: 8px 12px; border: 1px solid var(--line); background: rgba(16, 21, 28, 0.96); color: var(--text); }
+.lead-box[hidden] { display: none; }
+/* Departure climb status card, 2D view (task 17.7). Compact: it must not push the layout past one screen. */
+.departure-card { padding: 4px 10px; border: 1px solid var(--line); background: rgba(16, 21, 28, 0.96); color: var(--text); font-size: 0.85rem; }
+.departure-card[hidden] { display: none; }
+.departure-card h3 { margin: 0 0 2px; font-size: 0.9rem; }
+.departure-card p { margin: 0 0 2px; }
+.departure-card-note { font-size: 0.75rem; opacity: 0.85; }
+.lead-box h3 { margin: 0 0 4px; font-size: 1rem; }
+.lead-status { margin: 0 0 8px; }
+.takeoff-btn { min-height: 44px; min-width: 44px; padding: 4px 18px; font-size: 1rem; font-weight: 600; }
+.takeoff-btn[hidden] { display: none; }
+body.lead-active #controls { display: none; }
