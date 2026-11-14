@@ -1,35 +1,40 @@
 /* Cockpit panel overlay (task 15.3). Uses the colour variables of game.css. Every control is at least 44 px
    high and has a visible focus ring; every drawing has a text label, so nothing relies on colour alone (R10.1). */
 .cockpit-panel {
+  /* Slim overlay on the windshield (design 15.1): level strip and map inset at the top, one text line, one bar row at the bottom. */
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(120px, auto) 90px minmax(220px, 2fr);
-  grid-template-rows: auto auto auto auto;
-  grid-template-areas:
-    "fuel ice switch tape map"
-    "legend legend legend legend legend"
-    "text text text text text"
-    "note note note source source";
-  gap: 6px 12px;
-  padding: 8px 12px;
-  background: rgba(16, 21, 28, 0.96);
-  border-top: 1px solid var(--line);
+  grid-template-columns: minmax(0, 1fr) 150px;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas: "legend map" "text map" "gap gap" "bar bar";
+  gap: 4px 8px;
   color: var(--text);
   font-size: 0.85rem;
 }
-.cp-fuel { grid-area: fuel; display: flex; flex-direction: column; }
-.cp-ice { grid-area: ice; display: flex; flex-direction: column; gap: 2px; }
-.cp-switch { grid-area: switch; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.cp-tape { grid-area: tape; margin: 0; display: flex; flex-direction: column; }
-.cp-map { grid-area: map; margin: 0; display: flex; flex-direction: column; min-width: 0; }
-.cp-legend { grid-area: legend; display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; }
-.cp-text-line { grid-area: text; margin: 0; }
-.cp-game-note { grid-area: note; margin: 0; color: var(--muted); }
-.cp-source { grid-area: source; margin: 0; color: var(--muted); font-size: 0.8rem; }
-.cp-label { color: var(--muted); }
-.cp-help { color: var(--muted); font-size: 0.78rem; }
-.cp-fuel-value { font-size: 1.6rem; font-variant-numeric: tabular-nums; font-weight: 600; }
-.cp-ice-meter { width: 100%; height: 14px; }
-.cp-ice-value { font-variant-numeric: tabular-nums; }
+.cp-bar {
+  grid-area: bar; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 20px;
+  padding: 4px 12px; background: rgba(16, 21, 28, 0.82); border-top: 1px solid var(--line); pointer-events: auto;
+}
+.cp-fuel { position: relative; display: flex; flex-direction: column; min-width: 0; }
+/* The cost pop-up floats above the fuel counter so it never widens the bar. */
+.cockpit-panel .cp-cost-pop { position: absolute; left: 0; bottom: calc(100% + 6px); margin: 0; white-space: nowrap; }
+.cp-ice { display: flex; flex-direction: column; gap: 2px; min-width: 190px; }
+.cp-ice-row { display: flex; align-items: center; gap: 8px; }
+.cp-switch { display: flex; align-items: center; gap: 8px; }
+.cp-tape { margin: 0; display: flex; flex-direction: column; }
+.cp-map { grid-area: map; margin: 6px 6px 0 0; display: flex; flex-direction: column; min-width: 0; align-self: start; pointer-events: auto; }
+.cp-legend {
+  grid-area: legend; display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 6px 0 0 6px; padding: 3px 8px; list-style: none;
+  background: rgba(16, 21, 28, 0.82); border-radius: 4px; justify-self: start; font-size: 0.8rem;
+}
+.cp-text-line {
+  grid-area: text; margin: 0 0 0 6px; padding: 1px 8px; font-size: 0.78rem; justify-self: start; max-width: 100%;
+  background: rgba(16, 21, 28, 0.82); border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cp-label { color: var(--muted); font-size: 0.78rem; }
+.cp-fuel-value { font-size: 1.3rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cp-ice-meter { flex: 1 1 auto; min-width: 90px; height: 14px; }
+.cp-ice-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cp-antiice { min-height: 44px; min-width: 44px; padding: 2px 14px; }
 .cp-antiice[aria-checked="true"] { border-color: var(--warn); border-width: 2px; font-weight: 600; }
 .cp-lamp {
@@ -38,10 +43,9 @@
 }
 .cp-lamp-on { background: var(--warn); border-color: #ffffff; }
 .cp-lamp-text { color: var(--text); }
-.cp-tape-canvas { width: 100%; height: 84px; display: block; border: 1px solid var(--line); }
-.cp-tape-value { font-variant-numeric: tabular-nums; }
-.cp-map-canvas { width: 100%; height: 84px; display: block; border: 1px solid var(--line); }
-.cp-map-text { color: var(--muted); font-size: 0.78rem; }
+.cp-tape-value { font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.cp-map-canvas { width: 100%; height: 84px; background: #10161d; display: block; border: 1px solid var(--line); }
+.cp-map-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .cp-legend-item { display: flex; align-items: center; gap: 6px; }
 .cp-swatch { width: 18px; height: 14px; border: 1px solid var(--muted); display: inline-block; }
 .cp-level-0 .cp-swatch { background: repeating-linear-gradient(90deg, #9aa3ad 0 1px, transparent 1px 5px); }
@@ -49,11 +53,10 @@
 .cp-level-2 .cp-swatch { background: radial-gradient(#74d4ff 1px, transparent 1.5px) 0 0 / 5px 5px; }
 .cp-level-3 .cp-swatch { background: repeating-linear-gradient(45deg, #ffb347 0 2px, transparent 2px 6px); border-color: var(--orange); }
 
-@media (max-width: 760px) {
-  .cockpit-panel {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas: "fuel ice" "switch tape" "map map" "legend legend" "text text" "note note" "source source";
-  }
+@media (max-width: 900px) {
+  .cockpit-panel { grid-template-columns: minmax(0, 1fr) 110px; }
+  .cp-bar { flex-wrap: wrap; }
+  .cp-ice { min-width: 140px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cockpit-panel * { transition: none !important; animation: none !important; }

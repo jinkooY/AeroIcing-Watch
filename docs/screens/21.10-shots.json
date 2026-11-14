@@ -1,0 +1,44 @@
+{
+ "case": "20261112-kjfk-kbna-1930z",
+ "prefix": "21.10",
+ "viewport": "1280x720",
+ "measuredAt": "2026-11-14T08:55:25.003Z",
+ "shots": {
+  "21.10-start.png": {
+   "ice": 0
+  },
+  "21.10-gate.png": {
+   "ice": 0
+  },
+  "21.10-frost-first.png": {
+   "ice": 6,
+   "atGate": false
+  },
+  "21.10-frost-25.png": {
+   "ice": 32,
+   "atGate": false
+  },
+  "21.10-frost-50.png": {
+   "ice": 50,
+   "atGate": true
+  },
+  "21.10-gate-antiice.png": {
+   "ice": 50
+  },
+  "21.10-report.png": {
+   "ice": 50,
+   "reportTitle": "Flight report"
+  }
+ },
+ "problems": [],
+ "view": "cockpit",
+ "antiIceAtIce": 50,
+ "reportTitle": "Flight report",
+ "ranked": true,
+ "gateShot": true,
+ "frostShots": [
+  1,
+  25,
+  50
+ ]
+}

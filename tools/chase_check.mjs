@@ -4,12 +4,10 @@
 // rate with ?perf=1 in chase view (recorded as measured, with browser and WebGL renderer). Screenshots go to
 // docs/screens/19.2-*.png; results to docs/screens/19.2-chase.json.
 // Usage: node tools/chase_check.mjs [--gpu=hw|sw] [--case=<id part>] [--out=docs/screens]
-import http from "node:http";
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { startGuard } from "./browser_guard.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name, dflt) => {
@@ -19,60 +17,16 @@ const arg = (name, dflt) => {
 const outDir = path.resolve(root, arg("out", "docs/screens"));
 const gpu = arg("gpu", "hw");
 const only = arg("case", "");
-const BROWSERS = [
-  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-  "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
-  "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-];
-const browserPath = BROWSERS.find((p) => existsSync(p));
-if (!browserPath) throw new Error("No Edge or Chrome found");
-
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png" };
-const server = http.createServer((req, res) => {
-  const file = path.join(root, decodeURIComponent(new URL(req.url, "http://x").pathname));
-  if (!file.startsWith(root) || !existsSync(file)) { res.writeHead(404); res.end(); return; }
-  res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-store" });
-  res.end(readFileSync(file));
-});
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const base = `http://127.0.0.1:${server.address().port}`;
+const problems = [];
+const onMessage = (m) => {
+ if (m.method === "Runtime.exceptionThrown") problems.push("exception: " + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
+ if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") problems.push("console.error: " + m.params.args.map((a) => a.value ?? a.description).join(" "));
+ if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/favicon\.ico/.test(m.params.entry.url || "")) problems.push("log: " + m.params.entry.text + " " + (m.params.entry.url || ""));
+};
+const guard = await startGuard({ root, extraArgs: (gpu === "sw" ? ["--disable-gpu"] : ["--ignore-gpu-blocklist"]), onMessage });
+const { base, send, evaluate, sleep } = guard;
 const index = JSON.parse(readFileSync(path.join(root, "static/cloud-dive/cases/index.json"), "utf8"));
 const caseId = index.cases.map((c) => c.id).find((id) => id.includes(only));
-
-const profile = mkdtempSync(path.join(tmpdir(), "cdchase-"));
-const port = 9800 + Math.floor(Math.random() * 150);
-const proc = spawn(browserPath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "--headless=new", "--no-first-run",
-  ...(gpu === "sw" ? ["--disable-gpu"] : ["--ignore-gpu-blocklist"]), "--hide-scrollbars", "about:blank"], { stdio: "ignore" });
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function connect() {
-  for (let i = 0; i < 60; i++) {
-    try {
-      const page = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page");
-      if (page) return page.webSocketDebuggerUrl;
-    } catch { /* starting */ }
-    await sleep(250);
-  }
-  throw new Error("browser did not start");
-}
-const ws = new WebSocket(await connect());
-await new Promise((r) => ws.addEventListener("open", r, { once: true }));
-let nextId = 1;
-const waiting = new Map();
-const problems = [];
-ws.addEventListener("message", (ev) => {
-  const m = JSON.parse(ev.data);
-  if (m.id && waiting.has(m.id)) { waiting.get(m.id)(m); waiting.delete(m.id); return; }
-  if (m.method === "Runtime.exceptionThrown") problems.push("exception: " + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text));
-  if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") problems.push("console.error: " + m.params.args.map((a) => a.value ?? a.description).join(" "));
-  if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/favicon\.ico/.test(m.params.entry.url || "")) problems.push("log: " + m.params.entry.text + " " + (m.params.entry.url || ""));
-});
-const send = (method, params = {}) => new Promise((resolve, reject) => {
-  const id = nextId++;
-  waiting.set(id, (m) => (m.error ? reject(new Error(m.error.message)) : resolve(m.result)));
-  ws.send(JSON.stringify({ id, method, params }));
-});
-const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })).result.value;
 async function waitFor(expression, ms = 20000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) { if (await evaluate(expression)) return true; await sleep(150); }
@@ -177,7 +131,5 @@ try {
   if (perf) console.log("chase fps:", perf.fps && perf.fps.toFixed(1), "frames:", perf.frames, "p95 gap ms:", perf.gapP95Ms && perf.gapP95Ms.toFixed(1), "triangles:", perf.triangles, "calls:", perf.drawCalls);
   console.log("browser:", ver.product, "| gpu mode:", gpu, "| WebGL renderer:", gl);
   if (!ok) process.exitCode = 1;
-  ws.close(); proc.kill(); server.close();
-  await sleep(500);
-  try { rmSync(profile, { recursive: true, force: true }); } catch { /* locked */ }
+  await guard.close();
 }

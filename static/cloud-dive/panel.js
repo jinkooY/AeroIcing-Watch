@@ -267,7 +267,10 @@ export function createPanel(root, deps = {}) {
   const iceLabel = el("span", { class: "cp-label", id: "cp-ice-label" }, "Ice index (game model)");
   const iceMeter = el("meter", { class: "cp-ice-meter", min: "0", max: String(engine.ICE_MAX), value: "0", "aria-labelledby": "cp-ice-label" });
   const iceValue = el("span", { class: "cp-ice-value" }, `0 of ${engine.ICE_MAX}`);
-  ice.append(iceLabel, iceMeter, iceValue, el("span", { class: "cp-help" }, TEXT.iceHelp));
+  ice.setAttribute("title", TEXT.iceHelp); // the help sentence moves into the tooltip (design 15.1)
+  const iceRow = el("div", { class: "cp-ice-row" });
+  iceRow.append(iceMeter, iceValue);
+  ice.append(iceLabel, iceRow);
 
   const sw = el("div", { class: "cp-switch" });
   const swBtn = el("button", { type: "button", role: "switch", "aria-checked": "false", class: "cp-antiice" }, `${TEXT.antiIce}: off`);
@@ -278,10 +281,10 @@ export function createPanel(root, deps = {}) {
   });
   sw.append(swBtn, lamp, lampText);
 
-  const tapeWrap = el("figure", { class: "cp-tape" });
-  const tapeCanvas = el("canvas", { class: "cp-tape-canvas", "aria-hidden": "true" });
-  const tapeValue = el("figcaption", { class: "cp-tape-value" }, `${TEXT.altitude}: 0`);
-  tapeWrap.append(tapeCanvas, tapeValue);
+  // Altitude is a numeric readout; the drawn tape is no longer mounted in the cockpit (design 15.1).
+  const tapeWrap = el("div", { class: "cp-tape" });
+  const tapeValue = el("output", { class: "cp-tape-value" }, `${TEXT.altitude}: 0`);
+  tapeWrap.append(tapeValue);
 
   const mapWrap = el("figure", { class: "cp-map" });
   const mapCanvas = el("canvas", { class: "cp-map-canvas", role: "img", "aria-label": TEXT.map });
@@ -290,10 +293,11 @@ export function createPanel(root, deps = {}) {
 
   const legend = el("ul", { class: "cp-legend", "aria-label": TEXT.legend });
   const textLine = el("p", { class: "cp-text-line", "aria-live": "polite", "aria-atomic": "true" });
-  const gameNote = el("p", { class: "cp-game-note" }, GAME_NOTE);
-  const sourceEl = el("p", { class: "cp-source" });
+  // The game note and the source line live once, in the bottom bar of index.html (R22.3).
+  const bar = el("div", { class: "cp-bar" });
+  bar.append(fuel, ice, sw, tapeWrap);
 
-  box.append(fuel, ice, sw, tapeWrap, mapWrap, legend, textLine, gameNote, sourceEl);
+  box.append(legend, mapWrap, textLine, bar);
   root.append(box);
 
   let lastView = null;
@@ -303,10 +307,8 @@ export function createPanel(root, deps = {}) {
     if (!lastView) return;
     const mctx = mapCanvas.getContext("2d");
     if (mctx) drawPanelMap(mctx, lastView.map, mapCanvas.clientWidth, mapCanvas.clientHeight);
-    const tctx = tapeCanvas.getContext("2d");
-    if (tctx) drawAltitudeTape(tctx, lastView.panel, tapeCanvas.clientWidth, tapeCanvas.clientHeight);
   };
-  const stops = [fitCanvas(mapCanvas, redraw), fitCanvas(tapeCanvas, redraw)];
+  const stops = [fitCanvas(mapCanvas, redraw)];
 
   // Display-only counter value between steps (task 16.3); update() sets the exact engine total.
   function setFuel(usd) {
@@ -350,11 +352,13 @@ export function createPanel(root, deps = {}) {
       legendKey = key;
       legend.replaceChildren(...legendItems(p.legend).map((it) => {
         const li = el("li", { class: `cp-legend-item cp-level-${it.level}` });
-        li.append(el("span", { class: "cp-swatch", "aria-hidden": "true" }), el("span", {}, `${it.name} (${it.pattern})`));
+        // Exact level name in view; the pattern word goes to title and aria-label (design 15.1).
+        li.setAttribute("title", `${it.name} (${it.pattern})`);
+        li.setAttribute("aria-label", `${it.name} (${it.pattern})`);
+        li.append(el("span", { class: "cp-swatch", "aria-hidden": "true" }), el("span", {}, it.name));
         return li;
       }));
     }
-    sourceEl.textContent = view && view.caseData ? sourceLine(view.caseData) : "";
 
     if (view && view.engineCase && view.state) {
       const c = view.engineCase;

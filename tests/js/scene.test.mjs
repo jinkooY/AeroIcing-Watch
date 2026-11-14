@@ -228,6 +228,7 @@ for (const n of names) {
         assert.notEqual(b.levelIndex, E.NOT_INDICATED);
         assert.equal(b.level, file.rule.levels[b.levelIndex]);
         assert.ok(b.x0Km >= 0);
+        assert.ok(b.weight === 1 || b.weight === S.FAR_EVIDENCE_WEIGHT);
         for (let s = b.step0; s <= b.step1; s++)
           for (let a = 0; a < c.nAlts; a++)
             if (coveredLevel(c, b, s, a)) {
@@ -283,6 +284,28 @@ test("CD-P25 synthetic: runs merge along track, Not indicated draws nothing, Not
     assert.ok(b.loFt + (c.altsFt[1] - c.altsFt[0]) / 2 - altFt <= S.NA_NEAR_FT);
   }
   assert.equal(ev.filter((b) => b.lane >= 3).length, 0);
+});
+
+test("CD-P34 synthetic: weight is 1 within 2,000 ft of the band, else 0.25; it changes no level, count, extent or label", () => {
+  const { file, c } = synthEvidence(load(names[0]), (lane, s, a) => (lane === 0 && a % 4 === 0 ? E.OBSERVED : lane === 1 ? E.POSSIBLE : E.NOT_INDICATED));
+  const lanes = S.buildScene(file, null, { phase: "cruise" }, {}).lanes;
+  let draws = 0;
+  for (const altFt of [-5000, 0, 5000, 12345, 20000, 30000, 36000, 41000, 60000]) {
+    const ev = S.buildEvidence(file, c, 0, lanes, altFt, 300);
+    assert.ok(ev.length > 0);
+    for (const b of ev) {
+      const d = altFt < b.loFt ? b.loFt - altFt : altFt > b.hiFt ? altFt - b.hiFt : 0;
+      assert.equal(b.weight, d <= 2000 ? 1 : 0.25);
+      draws++;
+    }
+  }
+  assert.ok(draws >= 9);
+  const a1 = S.buildEvidence(file, c, 0, lanes, 30000, 300), a2 = S.buildEvidence(file, c, 0, lanes, 30001, 300);
+  const key = (ev) => ev.map((b) => [b.level, b.x0Km, b.x1Km, b.loFt, b.hiFt]);
+  assert.deepEqual(key(a1), key(a2));
+  assert.equal(S.evidenceWeight(10000, 12000, 14000), 1);
+  assert.equal(S.evidenceWeight(10000, 12000, 14001), 0.25);
+  assert.equal(S.evidenceWeight(10000, 12000, 7999), 0.25);
 });
 
 test("CD-P26 synthetic: cap binds, Observed kept first, then Possible, then Not assessed", () => {

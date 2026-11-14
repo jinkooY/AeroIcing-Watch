@@ -12,7 +12,8 @@ import {
 // The lane sheets are drawn EYE_HEIGHT_KM below the eye. A sheet at exactly eye level would be edge-on and
 // collapse into the horizon line, so the eye sits above it and the sheets read as lanes on the way ahead.
 export const EYE_HEIGHT_KM = 0.8;
-export const GUIDE_HALF_WIDTH_KM = 0.25; // half width of one lane sheet
+export const GUIDE_HALF_WIDTH_KM = 0.03; // half width of one thin dashed lane strip
+export const GUIDE_DASH_TILE_KM = 0.4; // km per dash repeat
 export const MIN_HFOV_DEG = 70; // narrow (phone) screens widen the vertical field of view up to MAX_VFOV_DEG
 export const MAX_VFOV_DEG = 100;
 export const MAX_BASE_LABELS = 4; // "estimated" labels drawn at once
@@ -120,6 +121,16 @@ export const softData = (size = 32) =>
     return 255 * (1 - smooth(0.45, 1, Math.max(Math.abs(u), Math.abs(v))));
   });
 
+// Sky gate fills (design 15.2). Observed: dense diagonal lines. Not assessed: vertical stripes (different from the
+// sparse diagonal hatch of the evidence bands). Possible reuses stippleData.
+export const diagonalData = (size = 32) => rgba(size, (x, y) => ((x + y) % 8 < 3 ? 230 : 0));
+// Possible gate fill: clear 3 px dots on an 8 px grid, a light haze between them.
+export const gateDotData = (size = 32) =>
+  rgba(size, (x, y) => (x % 8 >= 2 && x % 8 <= 4 && y % 8 >= 2 && y % 8 <= 4 ? 255 : 35));
+export const stripeData = (size = 32) => rgba(size, (x) => (x % 8 < 3 ? 220 : 0));
+// Lane guide dashes (design 15.4): first half of each repeat opaque along u, the rest transparent.
+export const dashData = (size = 32) => rgba(size, (x) => (x < size / 2 ? 255 : 0));
+
 // Frost (R18.1): generated, no image file, no random number. Alpha is strong at the border of the windshield
 // opening and fades to nothing toward the centre; a fixed integer hash breaks it into crystal-like specks.
 // The material opacity (frostOpacity) scales the whole texture, so the centre of the view stays readable.
@@ -137,10 +148,11 @@ export const frostData = (size = 64) =>
     return 255 * edge * speck;
   });
 
-// Frost opacity 0..1 from the scene description only: ice / 100 (scene.effects.frost). Zero when absent.
+// Frost opacity 0..1 from the scene description only (design 15.4): min(1, 2 x effects.frost), so 0.5 at ice 25
+// and 1.0 from ice 50. A drawing curve only; effects.frost itself stays ice / 100. Zero when absent.
 export function frostOpacity(scene) {
   const f = scene && scene.effects ? scene.effects.frost : 0;
-  return clamp(num(f), 0, 1);
+  return Math.min(1, 2 * clamp(num(f), 0, 1));
 }
 
 // Windshield opening in camera space at z = -1 (same frame as cockpitBoxes): frost never covers the panel.
@@ -225,12 +237,56 @@ export function evidenceBoxes(scene) {
     out.push({
       x0, x1, y0: ftToDisplayKm(b.loFt), y1: ftToDisplayKm(b.hiFt),
       z0: num(b.zKm) - hw, z1: num(b.zKm) + hw,
-      color: st.color, alpha: st.alpha, tile: st.tile || 0, shade: false, level,
+      color: st.color, alpha: st.alpha * (b.weight === undefined ? 1 : Math.max(0, Math.min(1, num(b.weight)))),
+      tile: st.tile || 0, shade: false, level,
     });
   }
   return out;
 }
 
+// ---- Sky gates (design 15.2) ----------------------------------------------------------------------------
+export const GATE_EDGE_KM = 0.3; // black edge bar thickness, about 6 px at the gate distance (frame height 1.83 km, about 36 px)
+export const GATE_BAR_KM = 0.14; // coloured line thickness, centred in the edge with black on both sides
+export const GATE_EDGE_COLOR = [0, 0, 0]; // opaque black edge under every coloured line (colours are linear; sRGB output lifts them)
+export const GATE_FILL_TILE_KM = 1.6; // large enough that dots and lines stay several pixels wide at the gate distance
+// Gate line and fill colours: saturated and darker than the evidence-band colours, which are close to the pale sky.
+export const GATE_COLOR = Object.freeze({
+  [LEVEL_OBSERVED]: [1.0, 0.32, 0.0],
+  [LEVEL_POSSIBLE]: [0.0, 0.12, 1.0],
+  [LEVEL_NOT_ASSESSED]: [0.3, 0.3, 0.3],
+});
+export const GATE_LINE_COLOR = [0.88, 0.92, 0.96]; // Not indicated: neutral empty frame
+export const GATE_LABEL_GAP_KM = 0.25; // clear space between the frame top and the label bottom
+// Label sprite height is width / 4 (cockpit3d.js), so a label centred at top + gap + width / 8 sits wholly above the frame.
+export const gateLabelWidth = (g) => Math.max(2, Math.min(7, 1.9 * num(g.halfWidthKm, 3.5)));
+// Per gate: four dark edge bars ("edge") and four coloured inner bars ("outline", every level), both opaque, and one
+// fill quad ("fill", not for Not indicated). 9 boxes = 108 triangles per gate. Boxes carry `level` and `part`;
+// cockpit3d.js picks the material from them.
+export function gateBoxes(scene) {
+  const out = [];
+  for (const g of (scene && scene.gates) || []) {
+    const level = levelIndexOf(g);
+    const color = GATE_COLOR[level] || GATE_LINE_COLOR;
+    const x = num(g.xKm), hw = num(g.halfWidthKm), hh = num(g.halfHeightKm), y = num(g.yKm), z = num(g.zKm);
+    const bars = (part, rgb, t0, t1, dx) => {
+      const bar = (b) => out.push({ x0: x - dx, x1: x + dx, color: rgb, alpha: 1, shade: false, level, part, lane: g.lane, ...b });
+      bar({ y0: y + hh - t1, y1: y + hh - t0, z0: z - hw, z1: z + hw });
+      bar({ y0: y - hh + t0, y1: y - hh + t1, z0: z - hw, z1: z + hw });
+      bar({ y0: y - hh, y1: y + hh, z0: z - hw + t0, z1: z - hw + t1 });
+      bar({ y0: y - hh, y1: y + hh, z0: z + hw - t1, z1: z + hw - t0 });
+    };
+    bars("edge", GATE_EDGE_COLOR, 0, GATE_EDGE_KM, 0.03);
+    // Inner line sits inside the edge, a little nearer the camera.
+    bars("outline", color, (GATE_EDGE_KM - GATE_BAR_KM) / 2, (GATE_EDGE_KM + GATE_BAR_KM) / 2, 0.05);
+    if (level !== LEVEL_NOT_INDICATED) {
+      out.push({
+        x0: x - 0.01, x1: x + 0.01, y0: y - hh, y1: y + hh, z0: z - hw, z1: z + hw,
+        color, alpha: level === LEVEL_POSSIBLE ? 1 : 0.8, tile: GATE_FILL_TILE_KM, shade: false, level, part: "fill", lane: g.lane,
+      });
+    }
+  }
+  return out;
+}
 // ---- Lane sheets, airport markers, labels --------------------------------------------------------------
 // Sheets are built relative to the eye: the renderer places the group at the camera x and EYE_HEIGHT_KM below it.
 export function guideBoxes(scene, viewKm = VIEW_KM) {
@@ -241,7 +297,7 @@ export function guideBoxes(scene, viewKm = VIEW_KM) {
     out.push({
       x0: -0.5, x1: viewKm, y0: 0, y1: 0.02,
       z0: num(l.zKm) - GUIDE_HALF_WIDTH_KM, z1: num(l.zKm) + GUIDE_HALF_WIDTH_KM,
-      color: c, alpha: a, shade: false,
+      color: c, alpha: a, shade: false, tile: GUIDE_DASH_TILE_KM,
     });
   }
   return out;
@@ -304,17 +360,26 @@ export function pickLabels(scene, maxBase = MAX_BASE_LABELS) {
   const est = ((scene && scene.clouds) || []).filter((c) => c.baseEstimated && num(c.x1Km) - num(c.x0Km) > 1e-6);
   est.sort((p, q) => Math.abs((p.x0Km + p.x1Km) / 2 - camX) - Math.abs((q.x0Km + q.x1Km) / 2 - camX) ||
     p.lane - q.lane || p.x0Km - q.x0Km);
-  for (const c of est.slice(0, Math.max(0, maxBase))) {
+  // R22.10: no "base estimated" label while sky gates are shown; it would cross the gate labels at the centre.
+  const gated = ((scene && scene.gates) || []).length > 0;
+  for (const c of est.slice(0, gated ? 0 : Math.max(0, maxBase))) {
     out.push({
-      text: `base ${STRINGS.baseEstimated}`, x: (num(c.x0Km) + num(c.x1Km)) / 2,
-      y: ftToDisplayKm(num(c.bottomFt, num(c.topFt))) - 0.4, z: num(c.zKm), width: 6, kind: "base",
+      // Lower far corner of the volume (far end, lane edge, base height), never its centre.
+      text: `base ${STRINGS.baseEstimated}`, x: num(c.x1Km),
+      y: ftToDisplayKm(num(c.bottomFt, num(c.topFt))), z: num(c.zKm) + num(c.halfWidthKm), width: 4.5, kind: "base",
     });
+  }
+  // One label per sky gate, at the top edge of the frame; the text is the exact level name.
+  for (const g of (scene && scene.gates) || []) {
+    if (!g.label) continue;
+    const w = gateLabelWidth(g);
+    out.push({ text: String(g.label), x: num(g.xKm), y: num(g.yKm) + num(g.halfHeightKm) + GATE_LABEL_GAP_KM + w / 8, z: num(g.zKm), width: w, kind: "gate" });
   }
   return out;
 }
 
 // ---- Cockpit frame and panel (camera space, plane at z = -1; no manufacturer shape, mark or livery) -------
-export const FRAME = Object.freeze({ pillar: 0.07, topRail: 0.08, panelTop: -0.52, glareHeight: 0.07 });
+export const FRAME = Object.freeze({ pillar: 0.07, topRail: 0.08, panelTop: -0.72, glareHeight: 0.07 });
 
 // Fraction of the screen that is windshield opening, from the frame constants.
 export function openingFraction(f = FRAME) {
@@ -393,8 +458,10 @@ export function buildDrawPlan(scene, opts = {}) {
   const guides = guideBoxes(scene, opts.viewKm);
   const airports = airportBoxes(scene);
   const labels = pickLabels(scene);
+  const gates = gateBoxes(scene);
   const frame = cockpitBoxes(num(opts.aspect, 1.78), opts.fovDeg);
-  const fixed = (guides.length + airports.length + frame.length) * BOX_TRIANGLES +
+  // Gates are counted in the fixed part: the drop loop below never removes them (the decision aid goes last).
+  const fixed = (guides.length + airports.length + frame.length + gates.length) * BOX_TRIANGLES +
     SKY_TRIANGLES + GROUND_TRIANGLES + labels.length * LABEL_TRIANGLES;
 
   const items = [
@@ -419,7 +486,7 @@ export function buildDrawPlan(scene, opts = {}) {
     observed: byLevel(LEVEL_OBSERVED),
     possible: byLevel(LEVEL_POSSIBLE),
     notAssessed: byLevel(LEVEL_NOT_ASSESSED),
-    guides, airports, labels, frame,
+    guides, airports, labels, frame, gates,
     triangles: total, fixedTriangles: fixed, dropped,
   };
 }
@@ -437,7 +504,10 @@ export function geometryKey(scene) {
   mix(num(s.ground && s.ground.y));
   for (const l of lanes) { mix(l.zKm); mix(l.isCurrent ? 1 : 0); mix(l.isTarget ? 2 : 0); }
   for (const c of clouds) { mix(c.x0Km); mix(c.x1Km); mix(c.zKm); mix(c.halfWidthKm); mix(c.topFt); mix(c.bottomFt); mix(c.baseEstimated ? 1 : 0); }
-  for (const b of ev) { mix(b.x0Km); mix(b.x1Km); mix(b.zKm); mix(b.halfWidthKm); mix(b.loFt); mix(b.hiFt); mix(levelIndexOf(b)); }
+  for (const b of ev) { mix(b.x0Km); mix(b.x1Km); mix(b.zKm); mix(b.halfWidthKm); mix(b.loFt); mix(b.hiFt); mix(levelIndexOf(b)); mix(b.weight === undefined ? 1 : b.weight); }
   for (const a of ap) { mix(a.xKm); mix(a.zKm); }
+  const gt = s.gates || [];
+  mix(gt.length);
+  for (const g of gt) { mix(g.lane); mix(g.xKm); mix(g.zKm); mix(g.yKm); mix(g.halfWidthKm); mix(g.halfHeightKm); mix(levelIndexOf(g)); }
   return h.toString(16);
 }

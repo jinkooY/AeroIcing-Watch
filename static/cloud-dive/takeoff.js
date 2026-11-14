@@ -3,6 +3,7 @@
 // the phase machine itself stays in phases.js and no engine value is changed here.
 import { createPhaseState, phaseStep, phaseDurationMs } from "./phases.js";
 import * as engine from "./engine.js";
+import { GATE_LABELS } from "./gate-controls.js";
 
 export const START_LABEL = "Start takeoff";
 export const START_HINT = "Press Space or Enter, or the button, to start the takeoff.";
@@ -100,6 +101,7 @@ export function leadStatusText(ps, icao) {
   if (ps.phase === "ready") return `Ready on the runway${where}. ${START_HINT}`;
   if (ps.phase === "takeoff") return "Taking off.";
   if (ps.phase === "climb") return "Climbing to the start of the route.";
+  if (ps.phase === "cruise") return `At the top of climb. Press ${GATE_LABELS.continue} to fly the route.`;
   return "";
 }
 

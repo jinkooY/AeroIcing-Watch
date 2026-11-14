@@ -10,7 +10,7 @@ import * as THREE from "./vendor/three/three.module.min.js";
 import { VIEW_KM, MAX_TRIANGLES, DEFAULT_FOV_DEG } from "./scene.js";
 import {
   EYE_HEIGHT_KM, SKY_SEGMENTS, buildDrawPlan, cameraEuler, fovForAspect, geometryKey, meshFromBoxes,
-  stippleData, hatchData, softData, cockpitBoxes, frostData, frostOpacity, frostRect, shakeOffsetDeg, windStreakSegments, MAX_STREAKS,
+  stippleData, gateDotData, hatchData, softData, diagonalData, stripeData, dashData, LEVEL_OBSERVED, LEVEL_POSSIBLE, LEVEL_NOT_ASSESSED, cockpitBoxes, frostData, frostOpacity, frostRect, shakeOffsetDeg, windStreakSegments, MAX_STREAKS,
 } from "./cockpit-geometry.js";
 
 import { chaseCamera, aircraftBoxes, chaseBudget } from "./chase.js";
@@ -69,10 +69,19 @@ function labelTexture(text) {
   ctx.fillStyle = "rgba(10,14,22,0.7)";
   ctx.fillRect(0, 0, 256, 64);
   ctx.fillStyle = "#f2f5fa";
-  ctx.font = "bold 28px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, 128, 33, 244);
+  if (text.length > 18 && text.includes(" ")) {
+    // Long level names: two lines, split at the space nearest the middle.
+    const spaces = [...text].map((ch, i) => (ch === " " ? i : -1)).filter((i) => i >= 0);
+    const cut = spaces.reduce((b, i) => (Math.abs(i - text.length / 2) < Math.abs(b - text.length / 2) ? i : b), spaces[0]);
+    ctx.font = "bold 25px sans-serif";
+    ctx.fillText(text.slice(0, cut), 128, 18, 244);
+    ctx.fillText(text.slice(cut + 1), 128, 47, 244);
+  } else {
+    ctx.font = "bold 28px sans-serif";
+    ctx.fillText(text, 128, 33, 244);
+  }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -96,8 +105,12 @@ export function createCockpit(canvas, options = {}) {
   const textures = {
     soft: dataTexture(softData(TEX), false),
     stipple: dataTexture(stippleData(TEX), true),
+    gateDot: dataTexture(gateDotData(TEX), true),
     hatch: dataTexture(hatchData(TEX), true),
     frost: dataTexture(frostData(FROST_TEX), false, FROST_TEX),
+    diagonal: dataTexture(diagonalData(TEX), true),
+    stripe: dataTexture(stripeData(TEX), true),
+    dash: dataTexture(dashData(TEX), true),
   };
   const base = { vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide };
   const mats = {
@@ -105,7 +118,12 @@ export function createCockpit(canvas, options = {}) {
     observed: new THREE.MeshBasicMaterial({ ...base, blending: THREE.AdditiveBlending, fog: false }),
     possible: new THREE.MeshBasicMaterial({ ...base, map: textures.stipple }),
     notAssessed: new THREE.MeshBasicMaterial({ ...base, map: textures.hatch, alphaTest: 0.05 }),
-    guide: new THREE.MeshBasicMaterial({ ...base }),
+    guide: new THREE.MeshBasicMaterial({ ...base, map: textures.dash, alphaTest: 0.05 }),
+    // Sky gates (design 15.2): outline for every level, fills by pattern. Depth test on so clouds hide a far frame.
+    gateLine: new THREE.MeshBasicMaterial({ ...base, fog: false }),
+    gateObserved: new THREE.MeshBasicMaterial({ ...base, map: textures.diagonal, alphaTest: 0.05, fog: false }),
+    gatePossible: new THREE.MeshBasicMaterial({ ...base, map: textures.gateDot, fog: false }),
+    gateNotAssessed: new THREE.MeshBasicMaterial({ ...base, map: textures.stripe, alphaTest: 0.05, fog: false }),
     solid: new THREE.MeshBasicMaterial({ vertexColors: true }),
     frame: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }),
   };
@@ -113,7 +131,7 @@ export function createCockpit(canvas, options = {}) {
     map: textures.frost, color: 0xe8f4ff, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false,
   });
   fadeNearEye(mats.cloud);
-  const renderOrder = { cloud: 1, notAssessed: 2, possible: 3, observed: 4 };
+  const renderOrder = { cloud: 1, notAssessed: 2, possible: 3, observed: 4, gate: 5 };
 
   // Sky dome (follows the eye) and flat ground (follows the eye in x and z only).
   const dome = new THREE.Mesh(
@@ -147,6 +165,10 @@ export function createCockpit(canvas, options = {}) {
   makeSlot("possible", mats.possible, renderOrder.possible);
   makeSlot("observed", mats.observed, renderOrder.observed);
   makeSlot("airports", mats.solid, 0);
+  makeSlot("gateLine", mats.gateLine, renderOrder.gate);
+  makeSlot("gateObserved", mats.gateObserved, renderOrder.gate);
+  makeSlot("gatePossible", mats.gatePossible, renderOrder.gate);
+  makeSlot("gateNotAssessed", mats.gateNotAssessed, renderOrder.gate);
   const guides = makeSlot("guides", mats.guide, 0);
   // Generic aircraft model of the chase view (task 19.1): built once at the origin, moved every frame.
   const aircraft = makeSlot("aircraft", mats.solid, 0);
@@ -267,6 +289,11 @@ export function createCockpit(canvas, options = {}) {
       fill("possible", plan.possible);
       fill("notAssessed", plan.notAssessed);
       fill("airports", plan.airports);
+      const gateFill = (lv) => plan.gates.filter((b) => b.part === "fill" && b.level === lv);
+      fill("gateLine", plan.gates.filter((b) => b.part !== "fill"));
+      fill("gateObserved", gateFill(LEVEL_OBSERVED));
+      fill("gatePossible", gateFill(LEVEL_POSSIBLE));
+      fill("gateNotAssessed", gateFill(LEVEL_NOT_ASSESSED));
       fill("guides", plan.guides);
       setLabels(plan.labels);
       stats.triangles = plan.triangles;

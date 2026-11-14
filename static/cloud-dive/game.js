@@ -29,6 +29,7 @@ import { fuelDisplayUsd, fuelDisplayWithDepartureUsd } from "./fuel-counter.js";
 import { departureUsd, withDeparture } from "./departure.js";
 import { cardApplies, departureCardText } from "./departure-card.js";
 import { popupFor } from "./cost-popup.js";
+import { openingFraction } from "./cockpit-geometry.js";
 import { createCruiseCamera, positionKm, eyePosition } from "./cruise-camera.js";
 import { chooseView, buttonLabel, viewKeyApplies } from "./view-mode.js";
 import { toggleMode, chaseKeyApplies, chaseButtonLabel } from "./chase.js";
@@ -804,12 +805,23 @@ function layoutFits() {
   return tall && wide && boxes;
 }
 
+// Ratio of the frame opening height (canvas height x openingFraction) to the window height; 0 when the cockpit
+// view is not shown (design 15.1, R22.1). Headless measurement only.
+function windshieldRatio() {
+  const cv = document.getElementById("cockpit-canvas");
+  const view = document.getElementById("cockpit-view");
+  if (!cv || !view || view.hidden || !window.innerHeight) return 0;
+  return Math.round(((cv.clientHeight * openingFraction()) / window.innerHeight) * 1000) / 1000;
+}
+
 function afterPaint(fn) {
   requestAnimationFrame(() => requestAnimationFrame(fn));
 }
 
 function checkLayout(s) {
   if (!layoutCheck || !s.engineCase || !s.state) return;
+  // Measured on every render, so it follows the cockpit view once the 3D module has loaded (design 15.1).
+  document.body.dataset.windshield = String(windshieldRatio());
   const gate = document.getElementById("gate-panel");
   const atGate = Boolean(gate && gate.classList.contains("is-gate"));
   if (fitsStart === null) {
@@ -817,11 +829,13 @@ function checkLayout(s) {
     afterPaint(() => {
       fitsStart = layoutFits();
       document.body.dataset.fits = fitsStart ? "yes" : "no";
+      document.body.dataset.windshield = String(windshieldRatio());
     });
   } else if (atGate && !fitsGateDone && typeof fitsStart === "boolean") {
     fitsGateDone = true;
     afterPaint(() => {
       document.body.dataset.fits = fitsStart && layoutFits() ? "yes" : "no";
+      document.body.dataset.windshield = String(windshieldRatio());
     });
   }
 }
@@ -844,6 +858,7 @@ const cockpit = {
   camera: createCruiseCamera(),
   scene: null,      // scene description of the current engine state
   sceneFor: null,   // engine state object the scene was built from
+  sceneGate: false, // true when that scene was built in the gate phase (sky gates drawn)
   from: null,       // { altFt, lane } before the last step, for display blending
   to: null,         // { altFt, lane } at the current step
   lastStep: null,
@@ -1181,6 +1196,12 @@ function onChaseKey(e) {
   toggleChase();
 }
 
+function atDecisionGate() {
+  if (!flightController) return false;
+  flightController.sync();
+  return flightController.getMode() === "gate";
+}
+
 // Builds the scene description for the current engine state (cruise only, from engine step 0) and updates the panel.
 function rebuildCockpitScene(s) {
   const c = s.engineCase;
@@ -1194,7 +1215,10 @@ function rebuildCockpitScene(s) {
   cockpit.fuelCur = total;
   cockpit.to = here;
   cockpit.lastStep = st.step;
-  cockpit.scene = buildScene(s.caseData, st, { phase: "cruise" }, sceneOptions(s.caseData, c, { mode: cockpit.mode, reducedMotion: reducedMotion() }));
+  // Sky gates (design 15.2) are drawn in the scene phase "gate", which is only the controller's gate mode.
+  // A pause is mode "paused": it stays "cruise" and shows no frames.
+  cockpit.sceneGate = atDecisionGate();
+  cockpit.scene = buildScene(s.caseData, st, { phase: cockpit.sceneGate ? "gate" : "cruise" }, sceneOptions(s.caseData, c, { mode: cockpit.mode, reducedMotion: reducedMotion() }));
   cockpit.sceneFor = st;
   if (cockpit.panel) {
     cockpit.panel.update(cockpit.scene, { caseData: s.caseData, engineCase: c, state: st, track: s.track });
@@ -1233,7 +1257,7 @@ function cockpitFrame(now) {
   if (!isCockpitView() || !cockpit.renderer || !s.engineCase || !s.state || $("flight").hidden) return;
   if (endingRunning() && endingFrame(now)) return;
   if (leadActive() && leadFrame(now)) return;
-  if (s.state !== cockpit.sceneFor) rebuildCockpitScene(s);
+  if (s.state !== cockpit.sceneFor || cockpit.sceneGate !== atDecisionGate()) rebuildCockpitScene(s);
   const c = s.engineCase;
   const reduced = reducedMotion();
   const frac = motionFrac(performance.now() - s.changeAt, TICK_MS, reduced);

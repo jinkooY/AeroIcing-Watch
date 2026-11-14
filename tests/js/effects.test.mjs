@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import * as E from "../../static/cloud-dive/engine.js";
 import * as S from "../../static/cloud-dive/scene.js";
+import * as G from "../../static/cloud-dive/cockpit-geometry.js";
 import { shakeOffsetDeg, windStreakSegments } from "../../static/cloud-dive/cockpit-geometry.js";
 
 const casesDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../static/cloud-dive/cases");
@@ -107,6 +108,7 @@ test("CD-P28 frost = ice/100 and never decreases; lamp equals anti-ice; effects 
       const r = rng(seed);
       let st = E.initialState(c, r() < 0.5);
       let prevFrost = -1;
+      let prevDrawn = -1;
       let prevTotal = null;
       for (let guard = 0; guard < c.nSteps + 5; guard++) {
         const phase = { phase: "cruise" };
@@ -118,6 +120,10 @@ test("CD-P28 frost = ice/100 and never decreases; lamp equals anti-ice; effects 
           assert.ok(Math.abs(eff.frost - st.ice / E.ICE_MAX) <= 1e-6, `${label} frost`);
           assert.ok(eff.frost >= 0 && eff.frost <= 1);
           assert.ok(eff.frost >= prevFrost - 1e-12, `${label} frost receded`);
+          const drawn = G.frostOpacity({ effects: eff });
+          assert.ok(Math.abs(drawn - Math.min(1, 2 * eff.frost)) <= 1e-12, `${label} drawn frost curve`);
+          assert.ok(drawn >= prevDrawn - 1e-12, `${label} drawn frost receded`);
+          prevDrawn = drawn;
           assert.equal(eff.wingLamp, st.antiIce, `${label} lamp`);
         }
         prevFrost = st.ice / E.ICE_MAX;

@@ -438,6 +438,83 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
   - _Requirements: R1.1, R1.2, R12.2, R16.4_
 - [x] 20.2 Final checkpoint: full test suites, wording test, layout check, Pages path check
 
+- [x] 21. (h) Visual polish (revision c)
+- [x] 21.1 Record the "before" screenshots (before any code change)
+  - Headless Chrome at 1280x720, KJFK-KBNA 2026-11-12, cockpit view: start (ready), first gate
+    and report; save as `docs/screens/21.0-start.png`, `21.0-gate.png`, `21.0-report.png`
+  - Take them from the current build, before any other task in this group changes code; add a
+    row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.1, R22.4, R22.8_
+- [x] 21.2 Slim overlay panel, large windshield and bottom-bar texts (design 15.1)
+  - `cockpit.css` and `panel.js`: canvas fills the cockpit view; `#cockpit-panel` becomes a one-row
+    overlay (fuel, "Ice index (game model)" meter with number, anti-ice switch with lamp, altitude
+    readout); compact level strip at the top with exact names, pattern word in `title` and `aria-label`;
+    panel map as a corner inset; `FRAME.panelTop` in `cockpit-geometry.js` raised towards -0.72
+  - Remove `.cp-game-note`, `.cp-source` and their nodes; `buildEffects` stops appending the source
+    text to `textLine`; the game note and the source line appear once, in the bottom bar
+  - `?layoutcheck=1` in `game.js` also sets `data-windshield` (frame opening height over `innerHeight`);
+    extend `tools/layout_check.mjs` to require `data-fits="yes"` and `data-windshield` of at least 0.6 at
+    1280x720; a DOM check that the note and source texts occur once; add a row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.1, R22.2, R22.3_
+- [x] 21.3 Sky gates (design 15.2)
+  - `scene.js`: `buildGates` and `gates[]` (empty outside the gate phase, five entries in the gate phase;
+    level is the worst of the next three cells at the target altitude, Not assessed when no cell remains;
+    label is the exact level name; no cost field, no recommendation)
+  - `cockpit-geometry.js` `gateBoxes` and `cockpit3d.js` `gates` slot: outline for every level, fills by
+    pattern (orange diagonal lines, blue dots, grey stripes, none), one text label per gate; gates counted in
+    `MAX_TRIANGLES` and dropped last
+  - Open check from design 15.2: confirm in `phases.js` and the controller whether a pause enters the
+    `gate` phase, and record the answer in the usage log; if it does not, document that no frames are shown at a pause
+  - Node tests (`fast-check`, 100 iterations or more): CD-P33; extend CD-P23 (purity with `gates`),
+    CD-P25 (gate level agrees with `levelAt`) and CD-P26 (gates <= 5); example tests for the four levels and
+    the no-cell case; add a row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.4, R22.11, R6.5, R2.5_
+- [x] 21.4 Evidence emphasis near the aircraft altitude (design 15.3)
+  - `buildEvidence` adds `weight` (1 within 2,000 ft of the band interval, else 0.25); `evidenceBoxes`
+    multiplies alpha by it; `geometryKey` mixes the weight; levels, counts, extents and labels unchanged
+  - Node test CD-P34; extend CD-P25 (the weight never changes level, count or extent); add a row to
+    `docs/kiro-usage-log.md`
+  - _Requirements: R22.5, R22.11_
+- [x] 21.5 Stronger frost curve and thin dashed lane guides (design 15.4)
+  - `frostOpacity(scene)` returns min(1, 2 x frost) (0.5 at ice 25, 1.0 from ice 50); `effects.frost`
+    stays ice / 100
+  - `guideBoxes` draws one thin strip per lane (`GUIDE_HALF_WIDTH_KM` about 0.03) with a generated dash
+    texture (`dashData`); keep the current and target lane emphasis
+  - Update CD-P28 (curve values, non-decreasing in ice, never decreases over a flight) and add example tests
+    for `frostOpacity` at ice 0, 25, 50, 100 and for `guideBoxes`; add a row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.6, R22.7, R18.1_
+- [x] 21.6 Report headline with the dollar gaps (design 15.5)
+  - `report.js` `reportHeadline(report)` (pure): "$N more than Straight-ahead", "$N less than
+    Straight-ahead", "The same as Straight-ahead", "$N above Best"; null entry for a missing reference
+  - `report-view.js` leads with `.report-lead` (Straight-ahead line, then Best line), then the saving share
+    percentage unchanged; diverted flights keep the not-ranked text and show no headline
+  - Node test CD-P35 and examples for a cheaper, a dearer and an equal flight and a missing reference; add a
+    row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.8, R8.2_
+- [x] 21.7 Post-climb status text and "base estimated" label (design 15.6)
+  - `controls.js` builds `goLabel` once and the status message from it; `takeoff.js` `leadStatusText` gets a
+    cruise reading "At the top of climb. Press Continue to fly the route." built from the same label constant
+  - `pickLabels` moves the `base` label to the far end and lane edge of its volume at the base height, width 4.5,
+    never at the centre of the view; example tests for the label position and the status text; add a row to
+    `docs/kiro-usage-log.md`
+  - _Requirements: R22.9, R22.10_
+- [x] 21.8 Wording test, unchanged-engine check and scene purity
+  - Extend `tests/test_wording.py` to scan the new strings (headline, status, gate labels, legend strip, label text)
+    for the terms of R9.1
+  - Check that `git diff` of `static/cloud-dive/engine.js`, `src/analysis/game_core.py`,
+    `src/analysis/cost_model.py` and `static/cloud-dive/cases/` is empty relative to the commit before group 21
+    (a test or script that fails on any difference)
+  - Re-run CD-P23 on the three real cases and synthetic cases in both array shapes with deep-frozen inputs; add a
+    row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.11, R9.1, R22.4_
+- [x] 21.9 Checkpoint: "after" screenshots and full test run
+  - Record `docs/screens/21.9-start.png`, `21.9-gate.png`, `21.9-frost-25.png`, `21.9-frost-50.png` and
+    `21.9-report.png` at 1280x720 for KJFK-KBNA, same method as 21.1
+  - Run `pytest -q` with `C:\Users\I7-JIN\miniconda3\envs\WeatherPath\python.exe`, the wording test,
+    `node --check` on every changed `*.js` file, `node --test tests/js/*.test.mjs` and `tools/layout_check.mjs`
+    (`data-fits="yes"`, `data-windshield` at least 0.6); fix failures; add a row to `docs/kiro-usage-log.md`
+  - _Requirements: R22.1, R22.3, R22.4, R22.6, R22.8, R22.11_
+
 ## Notes
 
 - F1 to F6 are approved (`requirements.md` 5.6; F3 amended with the two-sided anti-ice penalty and the balance criteria).
@@ -449,6 +526,8 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - Revision b (decisions G1 to G14): groups 13 to 20. Cuttable: 17.5, 16.2, 16.4, 19; optional: 16.7.
   Required: the rest, including 17.1 to 17.4 (departure constant, phases, runway, climb) and 18.
   If 17.5 is cut, the report opens directly at arrival or diversion.
+- Revision c (decision G15): group 21, presentation only. Engine, cost model, case files and evidence
+  values stay unchanged (R22.11). Task 21.1 must run before any other task of the group changes code.
 - Frame rates are measured in task 15.6 and 18.2 and recorded as measured, not as targets met.
 
 ## Task Dependency Graph
@@ -495,7 +574,15 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 35, "tasks": ["16.7"] },
     { "wave": 36, "tasks": ["19.1"] },
     { "wave": 37, "tasks": ["19.2", "19.3"] },
-    { "wave": 38, "tasks": ["20.1", "20.2"] }
+    { "wave": 38, "tasks": ["20.1", "20.2"] },
+    { "wave": 39, "tasks": ["21.1"] },
+    { "wave": 40, "tasks": ["21.2"] },
+    { "wave": 41, "tasks": ["21.3"] },
+    { "wave": 42, "tasks": ["21.4"] },
+    { "wave": 43, "tasks": ["21.5", "21.6"] },
+    { "wave": 44, "tasks": ["21.7"] },
+    { "wave": 45, "tasks": ["21.8"] },
+    { "wave": 46, "tasks": ["21.9"] }
   ]
 }
 ```

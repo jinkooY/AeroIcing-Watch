@@ -93,6 +93,28 @@ export function buildReport(c, state, references, fileParams) {
   };
 }
 
+// Report headline (R22.8, CD-P35). Pure: only the report numbers, nothing new from the engine.
+// Returns null for a diverted (not ranked) report. Each entry is null when its reference is missing.
+// vsStraight.usd is the rounded absolute difference; aboveBest.usd is the rounded gap to Best, never below 0.
+export function reportHeadline(report) {
+  if (!report || !report.ranked || !finite(report.totalUsd)) return null;
+  const refs = report.references || {};
+  let vsStraight = null;
+  if (finite(refs.straight_ahead)) {
+    const d = report.totalUsd - refs.straight_ahead;
+    const usd = Math.round(Math.abs(d));
+    let text = "The same as Straight-ahead";
+    if (usd > 0) text = `${formatUsdWhole(usd)} ${d > 0 ? "more" : "less"} than Straight-ahead`;
+    vsStraight = { usd, text };
+  }
+  let aboveBest = null;
+  if (finite(refs.best)) {
+    const usd = Math.max(0, Math.round(report.totalUsd - refs.best));
+    aboveBest = { usd, text: usd > 0 ? `${formatUsdWhole(usd)} above Best` : "The same as Best" };
+  }
+  return { vsStraight, aboveBest };
+}
+
 // ------------------------------------------------------------------------------------------
 // Personal best (browser only, never uploaded). `storage` is a Storage-like object or null.
 // Every access is wrapped, because localStorage can be missing, blocked or full.

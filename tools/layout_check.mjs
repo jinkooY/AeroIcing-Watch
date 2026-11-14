@@ -7,12 +7,10 @@
 // Results are also written to docs/screens/15.6-perf.json.
 // Usage: node tools/layout_check.mjs [--only=<case id part>] [--sizes=1280x720,390x844] [--out=docs/screens] [--gpu=hw|sw]
 //   --gpu=sw adds --disable-gpu (software GL); the default lets the browser choose.
-import http from "node:http";
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { startGuard } from "./browser_guard.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name, dflt) => {
@@ -24,64 +22,10 @@ const only = arg("only", "");
 const sizesArg = arg("sizes", "");
 const gpu = arg("gpu", "hw");
 
-const BROWSERS = [
-  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-  "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
-  "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-];
-const browserPath = BROWSERS.find((p) => existsSync(p));
-if (!browserPath) throw new Error("No Edge or Chrome found");
-
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png" };
-const server = http.createServer((req, res) => {
-  const rel = decodeURIComponent(new URL(req.url, "http://x").pathname);
-  const file = path.join(root, rel);
-  if (!file.startsWith(root) || !existsSync(file)) { res.writeHead(404); res.end(); return; }
-  try {
-    res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-store" });
-    res.end(readFileSync(file));
-  } catch { res.writeHead(500); res.end(); }
-});
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const base = `http://127.0.0.1:${server.address().port}`;
+const guard = await startGuard({ root, extraArgs: (gpu === "sw" ? ["--disable-gpu"] : ["--ignore-gpu-blocklist"]) });
+const { base, send, evaluate, sleep } = guard;
 const index = JSON.parse(readFileSync(path.join(root, "static/cloud-dive/cases/index.json"), "utf8"));
 const caseIds = index.cases.map((c) => c.id).filter((id) => id.includes(only));
-
-const profile = mkdtempSync(path.join(tmpdir(), "cdlayout-"));
-const port = 9300 + Math.floor(Math.random() * 500);
-const proc = spawn(browserPath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "--headless=new",
-  "--no-first-run", ...(gpu === "sw" ? ["--disable-gpu"] : ["--ignore-gpu-blocklist"]), "--hide-scrollbars", "about:blank"], { stdio: "ignore" });
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function connect() {
-  for (let i = 0; i < 60; i++) {
-    try {
-      const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-      const page = list.find((t) => t.type === "page");
-      if (page) return page.webSocketDebuggerUrl;
-    } catch { /* browser still starting */ }
-    await sleep(250);
-  }
-  throw new Error("browser did not start");
-}
-const ws = new WebSocket(await connect());
-await new Promise((r) => ws.addEventListener("open", r, { once: true }));
-let nextId = 1;
-const waiting = new Map();
-ws.addEventListener("message", (ev) => {
-  const m = JSON.parse(ev.data);
-  if (m.id && waiting.has(m.id)) { waiting.get(m.id)(m); waiting.delete(m.id); }
-});
-const send = (method, params = {}) => new Promise((resolve, reject) => {
-  const id = nextId++;
-  waiting.set(id, (m) => (m.error ? reject(new Error(m.error.message)) : resolve(m.result)));
-  ws.send(JSON.stringify({ id, method, params }));
-});
-const evaluate = async (expression) => {
-  const r = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-  return r.result.value;
-};
 async function waitFor(expression, ms = 20000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) {
@@ -101,9 +45,15 @@ await send("Runtime.enable");
 const results = [];
 // R14.6: at 1280 wide or more in landscape both fits flags must be "yes". Narrower or portrait screens may stack and
 // scroll vertically, but nothing may overflow sideways and every control must stay reachable.
-function verdict(w, h, a, b, lostA, lostB, detail) {
+// Task 21.2 (R22.1, R22.3): in the cockpit view at 1280x720 the windshield is at least 0.6 of the window height and
+// the game note and the source line each occur once.
+function verdict(w, h, a, b, lostA, lostB, detail, extra = {}) {
   const d = JSON.parse(detail);
   if (lostA || lostB) return "FAIL";
+  if (extra.view === "cockpit") {
+    if (w === 1280 && h === 720 && !(extra.windshield >= 0.6)) return "FAIL";
+    if (extra.noteCount !== 1 || extra.sourceCount !== 1) return "FAIL";
+  }
   if (w >= 1280 && w > h) return a === "yes" && b === "yes" ? "ok" : "FAIL";
   return d.sw <= w ? "ok (scrolls)" : "FAIL";
 }
@@ -161,6 +111,16 @@ try {
     const fitsStart = await evaluate("document.body.dataset.fits");
     const viewStart = await evaluate(`document.body.classList.contains("view-cockpit") ? "cockpit" : "2d"`);
     const lostStart = await evaluate(UNREACHABLE);
+    // R22.3: the game note and the source line are each present once in the visible page text.
+    const counts = JSON.parse(await evaluate(`JSON.stringify((() => { try {
+      const vis = (n) => n.offsetParent !== null || getComputedStyle(n).position === "fixed";
+      const text = [...document.querySelectorAll("body *")].filter((n) => vis(n) && !n.children.length).map((n) => n.textContent).join("\\n");
+      const note = "Game model. Not a flight procedure, not an icing severity.";
+      const src = document.getElementById("src-line");
+      const srcText = src ? src.textContent.replace(/^[ |]+/, "").trim() : "";
+      const occ = (s, sub) => (sub ? s.split(sub).length - 1 : 0);
+      return { noteCount: occ(text, note), sourceCount: src && src.offsetParent !== null ? occ(text, srcText) : 0 };
+    } catch (e) { return { err: String(e) }; } })())`));
     await shot(`15.6-${short}-${size}-start.png`);
     // Fly to the first gate: press Start and wait for the gate panel.
     // Task 17.3: in the cockpit view the flight opens on the runway; press Start takeoff and wait for the lead-in to end.
@@ -172,12 +132,13 @@ try {
     await sleep(900);
     const fitsGate = await evaluate("document.body.dataset.fits");
     const lostGate = await evaluate(UNREACHABLE);
+    const windshield = Number(await evaluate("document.body.dataset.windshield || 0"));
     await shot(`15.6-${short}-${size}-gate.png`); // before measurePerf() presses Continue
     const perf = await measurePerf();
     const detail = await evaluate(`JSON.stringify({ wide: [...document.querySelectorAll("body *")].filter((n) => n.offsetParent !== null && n.getBoundingClientRect().right > ${w} + 1).filter((n) => ![...n.children].some((k) => k.getBoundingClientRect().right > ${w} + 1)).slice(0, 8).map((n) => (n.id || n.className || n.tagName) + ":" + Math.round(n.getBoundingClientRect().right)), sh: document.documentElement.scrollHeight, sw: document.documentElement.scrollWidth,
       over: [...document.querySelectorAll("[data-fit-box]")].filter((n) => n.offsetParent !== null && n.scrollHeight > n.clientHeight + 1).map((n) => n.id || n.className) })`);
-    results.push({ case: short, size, view: viewStart, start: startOk ? fitsStart : "timeout", gate: atGate ? fitsGate : "no gate",
-      unreachable: `${lostStart}/${lostGate}`, pass: verdict(w, h, fitsStart, fitsGate, lostStart, lostGate, detail), fps: perf && perf.fps ? Math.round(perf.fps * 10) / 10 : null, detail });
+    results.push({ case: short, size, view: viewStart, windshield, note: counts.noteCount, source: counts.sourceCount, start: startOk ? fitsStart : "timeout", gate: atGate ? fitsGate : "no gate",
+      unreachable: `${lostStart}/${lostGate}`, pass: verdict(w, h, fitsStart, fitsGate, lostStart, lostGate, detail, { view: viewStart, windshield, ...counts }), fps: perf && perf.fps ? Math.round(perf.fps * 10) / 10 : null, detail });
     perfRows.push({ case: short, size, view: viewStart, ...perf });
   }
   // Task 17.8: the 2D view at 1280x720 with the departure climb status card (17.7) visible before the first step.
@@ -219,9 +180,5 @@ try {
     writeFileSync(path.join(outDir, "15.6-perf.json"), JSON.stringify({ browser: ver.product, gpuFlag: gpu, webglRenderer: gl, measuredAt: new Date().toISOString(), results, perf: perfRows }, null, 1));
     console.log("browser:", ver.product, "| gpu mode:", gpu, "| WebGL renderer:", gl);
   } catch (e) { console.log("could not record browser info:", e.message); }
-  ws.close();
-  proc.kill();
-  server.close();
-  await sleep(500);
-  try { rmSync(profile, { recursive: true, force: true }); } catch { /* profile still locked */ }
+  await guard.close();
 }
