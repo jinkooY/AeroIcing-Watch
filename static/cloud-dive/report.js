@@ -5,6 +5,7 @@
 // possible saving), R5.6 (diverted flights: not ranked), R8.4 (local best only), R8.5 (no ranking claims).
 
 import * as engine from "./engine.js";
+import { DEPARTURE_LABEL, departureUsd, referenceWithDeparture, withDeparture } from "./departure.js";
 
 export const LEVEL_LABELS = [
   "Not assessed",
@@ -16,6 +17,7 @@ export const LEVEL_LABELS = [
 export const COMPONENT_LABELS = [
   ["base", "Base / cruise"],
   ["climb", "Climb"],
+  ["departure", DEPARTURE_LABEL],
   ["detour", "Detour"],
   ["antiIce", "Anti-ice"],
   ["ice", "Ice drag"],
@@ -30,7 +32,8 @@ export const REFERENCE_LABELS = [
   ["wasteful", "Wasteful extreme", "Highest cost of any completed flight in this case."],
 ];
 
-export const STORAGE_PREFIX = "cloud-dive:best:";
+// v2: totals include the departure climb constant (task 17.1), so v1 values are not comparable.
+export const STORAGE_PREFIX = "cloud-dive:best:v2:";
 
 const finite = (v) => typeof v === "number" && Number.isFinite(v);
 
@@ -38,12 +41,13 @@ export function formatUsdWhole(v) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
 }
 
-// Reference costs from the case file, each null when missing or not a completed flight.
-export function referenceCosts(references) {
+// Reference costs as displayed (engine cost + departure climb constant), each null when missing or not a
+// completed flight. `params` is the case params object; without it the stored engine cost is returned.
+export function referenceCosts(references, params) {
   const out = {};
   for (const [key] of REFERENCE_LABELS) {
     const r = references && references[key];
-    out[key] = r && r.completed !== false && finite(r.costUsd) ? r.costUsd : null;
+    out[key] = r && r.completed !== false && finite(r.costUsd) ? referenceWithDeparture(r.costUsd, params) : null;
   }
   return out;
 }
@@ -59,27 +63,33 @@ export function savingSharePercent(playerUsd, bestUsd, straightAheadUsd) {
 }
 
 // Report model for a flight that is no longer flying. Returns null while the flight is on.
-export function buildReport(c, state, references) {
+export function buildReport(c, state, references, fileParams) {
   if (!c || !state || state.status === "flying") return null;
   const s = engine.summary(c, state);
-  const refs = referenceCosts(references);
+  const caseParams = fileParams || c.params; // the engine keeps only the numbers it uses; the constant is in the case file
+  const dep = departureUsd(caseParams);
+  const refs = referenceCosts(references, caseParams);
   const ranked = s.ranked;
-  const components = COMPONENT_LABELS.map(([key, label]) => ({ key, label, usd: s.components[key] || 0 }));
+  const totalUsd = withDeparture(s.totalUsd, caseParams);
+  const components = COMPONENT_LABELS.map(([key, label]) =>
+    ({ key, label, usd: key === "departure" ? dep : s.components[key] || 0 }));
   const kmPerLevel = LEVEL_LABELS.map((label, level) => ({ level, label, km: s.kmPerLevel[level] || 0 }));
   return {
     status: s.status,
     ranked,
-    totalUsd: s.totalUsd,
-    // Diverted flights: cost up to the diversion plus the diversion cost (R5.6).
+    totalUsd,
+    // Diverted flights: cost up to the diversion + the diversion cost + the departure climb (R5.6).
+    // costUpToDiversionUsd is the engine cost only; the departure climb is listed on its own.
     costUpToDiversionUsd: ranked ? null : s.totalUsd - s.components.diversion,
     diversionUsd: ranked ? null : s.components.diversion,
+    departureUsd: dep,
     components,
     icePeak: s.icePeak,
     minutesAntiIce: s.minutesAntiIce,
     kmPerLevel,
     distanceKm: s.distanceKm,
     references: refs,
-    savingSharePercent: ranked ? savingSharePercent(s.totalUsd, refs.best, refs.straight_ahead) : null,
+    savingSharePercent: ranked ? savingSharePercent(totalUsd, refs.best, refs.straight_ahead) : null,
   };
 }
 
@@ -140,7 +150,8 @@ export function shareText(report, title) {
   if (!report.ranked) {
     const upTo = formatUsdWhole(report.costUpToDiversionUsd);
     return `${head} My flight diverted (not ranked): ${upTo} up to the diversion plus ` +
-      `${formatUsdWhole(report.diversionUsd)} diversion cost. ${tail}`;
+      `${formatUsdWhole(report.diversionUsd)} diversion cost plus ` +
+      `${formatUsdWhole(report.departureUsd)} departure climb. ${tail}`;
   }
   const parts = [`${head} My fuel cost: ${formatUsdWhole(report.totalUsd)}.`];
   if (report.references.best !== null) parts.push(`Game Best: ${formatUsdWhole(report.references.best)}.`);

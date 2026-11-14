@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cloud Dive</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="game.css">
+  <link rel="stylesheet" href="cockpit.css">
 </head>
 <body>
   <!-- Top bar (task 12.2): title, case title, HUD chips, Change case. -->
@@ -15,7 +17,7 @@
 
     <dl id="hud" class="hud flight-only" aria-label="Flight status">
       <div class="hud-item hud-total">
-        <dt title="Fuel cost (game, illustrative)">Fuel cost (game)</dt>
+        <dt id="hud-total-label" title="Fuel cost (game, illustrative)">Fuel cost (game)</dt>
         <dd id="hud-total">$0</dd>
       </div>
       <div class="hud-item hud-ice">
@@ -58,7 +60,15 @@
 
     <!-- Flight screen (hidden until a case is loaded): two columns, map left, side view and controls right. -->
     <section id="flight" class="flight" aria-labelledby="flight-title" data-fit-box hidden>
+      <!-- Cockpit view (task 15.5): 3D canvas with the panel overlay. Default for flights; hidden in the 2D view
+           and when WebGL or the 3D module is not available (R19.1). -->
+      <section id="cockpit-view" class="cockpit-view" aria-label="Cockpit view" hidden>
+        <canvas id="cockpit-canvas" class="cockpit-canvas" role="img"
+                aria-label="Cockpit view: first-person view along the route with cloud volumes and evidence. The panel gives the same information as text."></canvas>
+        <div id="cockpit-panel"></div>
+      </section>
       <div class="col-left" data-fit-box>
+        <p id="view-notice" class="view-notice" role="status" hidden></p>
         <section id="map-section" class="map-section" aria-labelledby="map-title">
           <h3 id="map-title" class="sr-only">Map view</h3>
           <div class="map-wrap">
@@ -88,8 +98,23 @@
         </div>
         <p id="scene-text" class="sr-only"></p>
 
+        <!-- Departure climb status card (task 17.7): 2D view only, before the first step. -->
+        <section id="departure-card" class="departure-card" aria-labelledby="departure-card-title" hidden>
+          <h3 id="departure-card-title">Departure climb</h3>
+          <p><strong id="departure-card-cost"></strong> <span id="departure-card-route"></span> <span id="departure-card-level"></span></p>
+          <p id="departure-card-note" class="departure-card-note"></p>
+        </section>
+        <!-- Runway and takeoff (task 17.3): shown in the cockpit view until the climb ends. -->
+        <section id="lead-box" class="lead-box" aria-labelledby="lead-title" hidden>
+          <h3 id="lead-title" tabindex="-1">Departure</h3>
+          <p id="lead-status" class="lead-status" role="status" aria-live="polite"></p>
+          <button type="button" id="takeoff-btn" class="takeoff-btn" aria-keyshortcuts="Space Enter">Start takeoff</button>
+          <button type="button" id="skip-btn" class="takeoff-btn" aria-keyshortcuts="Space" hidden>Skip</button>
+        </section>
         <!-- Gate panel and controls plug in here (task 8.3). -->
         <section id="controls" aria-label="Controls" class="controls"></section>
+        <!-- Cockpit gate choices and side-view inset (task 15.4); hidden until the cockpit view is on. -->
+        <section id="gate-choices" aria-label="Gate choices" class="gate-choices-wrap" hidden></section>
       </div>
     </section>
 
@@ -107,6 +132,49 @@
   <dialog id="dlg-report" class="dlg dlg-wide" aria-labelledby="report-title">
     <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
     <section id="report" aria-label="Report" hidden></section>
+  </dialog>
+
+  <!-- Hot-seat (task 18.2): setup before the first flight, hand-over between flights. Nothing is uploaded. -->
+  <dialog id="dlg-hotseat" class="dlg" aria-labelledby="hotseat-title">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <form id="hotseat-form" method="dialog" class="hotseat-form">
+      <h2 id="hotseat-title" tabindex="-1">Hot-seat</h2>
+      <p class="small">2 to 4 players fly the same case in turn on this device. Names are optional and stay on this device.</p>
+      <p id="hotseat-case" class="small"></p>
+      <label for="hotseat-count">Number of players</label>
+      <select id="hotseat-count">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+      <div id="hotseat-names" class="hotseat-names"></div>
+      <button type="submit" id="hotseat-start">Start hot-seat</button>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-handover" class="dlg" aria-labelledby="handover-title">
+    <section class="hotseat-form">
+      <h2 id="handover-title" tabindex="-1">Hand the device to the next player</h2>
+      <p id="handover-text" role="status"></p>
+      <p class="small">The next player has not seen this report. Game model, illustrative dollar values.</p>
+      <button type="button" id="handover-start">Start</button>
+      <button type="button" id="handover-end">End hot-seat</button>
+    </section>
+  </dialog>
+
+  <!-- Hot-seat results (task 18.3): opens after the last player closes their report. In memory only. -->
+  <dialog id="dlg-results" class="dlg dlg-wide" aria-labelledby="results-title">
+    <div class="dlg-bar"><button type="button" class="dlg-close">Close</button></div>
+    <section class="hotseat-form results">
+      <h2 id="results-title" tabindex="-1">Hot-seat results</h2>
+      <table id="results-table" class="report-table results-table"></table>
+      <p id="results-departure" class="small"></p>
+      <p id="results-notes" class="small"></p>
+      <div class="results-actions">
+        <button type="button" id="results-again">Play again</button>
+        <button type="button" id="results-back">Back to cases</button>
+      </div>
+    </section>
   </dialog>
 
   <dialog id="dlg-why" class="dlg" aria-label="Why?">
@@ -152,8 +220,10 @@
   <!-- Bottom bar: game note (R9.3), one-line attribution, Legend, Why?, Sources. -->
   <footer class="bottom">
     <p id="game-note" class="game-note">Game model. Not a flight procedure, not an icing severity. Evidence from satellite cloud tops and an ECMWF forecast.</p>
-    <p class="attribution" title="Dollar values, ice index and parameters are illustrative game values.">NOAA GOES-R (public domain) | ECMWF Open Data, CC BY 4.0 | Natural Earth (public domain)</p>
+    <p class="attribution" title="Dollar values, ice index and parameters are illustrative game values.">NOAA GOES-R (public domain) | ECMWF Open Data, CC BY 4.0 | Natural Earth (public domain)<span id="src-line" class="src-line"></span></p>
     <nav class="bottom-buttons" aria-label="Details">
+      <button type="button" id="view-toggle" class="flight-only" aria-keyshortcuts="V" hidden>2D view (V)</button>
+      <button type="button" id="chase-toggle" class="flight-only" aria-keyshortcuts="C" aria-pressed="false" hidden>Chase view (C)</button>
       <button type="button" id="open-legend" class="flight-only" data-dialog="legend" aria-keyshortcuts="L">Legend (L)</button>
       <button type="button" id="open-why" class="flight-only" data-dialog="why">Why?</button>
       <button type="button" id="open-sources" class="flight-only" data-dialog="sources">Sources</button>

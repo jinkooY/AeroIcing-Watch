@@ -554,6 +554,715 @@
         "chatSessionId": "sess_26a04a06-43ce-44d1-8cee-62300dc91519",
         "timestamp": 1794559626597
       }
+    ],
+    "13.1 Re-verify R21 on the current build (re-verify only)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196642
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562204671
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562392655
+      }
+    ],
+    "13.2 Checkpoint: pytest, wording test, `node --check`, `node --test` pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196704
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562398797
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562466828
+      }
+    ],
+    "14.1 Create `static/cloud-dive/scene.js` with the frame, constants and schema": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196753
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562470555
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562611889
+      }
+    ],
+    "14.2 Build cloud volumes with merging and caps": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196816
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562615541
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562767837
+      }
+    ],
+    "14.3 Build evidence bands": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196869
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562771345
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562899232
+      }
+    ],
+    "14.4 Build effects and panel data": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196920
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562902813
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563025514
+      }
+    ],
+    "14.5 Write Node tests CD-P23 to CD-P26 and extend the wording test": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562196970
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563030822
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563132487
+      }
+    ],
+    "14.6 Checkpoint: pytest, wording test, `node --check`, `node --test` pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197021
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563136040
+      }
+    ],
+    "15.1 Vendor the 3D library": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197071
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563217716
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563296291
+      }
+    ],
+    "15.2 Write `cockpit3d.js`": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197121
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563299438
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563694486
+      }
+    ],
+    "15.3 Write the panel overlay `panel.js` and `cockpit.css`": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197180
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563698070
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563876333
+      }
+    ],
+    "15.4 Map gate choices to the controller and add the gate inset": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197231
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794563879620
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794564033073
+      }
+    ],
+    "15.5 Cruise camera, fast-forward, gate stop, 2D toggle, fallback and Why cards": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197280
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794564036615
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794564524707
+      }
+    ],
+    "15.6 Check layout and frame rate in a headless browser": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197329
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794564529167
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565180174
+      }
+    ],
+    "15.7 Checkpoint (shippable: a playable 3D cruise game): pytest, wording test,": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197373
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565183585
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565815787
+      }
+    ],
+    "16.1 Frost on the windshield edges": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197420
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565821487
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565915538
+      }
+    ],
+    "16.2 Airframe shake with reduced-motion handling (cuttable; built after group 18)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197471
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565923552
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566049541
+      }
+    ],
+    "16.3 Wing-heat lamp and fuel-counter rate": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197532
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566053492
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566158252
+      }
+    ],
+    "16.4 Wind streaks (cuttable; built after group 18)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197616
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566167102
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566271681
+      }
+    ],
+    "16.5 Write property test CD-P28 for frost and the wing-heat lamp, and a check that the effects change no engine value": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197665
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566275201
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566348474
+      }
+    ],
+    "16.6 Checkpoint (shippable): all test suites and the layout check pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197718
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566352308
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566502619
+      }
+    ],
+    "16.7 Cost pop-up \"+$N this segment\" (optional; built after 16.2, 16.4 and 17.5)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197767
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566510751
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566616570
+      }
+    ],
+    "17.1 Add the departure climb constant and airport elevations": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197814
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566620072
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567256224
+      }
+    ],
+    "17.2 Write `phases.js`": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197866
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567259950
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567420519
+      }
+    ],
+    "17.3 Runway scene and takeoff": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197919
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567424252
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567789632
+      }
+    ],
+    "17.4 Automatic climb with the labels, cloud fade and lead-in tuning": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562197970
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794567793114
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794568238810
+      }
+    ],
+    "17.5 Arrival and diversion cinematics, then the report (cuttable; built after group 18)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198020
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794568244061
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794568694564
+      }
+    ],
+    "17.6 Skip and reduced motion": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198071
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794568697946
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569041052
+      }
+    ],
+    "17.7 Show the departure climb as a status card in the 2D fallback": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198119
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569044742
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569384743
+      }
+    ],
+    "17.8 Checkpoint (shippable): all test suites and the layout check pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198168
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569388057
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569695296
+      }
+    ],
+    "18.1 Write `static/cloud-dive/hotseat.js` and property test CD-P31": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198220
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569698918
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569804094
+      }
+    ],
+    "18.2 Setup dialog and hand-over dialog between flights": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198271
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569808033
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794570182355
+      }
+    ],
+    "18.3 Results table dialog with Best and Straight-ahead": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198319
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794570185770
+      }
+    ],
+    "18.4 Checkpoint: all test suites and the layout check pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198372
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794570548750
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794571309612
+      }
+    ],
+    "19.1 Add the chase camera (key C) and a generic aircraft model built from primitives": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198430
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794571316714
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794571733046
+      }
+    ],
+    "19.2 Test and check: scene mode field, wording scan, frame rate in chase view": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198483
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794571736893
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572083485
+      }
+    ],
+    "19.3 Checkpoint: all test suites pass": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198533
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572087877
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572288040
+      }
+    ],
+    "20.1 Update README, the disclosure, `THIRD_PARTY_NOTICES.md` and the submission checklist": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198584
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572291594
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572520323
+      }
+    ],
+    "20.2 Final checkpoint: full test suites, wording test, layout check, Pages path check": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562198633
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572521604
+      },
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794573137158
+      }
+    ],
+    "13. (a) Playtest fixes on the 2D game": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794562466902
+      }
+    ],
+    "15. (c) Cockpit cruise view with gates": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794565815851
+      }
+    ],
+    "16. (d) Feedback effects (16.1 and 16.3 required; 16.2 and 16.4 cuttable; 16.7 optional)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794566616632
+      }
+    ],
+    "17. (e) Departure and climb (17.1 to 17.4, 17.6 to 17.8 required; 17.5 cuttable)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794569695392
+      }
+    ],
+    "18. (f) Hot-seat (required)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794571309745
+      }
+    ],
+    "19. (g) Chase view (cuttable before 2026-12-04; first to be cut)": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794572288122
+      }
+    ],
+    "20. Documentation for revision b": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794573137262
+      }
+    ],
+    "14. (b) Scene description and tests": [
+      {
+        "executionId": "8c1a7e31-5702-4d3e-81e6-746972f30775",
+        "chatSessionId": "sess_cc345684-27a6-4f91-9e4f-9132da151bc3",
+        "timestamp": 1794573147390
+      }
     ]
   }
 }

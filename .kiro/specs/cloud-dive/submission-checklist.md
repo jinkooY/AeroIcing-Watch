@@ -20,6 +20,13 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       statement 2026-11-13). Remaining: add `THIRD_PARTY_NOTICES.md` (ECMWF CC BY 4.0, NOAA
       GOES, IEM PIREP, Noh et al. 2017, CIRA as referenced work, OpenAP LGPL build-time
       only), link the disclosure and audit from the README, owner reads the final table.
+      Note (task 20.1, 2026-11-14): Kiro drafted the revision b parts. `THIRD_PARTY_NOTICES.md`
+      has three.js 0.160.1 (MIT, SHA-256), OurAirports (public domain) and a data table (ECMWF,
+      NOAA, Natural Earth, Noh, OpenAP, CIRA); IEM PIREP is not listed because no PIREP data is
+      used in the game. The README links the disclosure and notices. The disclosure has new
+      section 7 (revision a and b files by origin, all Kiro). Still the owner's: read the
+      table and section 7, confirm the ECMWF and NOAA attribution wording, check the three.js
+      SHA-256 with `Get-FileHash`, and confirm the final commit of each file.
 - [x] C5 Legacy components marked in the README and the disclosure (nothing deleted).
 
 ## Data (runs, not coding)
@@ -42,6 +49,13 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       that reads the `tune_params.py` report). Log the impact.
 - [ ] C11 Browser MCP server in `.kiro/settings/mcp.json` (verify the current
       package name); check the game on a narrow viewport. Log findings.
+      Revision b scope (task 20.1): the check covers the cockpit 3D view, not only the 2D
+      game, at 390x844: the cockpit canvas is not blank, the panel text and the gate buttons
+      (44 px) are reachable, the start and skip buttons work, key V and the 2D toggle work,
+      no console errors. Status 2026-11-14: not done; `.kiro/settings/mcp.json` does not
+      exist. The headless Edge runs in `docs/screens/15.6-*390x844*` came from
+      `tools/layout_check.mjs`, not from an MCP server, so they do not count for C11.
+      Nothing has been checked by a human on a real phone.
 - [ ] C12 One Kiro power relevant to the stack; keep it only if it changed something.
 - [ ] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
 - [ ] C14 Keep `docs/kiro-usage-log.md`: one row per completed task.
@@ -52,6 +66,11 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       captions, under 3:00, public on YouTube, shows the app running, no
       third-party logos or music (no CIRA or NOAA screenshots). Check that the
       voice service allows public use.
+      Revision b: record KJFK-KBNA with the 3D cockpit (takeoff, climb, cruise, a gate,
+      anti-ice, the report). KDEN-KLAX is not used in the video: it keeps the flat-ground
+      Why card and its altitude block is unchanged, so it is a playable case, not the demo.
+      The game note stays visible in the shot. Say that the ground is flat and frame rates
+      were measured on one laptop only.
       0:00-0:25 problem: icing decisions cost fuel - 0:25-1:30 a flight through a
       real icing day: cruise, gate, lane, climb, anti-ice, the dollar total -
       1:30-2:30 how Kiro built it (spec, properties, counterexample, hooks,

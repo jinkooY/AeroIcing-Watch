@@ -1,0 +1,81 @@
+{
+ "browser": "Edg/157.0.4341.46",
+ "gpuMode": "hw",
+ "webglRenderer": "ANGLE (Intel, Intel(R) UHD Graphics 770 (0x0000A780) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+ "measuredAt": "2026-11-13T12:12:28.196Z",
+ "case": "20261101-kden-klax-2100z",
+ "checks": {
+  "cockpit view active": {
+   "pass": true,
+   "info": ""
+  },
+  "chase button visible": {
+   "pass": true,
+   "info": ""
+  },
+  "key C switches to chase": {
+   "pass": true,
+   "info": "true"
+  },
+  "button switches back to cockpit": {
+   "pass": true,
+   "info": ""
+  },
+  "button switches to chase": {
+   "pass": true,
+   "info": ""
+  },
+  "button label": {
+   "pass": true,
+   "info": ""
+  },
+  "3D canvas not blank (flying)": {
+   "pass": true,
+   "info": "{\"w\":866,\"h\":323,\"colours\":181}"
+  },
+  "reaches a gate in chase view": {
+   "pass": true,
+   "info": ""
+  },
+  "3D canvas not blank (gate)": {
+   "pass": true,
+   "info": "{\"w\":866,\"h\":323,\"colours\":181}"
+  },
+  "layout fits at 1280x720": {
+   "pass": true,
+   "info": "yes"
+  },
+  "panel and gate controls reachable": {
+   "pass": true,
+   "info": "unreachable: 0"
+  },
+  "gate choice buttons present": {
+   "pass": true,
+   "info": "7"
+  },
+  "flight continues after Continue": {
+   "pass": true,
+   "info": "60 -> 319"
+  },
+  "still chase after gate": {
+   "pass": true,
+   "info": ""
+  },
+  "no console errors": {
+   "pass": true,
+   "info": ""
+  }
+ },
+ "perf": {
+  "frames": 319,
+  "fps": 59.99962382680985,
+  "gapP50Ms": 16.69999999999891,
+  "gapP95Ms": 16.799999999999272,
+  "gapMaxMs": 16.80000000000109,
+  "cpuMeanMs": 0.6246105919003115,
+  "cpuP95Ms": 1.2000000178813934,
+  "triangles": 2580,
+  "drawCalls": 12
+ },
+ "problems": []
+}

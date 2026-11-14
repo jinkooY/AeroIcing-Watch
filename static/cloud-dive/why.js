@@ -1,5 +1,8 @@
 // "Why?" cards (task 8.5, R9.4). Card text lives in WHY_CARDS so the wording test (8.6) can import
 // or scan it. The text explains the data and the game model. It gives no advice and no suggested action.
+// The display-scale card reuses the scene.js strings, so the numbers shown are the constants in use (R16.12).
+
+import { STRINGS } from "./scene.js";
 
 export const WHY_CARDS = [
   {
@@ -43,6 +46,30 @@ export const WHY_CARDS = [
       "In this game the anti-ice fuel factor is an illustrative game parameter stored in the case file. " +
         "It is not a figure for any real aircraft, and the dollar values are illustrative too.",
     ],
+  },
+  {
+    id: "why-cruise-level",
+    title: "Why is the start altitude called cruise level?",
+    paragraphs: [
+      "In this game the altitude the flight starts at is called cruise level. " +
+        "It belongs to the game's altitude block, a fixed range of altitudes that the game lets you fly in.",
+      "The block is below airline cruise level. It is a game setting chosen so that the cloud layers of the case fall inside it. " +
+        "It is not a flight procedure.",
+    ],
+  },
+  {
+    id: "why-flat-ground",
+    title: "Why is the ground flat?",
+    paragraphs: [
+      "The 3D view draws flat ground at the departure airport elevation. The game uses no terrain data, so mountains are not drawn. " +
+        "For example, on the Denver case the Rocky Mountains are not drawn.",
+      "The game's altitude block was set without terrain data. The evidence and the dollar values do not depend on the drawn ground.",
+    ],
+  },
+  {
+    id: "why-display-scale",
+    title: "Why do the distances look different in the 3D view?",
+    paragraphs: [STRINGS.displayScale, STRINGS.leadIn],
   },
 ];
 

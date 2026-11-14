@@ -21,7 +21,27 @@ import { drawFollowView, imageLegend } from "./map.js";
 import { updateTrack, motionFrac, describeMap, imageNames, fitCanvas, routeKey, firstFocusable } from "./view-helpers.js";
 import { TICK_MS } from "./controller.js";
 import { initControls } from "./controls.js";
+import { initGatePanel } from "./gate-panel.js";
+import { webglAvailable } from "./webgl-test.js";
+import { buildScene } from "./scene.js";
+import { createPanel, sourceLine } from "./panel.js";
+import { fuelDisplayUsd, fuelDisplayWithDepartureUsd } from "./fuel-counter.js";
+import { departureUsd, withDeparture } from "./departure.js";
+import { cardApplies, departureCardText } from "./departure-card.js";
+import { popupFor } from "./cost-popup.js";
+import { createCruiseCamera, positionKm, eyePosition } from "./cruise-camera.js";
+import { chooseView, buttonLabel, viewKeyApplies } from "./view-mode.js";
+import { toggleMode, chaseKeyApplies, chaseButtonLabel } from "./chase.js";
+import { phaseStep, phasePose } from "./phases.js";
+import {
+  inLead, newPhaseState, sceneOptions, isStartKey, frameDt, leadAdvance, engineStartState, finishLead,
+  withLeadEye, leadStatusText,
+  inEnding, endingInput, finishEnding, isSkipKey, endingStatusText, skippable, setReducedMotion,
+} from "./takeoff.js";
+
+let gatePanel = null; // set in boot(); the cockpit view (task 15.5) calls gatePanel.setCockpit(on)
 import { initReport } from "./report-view.js";
+import * as hotseat from "./hotseat.js";
 import { initWhy } from "./why.js";
 
 const CASES_DIR = "cases/";
@@ -47,6 +67,7 @@ const store = {
   track: [],            // flown positions [{lane, step}], reset with every flight
   prev: null,           // previous track entry, for display-only smooth motion
   changeAt: 0,          // performance.now() of the last step change
+  hot: null,            // hot-seat session (hotseat.js), or null for the single-player flow; in memory only (R20.3)
 };
 const listeners = new Set();
 
@@ -165,7 +186,7 @@ async function loadIndex() {
   }
 }
 
-async function openCase(entry) {
+async function openCase(entry, hot = null) {
   if (store.loading) return;
   store.loading = true;
   const status = $("picker-status");
@@ -175,6 +196,7 @@ async function openCase(entry) {
     if (data.schemaVersion !== 2) throw new Error(`${entry.file}: unsupported case file version`);
     const engineCase = engine.loadCase(data);
     store.caseData = data;
+    store.hot = hot;
     store.engineCase = engineCase;
     store.state = engine.initialState(engineCase);
     store.track = [];
@@ -182,6 +204,7 @@ async function openCase(entry) {
     store.images = { ir: null, phase: null };
     delete store.entryErrors[entry.id];
     showFlight();
+    resetCockpitFlight();
     // Test-only: ?ff=end flies the whole case with the starting targets so a headless run can capture the
     // report dialog. It uses the engine's own step; it is not linked from the page and not shown.
     if (new URLSearchParams(location.search).get("ff") === "end") {
@@ -240,13 +263,22 @@ function renderPicker() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = "Fly this case";
+    const hotBtn = document.createElement("button");
+    hotBtn.type = "button";
+    hotBtn.textContent = "Hot-seat (2 to 4 players)";
     if (reason) {
       btn.disabled = true;
+      hotBtn.disabled = true;
       btn.setAttribute("aria-describedby", `reason-${entry.id}`);
+      hotBtn.setAttribute("aria-describedby", `reason-${entry.id}`);
     } else {
       btn.addEventListener("click", () => openCase(entry));
+      hotBtn.addEventListener("click", () => openHotseatSetup(entry, hotBtn));
     }
-    li.append(info, btn);
+    const actions = document.createElement("div");
+    actions.className = "case-actions";
+    actions.append(btn, hotBtn);
+    li.append(info, actions);
     list.appendChild(li);
   }
   show("picker");
@@ -292,6 +324,7 @@ async function loadMapAssets(data) {
 }
 
 function backToCases() {
+  store.hot = null;
   store.caseData = null;
   store.track = [];
   store.prev = null;
@@ -309,7 +342,12 @@ function renderHud(s) {
   const c = s.engineCase;
   const st = s.state;
   if (!c || !st) return;
-  $("hud-total").textContent = formatUsd(engine.totalUsd(c, st));
+  // Engine total + Departure climb, except while the runway lead-in runs (R15.5, R4.6).
+  renderDepartureCard();
+  const dep = departureUsd(s.caseData && s.caseData.params);
+  const showDep = dep > 0 && !leadActive();
+  $("hud-total").textContent = formatUsd(showDep ? withDeparture(engine.totalUsd(c, st), s.caseData.params) : engine.totalUsd(c, st));
+  $("hud-total-label").textContent = showDep ? "Fuel cost incl. Departure climb" : "Fuel cost (game)";
   $("hud-ice-fill").style.width = `${st.ice}%`;
   $("hud-ice-bar").setAttribute("aria-valuenow", String(st.ice));
   $("hud-ice-text").textContent = `${st.ice} / ${engine.ICE_MAX}`;
@@ -328,6 +366,7 @@ let animHandle = 0;
 // Draws side view and map view. frac is the display-only share of the way from the previous step
 // position to the current one; the engine state is never touched here (R13.10).
 function paintScene(s, frac) {
+  if (isCockpitView()) return; // the 2D canvases are hidden in the cockpit view
   const message = s.engineCase ? "" : "No case loaded.";
   const base = { caseData: s.caseData, engineCase: s.engineCase, state: s.state, message, prev: s.prev, frac };
   const sc = canvasCss.scene;
@@ -528,6 +567,7 @@ function renderSources(s) {
   }
   const labels = d.labels || {};
   $("src-labels").textContent = [labels.gameModel, labels.references].filter(Boolean).join(" ");
+  $("src-line").textContent = ` | ${sourceLine(d)}`; // source line with UTC time on every flight screen (R1.3)
 }
 
 // ------------------------------------------------------------------------------------------
@@ -543,7 +583,10 @@ function hide(id) { $(id).hidden = true; }
 // focus to the opener. The report opens by itself when the flight ends.
 // ------------------------------------------------------------------------------------------
 
-const DIALOG_IDS = { report: "dlg-report", why: "dlg-why", sources: "dlg-sources", legend: "dlg-legend" };
+const DIALOG_IDS = {
+  report: "dlg-report", why: "dlg-why", sources: "dlg-sources", legend: "dlg-legend",
+  hotseat: "dlg-hotseat", handover: "dlg-handover", results: "dlg-results",
+};
 let current = null; // { name, dlg, opener, restore } of the open dialog, or null
 let reportShownFor = null;
 
@@ -583,11 +626,129 @@ function closeDialog(restoreFocus = true) {
 // first control that can take it (the report opens when Continue is already disabled).
 function onDialogClosed(dlg) {
   if (!current || current.dlg !== dlg) return; // a replaced dialog
-  const { opener, restore } = current;
+  const { opener, restore, name } = current;
   current = null;
   if (!restore) return;
+  // Hot-seat: after a player has read their own report, the device is handed on (R20.1).
+  if (name === "report" && store.hot && hotseat.handOverDue(store.hot)) {
+    openHandOver();
+    return;
+  }
+  // After the last player closes their report, the results table opens (R20.2).
+  if (name === "report" && store.hot && hotseat.resultsDue(store.hot)) {
+    openResults(opener);
+    return;
+  }
   const target = firstFocusable([opener, $("ctl-go"), $("back-to-cases"), $("flight-title")]);
   if (target) target.focus();
+}
+
+// ---- Hot-seat dialogs (task 18.2). Session in memory only; nothing is stored or uploaded (R20.3). ----
+let hotPending = null; // the case entry waiting for the setup dialog
+
+function renderHotNames() {
+  const n = Number($("hotseat-count").value);
+  const box = $("hotseat-names");
+  const old = [...box.querySelectorAll("input")].map((i) => i.value);
+  box.replaceChildren();
+  for (let i = 0; i < n; i += 1) {
+    const label = document.createElement("label");
+    label.setAttribute("for", `hotseat-name-${i}`);
+    label.textContent = `Name of player ${i + 1} (optional)`;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `hotseat-name-${i}`;
+    input.maxLength = hotseat.MAX_NAME_LENGTH;
+    input.autocomplete = "off";
+    input.value = old[i] || "";
+    label.appendChild(input);
+    box.appendChild(label);
+  }
+}
+
+function openHotseatSetup(entry, opener) {
+  hotPending = entry;
+  $("hotseat-case").textContent = `Case: ${entry.title}`;
+  renderHotNames();
+  openDialog("hotseat", opener);
+}
+
+function submitHotseat(e) {
+  e.preventDefault();
+  const entry = hotPending;
+  if (!entry) return;
+  const names = [...$("hotseat-names").querySelectorAll("input")].map((i) => i.value);
+  const session = hotseat.start(hotseat.setupNames(names, Number($("hotseat-count").value)));
+  hotPending = null;
+  closeDialog(false);
+  openCase(entry, session);
+}
+
+function openHandOver() {
+  $("handover-text").textContent = hotseat.handOverText(store.hot);
+  openDialog("handover", null);
+}
+
+// Results table (task 18.3). Built with textContent only; a real <table> with column and row headers.
+function openResults(opener) {
+  const view = hotseat.resultsRows(store.hot, store.caseData.references, store.caseData.params);
+  const table = $("results-table");
+  table.replaceChildren();
+  const cap = document.createElement("caption");
+  cap.textContent = "Fuel cost per player, lowest first. Diverted flights are not ranked.";
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  for (const h of view.headers) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = h;
+    hr.appendChild(th);
+  }
+  thead.appendChild(hr);
+  const tbody = document.createElement("tbody");
+  const nPlayers = store.hot.players.length;
+  view.rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    if (i >= nPlayers) tr.className = "baseline-row";
+    row.forEach((text, c) => {
+      const cell = document.createElement(c === 0 ? "th" : "td");
+      if (c === 0) cell.scope = "row";
+      cell.textContent = text;
+      tr.appendChild(cell);
+    });
+    tbody.appendChild(tr);
+  });
+  table.append(cap, thead, tbody);
+  $("results-departure").textContent = view.departureLine;
+  $("results-notes").textContent = view.notes.join(" ");
+  openDialog("results", opener);
+}
+
+function playAgain() {
+  if (!store.hot || !store.engineCase) return;
+  store.hot = hotseat.playAgain(store.hot);
+  store.track = [];
+  store.prev = null;
+  store.state = engine.initialState(store.engineCase);
+  reportShownFor = null;
+  closeDialog(false);
+  resetCockpitFlight();
+  notify();
+  $("flight-title").focus?.({ preventScroll: true });
+}
+
+// A fresh engine and a fresh takeoff lead-in on the same case (R20.1).
+function startNextFlight() {
+  if (!store.hot || !hotseat.handOverDue(store.hot) || !store.engineCase) return;
+  store.hot = hotseat.next(store.hot);
+  store.track = [];
+  store.prev = null;
+  store.state = engine.initialState(store.engineCase);
+  reportShownFor = null;
+  closeDialog(false);
+  resetCockpitFlight();
+  notify();
+  $("flight-title").focus?.({ preventScroll: true });
 }
 
 // Key L opens Legend, or closes it when only Legend is open (R14.2). Other game keys are blocked by
@@ -612,7 +773,12 @@ function maybeOpenReport(s) {
     return;
   }
   if (reportShownFor === st) return;
+  if (endingRunning()) return; // the arrival or diversion cinematic plays first; the report opens after it (R15.9, R15.10)
   reportShownFor = st;
+  if (s.hot) {
+    const res = hotseat.resultFromEngine(engine.summary(s.engineCase, st), s.caseData.params);
+    if (res) s.hot = hotseat.finish(s.hot, res);
+  }
   // Opener: Start/Continue when it can take focus, else Change case.
   openDialog("report", firstFocusable([$("ctl-go"), $("back-to-cases")]));
 }
@@ -660,16 +826,482 @@ function checkLayout(s) {
   }
 }
 
+// ------------------------------------------------------------------------------------------
+// Cockpit view (task 15.5, design 14.7 and 14.10). The default flight view. cockpit3d.js is loaded with a
+// dynamic import() after the WebGL test passes, so a 3D failure never breaks the 2D game: the 2D view opens
+// with a notice and plays the same flight through the same controller, with the same costs (R19.1).
+// The 3D layer only draws the scene description built by scene.js from the case and the engine state; nothing
+// here changes the engine state.
+// ------------------------------------------------------------------------------------------
+
+const cockpit = {
+  status: "idle",   // "idle" | "loading" | "ready" | "failed" (the 3D layer)
+  reason: null,     // "no-webgl" | "load-failed" when failed
+  wants2d: false,   // the player chose the 2D view (key V or button, R19.2)
+  view: "2d",       // the view on screen: "cockpit" | "2d"
+  renderer: null,   // createCockpit() result
+  panel: null,      // createPanel() result
+  camera: createCruiseCamera(),
+  scene: null,      // scene description of the current engine state
+  sceneFor: null,   // engine state object the scene was built from
+  from: null,       // { altFt, lane } before the last step, for display blending
+  to: null,         // { altFt, lane } at the current step
+  lastStep: null,
+  handle: 0,        // requestAnimationFrame handle
+  phase: null,      // phases.js state of the flight: runway, takeoff and climb before the engine starts (task 17.3)
+  leadLast: null,   // frame time of the previous lead-in frame, for real elapsed time
+  leadKey: "",      // phase and state the panel was last built for
+  mode: "cockpit",  // camera of the 3D view: "cockpit" | "chase" (key C, task 19.1); display only
+};
+let flightController = null; // set in boot()
+
+const isCockpitView = () => cockpit.view === "cockpit";
+const pixelRatio = () => Math.min(typeof devicePixelRatio === "number" && devicePixelRatio > 0 ? devicePixelRatio : 1, 2);
+
+// A new flight: forget the previous camera and blend positions.
+function resetCockpitFlight() {
+  cockpit.camera.reset();
+  cockpit.scene = null;
+  cockpit.sceneFor = null;
+  cockpit.from = null;
+  cockpit.to = null;
+  cockpit.lastStep = null;
+  cockpit.fuelPrev = null;
+  cockpit.fuelCur = null;
+  cockpit.stopState = null;
+  cockpit.phase = store.engineCase ? newPhaseState(store.caseData, store.engineCase, reducedMotion()) : null;
+  cockpit.leadLast = null;
+  cockpit.leadKey = "";
+  if (cockpit.panel && cockpit.panel.hideCost) cockpit.panel.hideCost();
+  renderLeadUi();
+}
+
+// ---- Runway and takeoff (task 17.3) ----
+// The lead-in runs only in the cockpit view. The 2D view starts the flight as before (R19.1).
+const leadActive = () => isCockpitView() && inLead(cockpit.phase);
+
+// Shows or hides the takeoff box and the controls, and the gate choices, for the current phase.
+function renderLeadUi() {
+  const lead = leadActive();
+  const ending = endingRunning();
+  document.body.classList.toggle("lead-active", lead || ending);
+  $("lead-box").hidden = !(lead || ending);
+  $("lead-title").textContent = ending ? (cockpit.phase.phase === "arrival" ? "Arrival" : "Diversion") : "Departure";
+  const ready = lead && cockpit.phase.phase === "ready";
+  $("takeoff-btn").hidden = !ready;
+  $("skip-btn").hidden = !cinematicRunning();
+  const air = store.caseData && store.caseData.airports ? store.caseData.airports : {};
+  const icao = air.from ? air.from.icao : "";
+  const toIcao = air.to ? air.to.icao : "";
+  $("lead-status").textContent = lead ? leadStatusText(cockpit.phase, icao) : ending ? endingStatusText(cockpit.phase, toIcao) : "";
+  if (gatePanel) gatePanel.setCockpit(isCockpitView() && !lead && !ending);
+  renderDepartureCard();
+}
+
+// Departure climb status card of the 2D view, before the first step (task 17.7, R19.1, R15.5).
+function renderDepartureCard() {
+  const s = store;
+  const show = Boolean(s.caseData) && cardApplies({ view: cockpit.view, state: s.state, params: s.caseData.params });
+  $("departure-card").hidden = !show;
+  if (!show) return;
+  const t = departureCardText(s.caseData, s.engineCase);
+  $("departure-card-title").textContent = t.title;
+  $("departure-card-cost").textContent = t.cost;
+  $("departure-card-route").textContent = t.route;
+  $("departure-card-level").textContent = t.level;
+  $("departure-card-note").textContent = t.note;
+}
+
+// ---- Arrival and diversion cinematics (task 17.5) ----
+// Unscored and display only: the engine state and the case are never changed here.
+const endingRunning = () => isCockpitView() && inEnding(cockpit.phase);
+
+// The engine reported the end of the flight: start the cinematic in the cockpit view; the 2D view goes
+// straight to the report (R15.9, R15.10).
+function beginEnding(s) {
+  const ps = cockpit.phase;
+  if (!ps || !s.engineCase || !s.state || s.state.status === "flying") return;
+  if (ps.phase !== "cruise" && ps.phase !== "gate") return;
+  let next = phaseStep(ps, 0, endingInput(s.engineCase, s.state));
+  if (!isCockpitView()) next = finishEnding(next);
+  cockpit.phase = next;
+  cockpit.leadLast = null;
+  cockpit.sceneFor = null;
+  renderLeadUi();
+  if (endingRunning()) $("skip-btn").focus({ preventScroll: true });
+}
+
+// Skip (task 17.6): button and Space, only while takeoff, climb, arrival or diversion runs (R15.11).
+// Space in cruise and gate stays Continue/Pause. Only the phase moves on; no value changes.
+const cinematicRunning = () => isCockpitView() && skippable(cockpit.phase);
+let skipRequested = false;
+function skipEnding() {
+  if (!cinematicRunning()) return;
+  skipRequested = true;
+  requestCockpitFrame();
+}
+
+// The reduced-motion setting can change during play (R15.12): the running phase keeps its progress.
+function onReducedMotionChange() {
+  if (cockpit.phase) cockpit.phase = setReducedMotion(cockpit.phase, reducedMotion());
+  requestCockpitFrame();
+}
+
+function onSkipKey(e) {
+  if (!cinematicRunning() || e.defaultPrevented || !isSkipKey(e)) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if (t && (t.tagName === "BUTTON" || t.tagName === "A") && t !== $("skip-btn")) return;
+  e.preventDefault();
+  skipEnding();
+}
+
+// One cinematic frame. Returns true when it drew the frame; false when the cinematic just ended (the report
+// opens and the normal frame follows).
+function endingFrame(now) {
+  const s = store;
+  const c = s.engineCase;
+  const reduced = reducedMotion();
+  const dt = frameDt(now, cockpit.leadLast);
+  cockpit.leadLast = now;
+  const skip = skipRequested;
+  skipRequested = false;
+  cockpit.phase = phaseStep(cockpit.phase, dt, skip ? { skip: true } : {});
+  if (!inEnding(cockpit.phase)) {
+    cockpit.sceneFor = null;
+    renderLeadUi();
+    maybeOpenReport(s);
+    return false;
+  }
+  const pose = phasePose(cockpit.phase);
+  const scene = withLeadEye(buildScene(s.caseData, s.state, pose, sceneOptions(s.caseData, c, { mode: cockpit.mode, reducedMotion: reduced })));
+  if (cockpit.panel && s.state !== cockpit.sceneFor) {
+    cockpit.sceneFor = s.state;
+    cockpit.panel.update(scene, { caseData: s.caseData, engineCase: c, state: s.state, track: s.track });
+    if (cockpit.panel.setFuel) {
+      const total = engine.totalUsd(c, s.state);
+      cockpit.panel.setFuel(fuelDisplayWithDepartureUsd(total, total, 1, true, departureUsd(s.caseData && s.caseData.params)));
+    }
+  }
+  try {
+    cockpit.renderer.render(scene, { nowMs: now, reducedMotion: reduced });
+  } catch (err) {
+    console.warn("3D view stopped:", err && err.message ? err.message : err);
+    cockpit.status = "failed";
+    cockpit.reason = "load-failed";
+    applyView();
+    return true;
+  }
+  requestCockpitFrame();
+  return true;
+}
+
+// A new view or a flight already under way ends the lead-in without a cinematic.
+function syncLeadToView() {
+  if (inEnding(cockpit.phase) && !isCockpitView()) {
+    cockpit.phase = finishEnding(cockpit.phase);
+    cockpit.sceneFor = null;
+    renderLeadUi();
+    maybeOpenReport(store);
+  }
+  if (!cockpit.phase || !inLead(cockpit.phase)) return;
+  const started = Boolean(store.state && store.state.step > 0);
+  if (!isCockpitView() || started) {
+    cockpit.phase = finishLead(cockpit.phase);
+    cockpit.sceneFor = null;
+  }
+}
+
+function startTakeoff() {
+  if (!leadActive() || cockpit.phase.phase !== "ready") return;
+  cockpit.phase = phaseStep(cockpit.phase, 0, { start: true });
+  cockpit.leadLast = null;
+  renderLeadUi();
+  $("lead-title").focus({ preventScroll: true });
+  requestCockpitFrame();
+}
+
+function onStartKey(e) {
+  if (!leadActive() || cockpit.phase.phase !== "ready" || e.defaultPrevented) return;
+  if (!isStartKey(e) || !gameKeysAllowed(e)) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if (t && (t.tagName === "BUTTON" || t.tagName === "A") && t !== $("takeoff-btn")) return;
+  e.preventDefault();
+  startTakeoff();
+}
+
+// One lead-in frame (ready, takeoff, climb). Returns true when it drew the frame; false when the climb just ended
+// and the normal cruise frame should follow. The engine does not step here (engineMayStep is false).
+function leadFrame(now) {
+  const s = store;
+  const c = s.engineCase;
+  const reduced = reducedMotion();
+  const dt = cockpit.phase.phase === "ready" ? 0 : frameDt(now, cockpit.leadLast);
+  cockpit.leadLast = now;
+  const before = cockpit.phase.phase;
+  const skip = skipRequested && before !== "ready";
+  if (skip) skipRequested = false;
+  const r = leadAdvance(cockpit.phase, dt, skip ? { skip: true } : {});
+  cockpit.phase = r.ps;
+  if (r.engineStart) {
+    const next = engineStartState(c, s.state);
+    cockpit.sceneFor = null;
+    if (next !== s.state) setState(next);
+    renderLeadUi();
+    renderHud(s); // the Departure climb joins the shown total at the hand-over (R15.5)
+    return false;
+  }
+  if (cockpit.phase.phase !== before) renderLeadUi();
+  const pose = phasePose(cockpit.phase);
+  const base = buildScene(s.caseData, s.state, pose, sceneOptions(s.caseData, c, { mode: cockpit.mode, reducedMotion: reduced }));
+  const scene = withLeadEye(base);
+  // The panel text changes inside the climb when the aircraft passes the altitude block (R15.6).
+  const key = `${cockpit.phase.phase}|${scene.panel.levelHere}`;
+  if (cockpit.panel && (key !== cockpit.leadKey || s.state !== cockpit.sceneFor)) {
+    cockpit.leadKey = key;
+    cockpit.sceneFor = s.state;
+    const total = engine.totalUsd(c, s.state);
+    cockpit.panel.update(scene, { caseData: s.caseData, engineCase: c, state: s.state, track: s.track });
+    if (cockpit.panel.setFuel) cockpit.panel.setFuel(fuelDisplayUsd(total, total, 1, true));
+  }
+  try {
+    cockpit.renderer.render(scene, { nowMs: now, reducedMotion: reduced });
+  } catch (err) {
+    console.warn("3D view stopped:", err && err.message ? err.message : err);
+    cockpit.status = "failed";
+    cockpit.reason = "load-failed";
+    applyView();
+    return true;
+  }
+  if (cockpit.phase.phase !== "ready") requestCockpitFrame();
+  return true;
+}
+
+function onAntiIce(next) {
+  const st = store.state;
+  if (st && flightController && st.antiIce !== next) flightController.toggleAntiIce();
+}
+
+function resizeCockpit() {
+  if (!cockpit.renderer) return;
+  const box = $("cockpit-canvas"); // the windshield: the space above the panel
+  if (box.clientWidth > 0 && box.clientHeight > 0) cockpit.renderer.resize(box.clientWidth, box.clientHeight, pixelRatio());
+  requestCockpitFrame();
+}
+
+async function loadCockpit() {
+  if (cockpit.status !== "idle") return;
+  if (!webglAvailable()) {
+    cockpit.status = "failed";
+    cockpit.reason = "no-webgl";
+    applyView();
+    return;
+  }
+  cockpit.status = "loading";
+  try {
+    const lib = await import("./cockpit3d.js");
+    cockpit.renderer = lib.createCockpit($("cockpit-canvas"), { pixelRatio: pixelRatio() });
+    cockpit.panel = createPanel($("cockpit-panel"), { onAntiIce });
+    if (typeof ResizeObserver === "function") new ResizeObserver(resizeCockpit).observe($("cockpit-canvas"));
+    cockpit.status = "ready";
+  } catch (err) {
+    console.warn("3D view not loaded:", err && err.message ? err.message : err);
+    if (cockpit.renderer) { try { cockpit.renderer.dispose(); } catch { /* already unusable */ } }
+    cockpit.renderer = null;
+    cockpit.panel = null;
+    cockpit.status = "failed";
+    cockpit.reason = "load-failed";
+  }
+  applyView();
+}
+
+// Puts the chosen view on screen: cockpit or 2D, the fallback notice and the view button.
+function applyView() {
+  const choice = chooseView(cockpit);
+  const was = cockpit.view;
+  cockpit.view = choice.view;
+  const on = choice.view === "cockpit";
+  document.body.classList.toggle("view-cockpit", on);
+  $("cockpit-view").hidden = !on;
+  syncLeadToView();
+  if (store.engineCase && store.state) renderHud(store);
+  renderLeadUi(); // also hands the gate choices to the cockpit view, except during the lead-in
+  const note = $("view-notice");
+  note.textContent = choice.notice || "";
+  note.hidden = !choice.notice;
+  const btn = $("view-toggle");
+  btn.hidden = !choice.canToggle;
+  btn.textContent = buttonLabel(choice.view);
+  $("chase-toggle").hidden = !(choice.view === "cockpit");
+  if (was === choice.view) return;
+  if (on) {
+    resizeCockpit();
+    if (store.engineCase && store.state) notify(); // builds the scene and the panel for the current state
+  } else if (store.engineCase && store.state) {
+    paintScene(store, 1);
+  }
+}
+
+function toggleView() {
+  cockpit.wants2d = !cockpit.wants2d;
+  applyView();
+}
+
+function onViewKey(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (!gameKeysAllowed(e)) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  const flightOn = Boolean(store.engineCase && store.state) && !$("flight").hidden;
+  if (!viewKeyApplies(e.key, { flightOn, canToggle: chooseView(cockpit).canToggle })) return;
+  e.preventDefault();
+  toggleView();
+}
+
+// Key C and the button: outside chase camera or cockpit camera. Only the drawing changes; the engine state,
+// the controller and the panel are untouched (R16.11).
+function toggleChase() {
+  cockpit.mode = toggleMode(cockpit.mode);
+  const btn = $("chase-toggle");
+  btn.textContent = chaseButtonLabel(cockpit.mode);
+  btn.setAttribute("aria-pressed", String(cockpit.mode === "chase"));
+  cockpit.sceneFor = null; // rebuild the scene description with the new mode
+  requestCockpitFrame();
+}
+
+function onChaseKey(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (!gameKeysAllowed(e)) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  const flightOn = Boolean(store.engineCase && store.state) && !$("flight").hidden;
+  if (!chaseKeyApplies(e.key, { flightOn, cockpitView: isCockpitView() })) return;
+  e.preventDefault();
+  toggleChase();
+}
+
+// Builds the scene description for the current engine state (cruise only, from engine step 0) and updates the panel.
+function rebuildCockpitScene(s) {
+  const c = s.engineCase;
+  const st = s.state;
+  const here = { altFt: c.altsFt[st.alt], lane: st.lane };
+  if (cockpit.lastStep === null || st.step < cockpit.lastStep || st.step > cockpit.lastStep + 1) cockpit.from = null;
+  else if (st.step === cockpit.lastStep + 1) cockpit.from = cockpit.to;
+  // Display-only fuel counter: previous total, kept only for a one-step advance (task 16.3, R13.10).
+  const total = engine.totalUsd(c, st);
+  if (st.step !== cockpit.lastStep) cockpit.fuelPrev = st.step === cockpit.lastStep + 1 && cockpit.fuelCur != null ? cockpit.fuelCur : total;
+  cockpit.fuelCur = total;
+  cockpit.to = here;
+  cockpit.lastStep = st.step;
+  cockpit.scene = buildScene(s.caseData, st, { phase: "cruise" }, sceneOptions(s.caseData, c, { mode: cockpit.mode, reducedMotion: reducedMotion() }));
+  cockpit.sceneFor = st;
+  if (cockpit.panel) {
+    cockpit.panel.update(cockpit.scene, { caseData: s.caseData, engineCase: c, state: st, track: s.track });
+  }
+}
+
+function requestCockpitFrame() {
+  if (!cockpit.handle && isCockpitView()) cockpit.handle = requestAnimationFrame(cockpitFrame);
+}
+
+// One frame. The eye follows the aircraft with motionFrac while the flight runs and eases to a stop within
+// 1.5 s when it stops at a gate, a pause or the end (R15.8). The loop stops when nothing moves.
+// ?perf=1 (task 15.6): frame timing while the flight runs, read by tools/layout_check.mjs as window.__cdPerf().
+// Never shown. Frames are only drawn while something moves, so only running frames are timed.
+const perfOn = new URLSearchParams(location.search).get("perf") === "1";
+const perfRun = { times: [], cpuMs: [], tri: 0, calls: 0 };
+if (perfOn) {
+  window.__cdPerf = () => {
+    const t = perfRun.times;
+    const gaps = t.slice(1).map((v, i) => v - t[i]).filter((g) => g < 250).sort((a, b) => a - b);
+    const sum = gaps.reduce((a, b) => a + b, 0);
+    const cpu = perfRun.cpuMs.slice().sort((a, b) => a - b);
+    const q = (arr, p) => (arr.length ? arr[Math.min(arr.length - 1, Math.floor(arr.length * p))] : null);
+    return {
+      frames: gaps.length, fps: sum > 0 ? (gaps.length * 1000) / sum : null,
+      gapP50Ms: q(gaps, 0.5), gapP95Ms: q(gaps, 0.95), gapMaxMs: gaps.length ? gaps[gaps.length - 1] : null,
+      cpuMeanMs: cpu.length ? cpu.reduce((a, b) => a + b, 0) / cpu.length : null, cpuP95Ms: q(cpu, 0.95),
+      triangles: perfRun.tri, drawCalls: perfRun.calls,
+    };
+  };
+}
+
+function cockpitFrame(now) {
+  cockpit.handle = 0;
+  const s = store;
+  if (!isCockpitView() || !cockpit.renderer || !s.engineCase || !s.state || $("flight").hidden) return;
+  if (endingRunning() && endingFrame(now)) return;
+  if (leadActive() && leadFrame(now)) return;
+  if (s.state !== cockpit.sceneFor) rebuildCockpitScene(s);
+  const c = s.engineCase;
+  const reduced = reducedMotion();
+  const frac = motionFrac(performance.now() - s.changeAt, TICK_MS, reduced);
+  const target = positionKm(c, s.prev ? s.prev.step : null, s.state.step, frac);
+  let running = false;
+  if (flightController) {
+    flightController.sync();
+    running = flightController.getMode() === "running";
+  }
+  // Cost pop-up (task 16.7): only at a stop (gate, pause, single step, end), from the two stop states that
+  // already happened. Never a preview of a choice.
+  if (!running && cockpit.panel && cockpit.panel.showCost && s.state !== cockpit.stopState) {
+    const pop = popupFor(c, cockpit.stopState, s.state, true);
+    if (pop) cockpit.panel.showCost(pop.text);
+    cockpit.stopState = s.state;
+  }
+  if (cockpit.panel && cockpit.panel.setFuel) {
+    cockpit.panel.setFuel(fuelDisplayWithDepartureUsd(cockpit.fuelPrev, cockpit.fuelCur, frac, s.state.status !== "flying" || reduced, departureUsd(s.caseData && s.caseData.params)));
+  }
+  const x = cockpit.camera.update({ nowMs: now, targetKm: target, running, snap: reduced });
+  const base = cockpit.scene;
+  const scene = { ...base, camera: { ...base.camera, pos: eyePosition(c, x, cockpit.from, cockpit.to, frac) } };
+  try {
+    const t0 = perfOn ? performance.now() : 0;
+    const drawn = cockpit.renderer.render(scene, { nowMs: now, reducedMotion: reduced });
+    if (perfOn && running) {
+      perfRun.times.push(now);
+      perfRun.cpuMs.push(performance.now() - t0);
+      perfRun.tri = drawn.drawnTriangles;
+      perfRun.calls = drawn.drawCalls;
+    }
+  } catch (err) {
+    // A draw failure at run time falls back to the 2D view with the notice; the flight goes on unchanged.
+    console.warn("3D view stopped:", err && err.message ? err.message : err);
+    cockpit.status = "failed";
+    cockpit.reason = "load-failed";
+    applyView();
+    return;
+  }
+  if (running || frac < 1 || !cockpit.camera.settled(target)) requestCockpitFrame();
+}
+
+function updateCockpit(s) {
+  if (!isCockpitView() || !s.engineCase || !s.state) return;
+  if (!leadActive() && !endingRunning() && s.state !== cockpit.sceneFor) rebuildCockpitScene(s); // the lead-in and the cinematics build their own scene
+  requestCockpitFrame();
+}
+
 function onChange(s) {
+  beginEnding(s);
   renderHud(s);
   renderSources(s);
   renderSceneNow(s);
+  updateCockpit(s);
   checkLayout(s);
 }
 
 function boot() {
   subscribe(onChange);
-  initControls({ root: $("controls"), getStore, subscribe, setState, formatFt, gameKeysAllowed });
+  // The flight keys do nothing during the runway and climb lead-in: the engine does not step there (R15.2).
+  const controller = initControls({
+    root: $("controls"), getStore, subscribe, setState, formatFt,
+    gameKeysAllowed: (e) => gameKeysAllowed(e) && !leadActive() && !endingRunning(),
+  });
+  // Task 15.4: cockpit gate choices and inset on the same controller; shown when the cockpit view
+  // calls gatePanel.setCockpit(true) (task 15.5). Hidden in the 2D view, where #controls does the same.
+  flightController = controller;
+  gatePanel = initGatePanel({ root: $("gate-choices"), controller, getStore, subscribe });
   initReport({ root: $("report"), getStore, subscribe });
   initWhy({ root: $("why"), subscribe });
   // After the report view has filled #report, so the dialog opens with its content and heading.
@@ -682,17 +1314,39 @@ function boot() {
   }
   for (const [name, id] of Object.entries(DIALOG_IDS)) {
     const dlg = $(id);
-    dlg.querySelector(".dlg-close").addEventListener("click", () => closeDialog());
+    dlg.querySelector(".dlg-close")?.addEventListener("click", () => closeDialog());
     dlg.addEventListener("close", () => onDialogClosed(dlg));
   }
+  $("hotseat-count").addEventListener("change", renderHotNames);
+  $("hotseat-form").addEventListener("submit", submitHotseat);
+  $("handover-start").addEventListener("click", startNextFlight);
+  $("results-again").addEventListener("click", playAgain);
+  $("results-back").addEventListener("click", () => { closeDialog(false); backToCases(); });
+  $("handover-end").addEventListener("click", () => { closeDialog(false); backToCases(); });
+  // The hand-over cannot be dismissed by accident: Escape is ignored, Start or End hot-seat leave it.
+  $("dlg-handover").addEventListener("cancel", (e) => e.preventDefault());
   document.addEventListener("keydown", onLegendKey);
   $("map-kind-toggle").addEventListener("click", toggleImageKind);
   document.addEventListener("keydown", onMapKey);
   $("back-to-cases").addEventListener("click", backToCases);
   $("error-retry").addEventListener("click", loadIndex);
   $("flight-title").tabIndex = -1;
+  $("view-toggle").addEventListener("click", toggleView);
+  $("takeoff-btn").addEventListener("click", startTakeoff);
+  $("skip-btn").addEventListener("click", skipEnding);
+  document.addEventListener("keydown", onSkipKey);
+  if (typeof matchMedia === "function") {
+    const mq = matchMedia("(prefers-reduced-motion: reduce)");
+    if (typeof mq.addEventListener === "function") mq.addEventListener("change", onReducedMotionChange);
+    else if (typeof mq.addListener === "function") mq.addListener(onReducedMotionChange);
+  }
+  document.addEventListener("keydown", onStartKey);
+  document.addEventListener("keydown", onViewKey);
+  document.addEventListener("keydown", onChaseKey);
+  $("chase-toggle").addEventListener("click", toggleChase);
   fitCanvases();
   loadIndex();
+  loadCockpit(); // dynamic import; on any failure the 2D view stays with a notice (R19.1)
 }
 
 boot();

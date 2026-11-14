@@ -57,9 +57,11 @@ export function initReport(deps) {
     shownFor = st;
 
     const data = store.caseData;
-    const report = buildReport(c, st, data.references);
+    const report = buildReport(c, st, data.references, data.params);
     const storage = browserStorage();
-    const best = recordPersonalBest(storage, data.id, report);
+    // Hot-seat flights share one device, so they do not touch the personal best; single-player is unchanged.
+    const hot = Boolean(store.hot);
+    const best = hot ? null : recordPersonalBest(storage, data.id, report);
 
     const kids = [];
     const h = el("h3", report.ranked ? "Flight report" : "Flight report: not ranked");
@@ -74,6 +76,7 @@ export function initReport(deps) {
       kids.push(el("p", `Not ranked. The ice index reached 100 and the flight ended in a diversion. ` +
         `Cost up to the diversion: ${formatUsdWhole(report.costUpToDiversionUsd)}. ` +
         `Diversion cost (illustrative game value): ${formatUsdWhole(report.diversionUsd)}. ` +
+        `Departure climb (illustrative game value): ${formatUsdWhole(report.departureUsd)}. ` +
         `Total: ${formatUsdWhole(report.totalUsd)}.`, "report-total"));
     }
 
@@ -104,7 +107,8 @@ export function initReport(deps) {
     }
 
     let bestText;
-    if (!report.ranked) bestText = "Diverted flights do not count toward a personal best.";
+    if (hot) bestText = "Hot-seat flight: the personal best is not updated.";
+    else if (!report.ranked) bestText = "Diverted flights do not count toward a personal best.";
     else if (!best.available) bestText = "Personal best could not be saved: browser storage is not available.";
     else if (best.isNew) bestText = `New personal best on this device: ${formatUsdWhole(report.totalUsd)}.`;
     else bestText = `Personal best on this device: ${best.best === null ? "none yet" : formatUsdWhole(best.best)}.`;

@@ -262,3 +262,69 @@ def test_r92_absence_and_missing_wordings_present_and_exclusive():
         data = json.loads(p.read_text(encoding="utf-8"))
         assert data["rule"]["levels"] == expected, p.name
         assert set(data["routeSummaryStartAltitude"]) == set(expected), p.name
+
+def test_scene_strings_and_vendor_skip():
+    """Task 14.5: scene.js (STRINGS table) is scanned, static/cloud-dive/vendor/ is not."""
+    texts = ui_texts()
+    assert "scene.js" in texts and any("Top of climb" == s for s in texts["scene.js"])
+    assert not any(k.startswith("vendor") for k in texts)
+    for s in texts["scene.js"]:
+        assert not violations(s), s
+
+
+def test_scene_panel_text_from_real_cases():
+    """Task 14.5: panel text and notes produced by buildScene for every real case and phase."""
+    import shutil
+    import subprocess
+    node = shutil.which("node")
+    if node is None:
+        import pytest
+        pytest.skip("node not available")
+    script = (
+        "import * as E from './static/cloud-dive/engine.js';"
+        "import * as S from './static/cloud-dive/scene.js';"
+        "import {readFileSync,readdirSync} from 'node:fs';"
+        "const out=[];const d='static/cloud-dive/cases/';"
+        "for(const n of readdirSync(d).filter(x=>/^\\d.*\\.json$/.test(x))){"
+        "const f=JSON.parse(readFileSync(d+n,'utf8'));const c=E.loadCase(f);"
+        "for(const ph of ['ready','climb','cruise','gate','arrival','report']){"
+        "for(const st of [E.initialState(c),{...E.initialState(c),ice:70,step:4}]){"
+        "const s=S.buildScene(f,st,{phase:ph},{});"
+        "out.push(s.panel.levelHere,s.panel.levelAhead,s.panel.textLine,s.panel.iceLabel,...s.panel.legend,"
+        "...Object.values(s.notes),...s.airports.map(a=>a.label||''));}}}"
+        "console.log(JSON.stringify(out));"
+    )
+    r = subprocess.run([node, "--input-type=module", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    strings = json.loads(r.stdout)
+    assert any("Not indicated" in s for s in strings)
+    bad = [(s, violations(s)) for s in set(strings) if s and violations(s)]
+    assert not bad, bad
+
+
+def test_panel_strings_scanned_task_15_3():
+    """Task 15.3: panel.js strings and cockpit.css content values are scanned; the game note matches R9.3."""
+    texts = ui_texts()
+    assert "panel.js" in texts and "cockpit.css" in texts
+    assert GAME_NOTE in "".join(texts["panel.js"])
+    assert "Ice index (game model)" in texts["panel.js"]
+    for s in texts["panel.js"] + texts["cockpit.css"]:
+        assert not violations(s), s
+
+
+def test_hotseat_strings_scanned_task_18_1():
+    """Task 18.1: hotseat.js strings are scanned and free of banned terms."""
+    texts = ui_texts()
+    assert "hotseat.js" in texts and "not ranked" in texts["hotseat.js"]
+    for s in texts["hotseat.js"]:
+        assert not violations(s), s
+
+
+def test_chase_strings_scanned_task_19_2():
+    """Task 19.2: chase.js strings, the chase button label and its html text are scanned."""
+    texts = ui_texts()
+    assert "chase.js" in texts and "Chase view (C)" in texts["chase.js"]
+    assert "Cockpit view (C)" in texts["chase.js"]
+    assert "Chase view (C)" in texts["index.html"]
+    for s in texts["chase.js"] + texts["index.html"]:
+        assert not violations(s), s

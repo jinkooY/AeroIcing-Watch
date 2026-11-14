@@ -207,6 +207,58 @@ This product is a dispatcher review aid based on satellite observations. It does
 - KIM / ECMWF NWP icing probability overlay
 - PIREP ingestion for corroboration
 
+## Cloud Dive (the Kiroween 2026 entry)
+
+Cloud Dive is a fuel-cost game on real US icing days. A regional jet flies a real route using
+GOES satellite cloud data and an ECMWF forecast. Cruise fast-forwards to a cloud. At each gate
+the player picks lane, altitude and anti-ice, each with a dollar price. The score is the total
+fuel cost in the game model, lower is better. It is a game model, not a flight procedure and not
+an icing severity.
+
+Open `static/cloud-dive/index.html` through any static server, for example
+`python -m http.server 8080 --directory static/cloud-dive`. No build step and no API key.
+
+Features:
+
+- Three real cases: KJFK-KBNA (2026-11-12), KDEN-KLAX (2026-11-01), KBUF-KPWM (2026-11-07).
+- 3D cockpit view (three.js 0.160.1, vendored) with a panel: fuel counter, ice index (game
+  model), anti-ice switch and lamp, altitude tape, panel map, text line with the head-wind
+  number. Frost on the windshield, airframe shake, and wind streaks. Shake is off under
+  reduced motion.
+- Takeoff on a runway, an automatic climb to the game's altitude block, then cruise. Arrival and
+  diversion cinematics, then the report. Skip button and Space skip cinematics. A fixed
+  illustrative Departure climb cost is added to every flight.
+- Chase view (key C) with a generic aircraft model built from primitives.
+- Hot-seat for 2 to 4 players on one device with a results table. Nothing is uploaded and there
+  is no online ranking.
+- 2D side view and map view with the satellite image (key V switches the view). It is also the
+  fallback when WebGL is not available.
+- Evidence levels (Observed, Possible, Not indicated, Not assessed) and a labelled ice index.
+  Best and Straight-ahead baselines appear only after play.
+- The same evidence engine feeds the dispatcher cross-section view and API above.
+
+Limits:
+
+- The ground is flat at the departure airport elevation and terrain is not drawn. The game uses no
+  terrain data. For KDEN-KLAX, the Why card says so and the altitude block is unchanged.
+- Cruise level is the game's altitude block, below airline cruise level, not an ATC assignment.
+  Lane spacing and vertical scale are exaggerated in the 3D view (Why cards explain).
+- Satellite sees cloud tops only. Cloud base is an estimate.
+
+Measured on this laptop only (Edge 157, Intel UHD 770, 60 Hz display, headless runs recorded in
+[`docs/screens/15.6-perf.json`](docs/screens/15.6-perf.json) and
+`docs/screens/19.2-chase-*.json`): the cockpit view ran at about 60 frames per second at
+1280x720, 1366x768 and 390x844, and 58.7 at 1920x1080. The chase view ran at about 60 (hardware GL and
+software GL, both in `19.2-chase-*.json`). 60 is the display refresh cap, so these are not a measure of headroom.
+Other devices were not measured.
+
+Not verified: the game was not checked by a human on a phone or in a non-Edge browser. The
+390x844 and 800x1000 layouts were checked by a headless Edge script only; they scroll by design.
+The MCP browser check of the cockpit on a narrow viewport (checklist C11) is not done yet.
+
+Third-party code and data: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Origin of every
+file, by tool: [`docs/Preexisting_Work_Disclosure.md`](docs/Preexisting_Work_Disclosure.md).
+
 ## Legacy components (outside the Kiroween 2026 entry)
 
 The entry is the US-origin Cloud Dive game and its evidence engine (see

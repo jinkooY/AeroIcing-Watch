@@ -151,6 +151,11 @@ body:not(.in-flight) .app-main { overflow: auto; }
 .ctl-buttons button.ctl-lane { flex: 0 0 44px; }
 button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; box-shadow: inset 0 0 0 2px var(--accent); }
 .ctl-lane.is-here { border-style: dashed; }
+.gate-choices-wrap[hidden] { display: none; }
+.gate-inset { display: block; width: 100%; max-width: 360px; height: 180px; border: 1px solid var(--line); border-radius: 8px; background: #0c1015; }
+.gate-inset[hidden] { display: none; }
+.gate-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.gate-btn { min-width: 44px; min-height: 44px; flex: 1 1 90px; }
 .ctl-toggle { width: 100%; font-weight: 600; }
 .ctl-go-field { border: 0; padding: 0; }
 .ctl-go { width: 100%; height: 100%; min-height: 44px; font-size: 1.05rem; font-weight: 700; background: #1f3a55; border-color: var(--accent); }
@@ -202,6 +207,17 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 .dlg h2, .dlg h3 { scroll-margin-top: 56px; }
 .dlg h2:focus, .dlg h3:focus { outline: 3px solid var(--focus); outline-offset: 2px; }
 .dlg h2 { margin-top: 0; }
+.hotseat-form { display: grid; gap: 8px; justify-items: start; }
+.hotseat-form select, .hotseat-form input, .hotseat-form button { min-height: 44px; font: inherit; }
+.results-table th[scope="col"] { border-bottom: 2px solid var(--text); }
+.results-table tbody th { font-weight: 600; text-align: left; }
+.results-table tr.baseline-row th, .results-table tr.baseline-row td { border-top: 2px solid var(--text); font-style: italic; }
+.results-table td { text-align: right; font-variant-numeric: tabular-nums; }
+.results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.results-actions button { min-height: 44px; font: inherit; }
+.hotseat-names { display: grid; gap: 6px; width: 100%; }
+.hotseat-names label { display: grid; gap: 2px; }
+.case-item .case-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .legend-cols { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 20px; }
 .legend-canvas { display: block; width: 290px; height: 400px; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: #0c1015; }
 @media (max-width: 700px) { .legend-cols { grid-template-columns: minmax(0, 1fr); } }
@@ -211,7 +227,7 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
   body { height: auto; min-height: 100vh; display: block; }
   .top { flex-wrap: wrap; padding: 6px 12px; }
   .flight-title { flex: 1 1 100%; white-space: normal; }
-  .hud { flex-wrap: wrap; }
+  .hud { flex-wrap: wrap; max-width: 100%; flex: 1 1 100%; }
   .flight { grid-template-columns: minmax(0, 1fr); height: auto; }
   .col-left { display: block; }
   .map-section { display: block; }
@@ -243,3 +259,31 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 .why-card summary { cursor: pointer; font-weight: 600; padding: 0.4rem 0; }
 .why-card summary:focus-visible { outline: 3px solid #1a5fb4; outline-offset: 2px; }
 .why-card p { margin: 0.4rem 0; line-height: 1.45; }
+
+/* Cockpit view (task 15.5). The cockpit is the default flight view; body.view-cockpit hides the 2D map column and
+   the 2D controls (the gate text stays, the gate buttons and inset come from #gate-choices). */
+.cockpit-view {
+  position: relative; min-width: 0; min-height: 0; overflow: hidden;
+  background: #0c1015; border: 1px solid var(--line); border-radius: 8px;
+}
+/* Task 15.6: the view is a column. The canvas (the windshield) takes the space above the panel, so the panel never
+   covers the scene; the 3D frame is drawn at the canvas aspect. */
+.cockpit-view { display: flex; flex-direction: column; }
+.cockpit-canvas { position: relative; display: block; flex: 1 1 0; width: 100%; height: 0; min-height: 160px; }
+#cockpit-panel { flex: 0 0 auto; }
+.view-notice {
+  margin: 0 0 6px; padding: 6px 10px; font-size: 0.85rem;
+  border: 1px solid var(--warn); border-radius: 6px; background: #2a2218;
+}
+body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+body.view-cockpit .col-left,
+body.view-cockpit .scene-wrap,
+body.view-cockpit #controls .ctl-row,
+body.view-cockpit .src-line { display: none; }
+body.view-cockpit .col-right { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+body.view-cockpit .gate-panel { height: auto; min-height: 88px; max-height: 150px; flex: 0 0 auto; }
+body.view-cockpit .gate-inset { height: 140px; }
+@media (max-width: 760px) {
+  body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  body.view-cockpit .col-right { max-height: 45dvh; }
+}
