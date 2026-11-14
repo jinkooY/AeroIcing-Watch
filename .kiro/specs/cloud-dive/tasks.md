@@ -529,6 +529,7 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - Revision c (decision G15): group 21, presentation only. Engine, cost model, case files and evidence
   values stay unchanged (R22.11). Task 21.1 must run before any other task of the group changes code.
 - Frame rates are measured in task 15.6 and 18.2 and recorded as measured, not as targets met.
+- Open items from the 2026-11-14 review are listed in [docs/pending-items.md](../../../docs/pending-items.md). They are not tasks yet and wait for the owner's instruction.
 
 ## Task Dependency Graph
 
