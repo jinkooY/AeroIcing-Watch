@@ -8,6 +8,10 @@ Compare two illustrative Incheon–Haneda routes using an archived ECMWF IFS for
 
 From the repository root, run `python -m http.server 8080 --bind 127.0.0.1 --protocol HTTP/1.1 --directory static/route-demo` and open [localhost:8080](http://localhost:8080/). The demo needs a static HTTP server and a browser. It uses bundled results with no API key, live weather feed or Python packages required. See the [submission notes](docs/AeroIcing_Watch_Submission_Package.md) for reproduction and deployment.
 
+The **3D Replay** link next to the segment controls opens `replay.html`, which flies the selected route through the same archived segments. Both pages share the URL hash `#route=<direct|via>&segment=<0-based index>`, so a link such as `index.html#route=via&segment=20` opens the via route at segment 21 and the replay's 2D link returns to the same segment.
+
+`static/route-demo/scenario.json` uses schema version 2. In addition to the segment midpoints shown in the comparison, each route has a `replay.track` list of exact segment boundaries (segment *i* runs from `track[i]` to `track[i+1]`, with the via waypoint as an exact vertex); the 2D map draws its route lines from this track. Regenerate the file from two archived IFS route evaluations with `python tools/export_route_demo.py <archive-dir>`. The exporter re-derives the segment midpoints and ETAs and refuses to write if they disagree with the archived evaluator output. Run the checks with `python -m pytest tests`.
+
 The rest of this README documents the FastAPI development application and its separate satellite cross-section workflow.
 
 **Kiro Hackathon 2026** — Satellite-based icing risk cross-section for airline dispatchers and flight crews.

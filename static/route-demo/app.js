@@ -84,11 +84,13 @@ function drawRouteCards() {
   get("cue-note").textContent = `Research screen uses forecast temperatures of ${thresholds.temperature_c.join(" to ")} °C and relative humidity of at least ${thresholds.rh_percent_min}%. Segments without either input are unevaluable.`;
 }
 
-function routeGeometry({ waypoints, segments }) {
+function routeGeometry({ waypoints, segments, replay }) {
+  // Schema 2 exports the exact segment boundaries, including the via waypoint.
+  if (Array.isArray(replay?.track) && replay.track.length >= 2) return replay.track;
   const geometry = [waypoints[0], ...segments, waypoints.at(-1)];
   const waypoint = waypoints[1];
   if (waypoints.length === 3) {
-    // The cached segment positions are midpoints. Restore the turn between the closest adjacent pair.
+    // Schema 1 only has segment midpoints. Restore the turn between the closest adjacent pair.
     const longitudeScale = Math.cos(waypoint.latitude * Math.PI / 180);
     const distance = (point) => Math.hypot(
       point.latitude - waypoint.latitude, (point.longitude - waypoint.longitude) * longitudeScale
@@ -104,10 +106,30 @@ function routeGeometry({ waypoints, segments }) {
   }
   return geometry;
 }
+
+function replayHref() {
+  const route = scenario.routes[routeIndex];
+  return `#route=${encodeURIComponent(route.id)}&segment=${segmentIndex}`;
+}
+
+function syncHash() {
+  const hash = replayHref();
+  get("replay-link").href = `replay.html${hash}`;
+  if (location.hash !== hash) history.replaceState(null, "", hash);
+}
+
+function readHash() {
+  const params = new URLSearchParams(location.hash.slice(1));
+  const route = scenario.routes.findIndex((item) => item.id === params.get("route"));
+  const segmentText = params.get("segment");
+  const segment = segmentText !== null && /^\d+$/.test(segmentText) ? Number(segmentText) : null;
+  return { route, segment };
+}
+
 function drawMap(route, segment) {
   const map = get("map");
   map.replaceChildren();
-  const locations = scenario.routes.flatMap(({ waypoints, segments }) => [...waypoints, ...segments]);
+  const locations = scenario.routes.flatMap((item) => [...item.waypoints, ...item.segments, ...routeGeometry(item)]);
   const longitude = locations.map((point) => point.longitude);
   const latitude = locations.map((point) => point.latitude);
   const minLon = Math.floor(Math.min(...longitude)) - 1;
@@ -232,9 +254,10 @@ function setSegment(index) {
   ]);
   drawMap(route, segment);
   drawChart(route, segment);
+  syncHash();
 }
 
-function setRoute(index) {
+function setRoute(index, initialSegment = 0) {
   routeIndex = index;
   const { segments, ctps_observation } = scenario.routes[index];
   for (const [cardIndex, card] of [...get("routes").children].entries()) {
@@ -248,7 +271,7 @@ function setRoute(index) {
   get("observation").textContent = ctps_observation.state === "no_recent_observation"
     ? "Concurrent GK-2A CTPS cloud observations were unavailable for this route."
     : "GK-2A CTPS availability could not be verified for the decision time.";
-  setSegment(0);
+  setSegment(initialSegment >= 0 && initialSegment < segments.length ? initialSegment : 0);
 }
 
 function render(data) {
@@ -271,7 +294,15 @@ function render(data) {
   get("segment").addEventListener("change", (event) => setSegment(Number(event.target.value)));
   get("previous").addEventListener("click", () => setSegment(segmentIndex - 1));
   get("next").addEventListener("click", () => setSegment(segmentIndex + 1));
-  setRoute(0);
+  const initial = readHash();
+  if (initial.route >= 0) setRoute(initial.route, initial.segment ?? 0);
+  else setRoute(0);
+  window.addEventListener("hashchange", () => {
+    const next = readHash();
+    if (next.route >= 0 && next.route !== routeIndex) setRoute(next.route, next.segment ?? 0);
+    else if (next.route === routeIndex && next.segment !== null) setSegment(next.segment);
+    syncHash();
+  });
   get("load-status").hidden = true;
   get("demo").hidden = false;
 }
@@ -281,7 +312,7 @@ async function loadDemo() {
     const response = await fetch("scenario.json");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (data.schema_version !== 1 || data.routes.length !== 2) throw new Error("Unsupported scenario");
+    if (![1, 2].includes(data.schema_version) || data.routes.length !== 2) throw new Error("Unsupported scenario");
     render(data);
   } catch (error) {
     console.error(error);

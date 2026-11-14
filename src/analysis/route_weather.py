@@ -6,6 +6,7 @@ import math
 from pyproj import Geod
 
 from src.analysis.aircraft_performance import performance_model
+from src.analysis.route_sampler import split_legs
 from src.integration.ifs_grid import sample
 
 GEOD = Geod(ellps="WGS84")
@@ -60,19 +61,7 @@ def ground_speed(u: float, v: float, azimuth: float, tas_kt: float) -> float | N
 
 
 def legs_for(points):
-    legs = []
-    for (lat1, lon1), (lat2, lon2) in zip(points, points[1:]):
-        azimuth, _, metres = GEOD.inv(lon1, lat1, lon2, lat2)
-        if metres < 1:
-            raise ValueError("Adjacent waypoints must be distinct")
-        n = math.ceil(metres / 25000)
-        if len(legs) + n > 400:
-            raise ValueError("Route exceeds the 400-segment evaluation limit")
-        for i in range(n):
-            offset = metres * i / n
-            mid_lon, mid_lat, reverse = GEOD.fwd(lon1, lat1, azimuth, offset + metres / (2 * n))
-            legs.append((mid_lat, mid_lon, reverse + 180, metres / n))
-    return legs
+    return [(mid[0], mid[1], azimuth, metres) for _, mid, _, azimuth, metres in split_legs(points)]
 
 
 def evaluate(bundle, points, departure, altitude_ft, tas_kt, mass_kg, aircraft=None, engine=None):

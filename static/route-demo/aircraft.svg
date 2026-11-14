@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Self-drawn top-down aircraft silhouette; nose points up (direction of travel). -->
+  <g fill="#ffffff" stroke="#0b1522" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M32 3 C35 3 36 7 36 11 L36 24 L60 37 L60 42 L36 35 L35 51 L43 57 L43 61 L32 58 L21 61 L21 57 L29 51 L28 35 L4 42 L4 37 L28 24 L28 11 C28 7 29 3 32 3 Z"/>
+  </g>
+</svg>

@@ -1,9 +1,14 @@
 """Export the public route demo from two saved IFS route evaluations."""
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.analysis.route_sampler import split_legs  # noqa: E402
 
 
 OUTPUT = Path(__file__).resolve().parents[1] / "static" / "route-demo" / "scenario.json"
@@ -17,6 +22,13 @@ SEGMENT_FIELDS = (
     "temperature_c", "wind_speed_kt", "wind_from_deg", "ground_speed_kt",
     "duration_s", "fuel_kg",
 )
+SCHEMA_VERSION = 2
+REPLAY_VERSION = 1
+FEET_TO_M = 0.3048
+# Exported midpoints must reproduce the archived evaluation; ETAs may differ by the
+# evaluator's 0.1 s convergence tolerance.
+MIDPOINT_TOLERANCE_DEG = 1e-7
+ETA_TOLERANCE_S = 1.0
 ROUTES = (
     ("direct", "Direct candidate", ("RKSI", "RJTT")),
     ("via", "Waypoint candidate", ("RKSI", "34.8°N, 133.0°E", "RJTT")),
@@ -61,6 +73,78 @@ def shared_context(response):
     }
 
 
+def isoformat(timestamp):
+    return timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def build_replay(route_id, waypoint_labels, request, response):
+    """Rebuild segment boundaries and boundary times from the evaluator's leg split."""
+    points = [(point["lat"], point["lon"]) for point in request["waypoints"]]
+    legs = split_legs(points)
+    segments = response["segments"]
+    if len(legs) != response["segment_count"] or len(segments) > len(legs):
+        raise ValueError(f"Segment count mismatch for {route_id}")
+
+    waypoint_at = {}
+    for point, name in zip(points, waypoint_labels, strict=True):
+        waypoint_at[point] = name
+
+    departure = datetime.fromisoformat(response["departure"].replace("Z", "+00:00"))
+    now = departure
+    travelled_m = 0.0
+    times = [departure]
+    stopped_index = None
+    for index, ((_, mid, _, _, metres), segment) in enumerate(zip(legs, segments)):
+        if abs(mid[0] - segment["latitude"]) > MIDPOINT_TOLERANCE_DEG or abs(
+            mid[1] - segment["longitude"]
+        ) > MIDPOINT_TOLERANCE_DEG:
+            raise ValueError(f"Segment {index} midpoint of {route_id} differs from the evaluator")
+        duration = segment.get("duration_s")
+        if duration is None:
+            stopped_index = index
+            break
+        eta = datetime.fromisoformat(segment["eta"].replace("Z", "+00:00"))
+        expected = now + timedelta(seconds=duration / 2)
+        if abs((eta - expected).total_seconds()) > ETA_TOLERANCE_S:
+            raise ValueError(f"Segment {index} midpoint ETA of {route_id} is inconsistent")
+        now += timedelta(seconds=duration)
+        times.append(now)
+    if stopped_index is None and len(segments) < len(legs):
+        stopped_index = len(segments)
+
+    track = []
+    for index in range(len(legs) + 1):
+        point = legs[0][0] if index == 0 else legs[index - 1][2]
+        track.append({
+            "latitude": point[0],
+            "longitude": point[1],
+            "distance_km": travelled_m / 1000,
+            "time": isoformat(times[index]) if index < len(times) else None,
+            "waypoint": waypoint_at.get(point),
+        })
+        if index < len(legs):
+            travelled_m += legs[index][4]
+
+    if [item["waypoint"] for item in track if item["waypoint"]] != list(waypoint_labels):
+        raise ValueError(f"Waypoints of {route_id} do not fall on segment boundaries")
+
+    complete = stopped_index is None
+    if complete and response["total_time_s"] is not None and abs(
+        (now - departure).total_seconds() - response["total_time_s"]
+    ) > 1e-3:
+        raise ValueError(f"Boundary times of {route_id} do not sum to the route total")
+    return {
+        "track": track,
+        "start_at": isoformat(departure),
+        "end_at": isoformat(now),
+        "status": "complete" if complete else "truncated",
+        "stopped_segment_index": stopped_index,
+        "stopped_reason": None if complete else (
+            segments[stopped_index]["state"] if stopped_index < len(segments) else "not_evaluated"
+        ),
+    }
+
+
 def export_route(route_id, label, waypoint_labels, request, response):
     if utc(request["departure_at"]) != utc(response["departure"]) or utc(
         request["decision_at"]
@@ -69,9 +153,10 @@ def export_route(route_id, label, waypoint_labels, request, response):
 
     segments = []
     travelled_km = 0.0
-    for segment in response["segments"]:
+    for index, segment in enumerate(response["segments"]):
         length_km = segment["distance_km"]
-        public_segment = {field: segment.get(field) for field in SEGMENT_FIELDS}
+        public_segment = {"id": f"{route_id}-{index + 1:03d}", "index": index}
+        public_segment.update({field: segment.get(field) for field in SEGMENT_FIELDS})
         public_segment.update(
             cumulative_distance_km=travelled_km + length_km / 2,
             eta=utc(segment["eta"]),
@@ -100,6 +185,7 @@ def export_route(route_id, label, waypoint_labels, request, response):
         },
         "ctps_observation": {"state": response["ctps_observation"]["state"]},
         "segments": segments,
+        "replay": build_replay(route_id, waypoint_labels, request, response),
     }
 
 
@@ -115,11 +201,24 @@ def export_scenario(input_directory):
     if contexts[0] != contexts[1]:
         raise ValueError("The demo routes must share the same forecast and assumptions")
 
+    altitude_ft = contexts[0]["assumptions"]["altitude_ft_pressure"]
     return {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "title": "Incheon to Tokyo Haneda",
         "data_kind": "archived_forecast",
         **contexts[0],
+        "replay": {
+            "version": REPLAY_VERSION,
+            "coordinate_system": "WGS84 latitude/longitude in degrees",
+            "time_basis": "UTC. Track times are segment boundaries from departure plus evaluated "
+            "segment durations. Segment eta values are midpoint times.",
+            "phase": "level_cruise_only",
+            "pressure_altitude_ft": altitude_ft,
+            "display_height_m": round(altitude_ft * FEET_TO_M, 1),
+            "height_reference": "Display only: pressure altitude converted to metres above the "
+            "WGS84 ellipsoid without temperature or geoid correction",
+            "interpolation": "Constant groundspeed along the geodesic between adjacent track points",
+        },
         "routes": routes,
     }
 
