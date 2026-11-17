@@ -502,6 +502,30 @@ worded "$N above Best", and SHALL show the saving share of R8.2 as a percentage 
 THE SKY GATE FRAMES SHALL show evidence only and SHALL NOT carry a cost preview or a
 recommendation (R6.5, R9.4).
 
+### R23 Cloud look and capture mode (revision d)
+23.1 THE COCKPIT VIEW SHALL draw each cloud volume as soft puffs with a layered cloud texture,
+light on top and grey underneath, instead of one flat gradient card. Puff positions come from a
+hash of lane, step and puff index. The hash is display only: no random number and no clock
+value decide a position, so one case at one step always gives the same clouds.
+23.2 EVERY PUFF SHALL lie inside the footprint of its cloud volume and between its estimated
+base and its observed top. A null or estimated base stays faded and labelled "base estimated".
+No cloud is drawn where the satellite state is not `observed`. Observed evidence is never
+dropped to meet a cap (CD-P24, CD-P26).
+23.3 WHEN the user prefers reduced motion, THE PUFFS SHALL NOT drift. Otherwise they drift
+slowly, and inside a cloud thin mist streaks pass the windshield.
+23.4 THE SKY, HAZE AND GROUND SHALL read as depth: a sky gradient with a horizon glow, haze that
+thickens with distance, and a ground texture without the stretched streaks of the old sky dome.
+23.5 THE CLOUD LOOK SHALL change drawing only. The engine, the cost model, the evidence
+levels, the sky gates, the evidence drawings (R16.7), the labels and every case file stay
+unchanged (R22.11). The frame rate at 1920 x 1080 SHALL be measured and recorded, as in
+task 15.6, and the triangle caps of design 14.9 SHALL still hold.
+23.6 WHEN the page address contains `?video=1`, THE COCKPIT VIEW SHALL enlarge the 3D labels to
+at least 28 px and the HUD values to at least 26 px at 1920 x 1080, hide the row of shortcut
+buttons and the mouse pointer, and keep the game note, the source line, the level strip and the
+"here" and "ahead" text line. WITHOUT the parameter the page SHALL be pixel-identical to the
+page without this requirement. The mode changes display only; no engine input or output.
+23.7 THE SUBMISSION VIDEO SHALL carry burned-in captions that do not cover the game note and
+the source line, and a separate SRT file SHALL be uploaded with it.
 ## 5. Decision log (2026-11-13)
 
 Sections 1-4 above predate these decisions. Where they conflict, this log
@@ -625,6 +649,7 @@ Not verified: the real anti-ice fuel penalty (no source found; the anti-ice fact
 | G13 | **Owner: lateral display compression.** A display constant `LATK` scales lane spacing in the cockpit view (as the 2D map widens its lanes), tuned in task 15.2 together with the vertical exaggeration `VEX` (down to 0.2 if the side lanes are not readable from the cockpit), and explained in the display-scale "Why?" text (R16.12). |
 | G14 | **Owner: optional cost pop-up.** After 16, a short "+$N this segment" pop-up shows the actual cost since the previous stop. It is shown after the cost is incurred, never as a preview (R18.5, R6.5). |
 | G15 | **Owner approved visual polish group 21 (revision c, R22).** Defaults: the gate frame level is the worst level of the next 3 cells in that lane at the target altitude; frost is about 0.5 opacity at ice index 25 and 1.0 at 50 or more; the report reads "$N more than / less than Straight-ahead" with "$N above Best" below it. Engine, cost model, case files and evidence values stay unchanged. |
+| G16 | **Owner approved revision d (R23), 2026-11-16.** (1) Cloud look: deterministic, display-only noise (hash of lane, step, puff index) replaces the "no noise" sentence of design 14.4 for drawing only; the engine, solver and evidence path still use no random number. (2) Capture mode `?video=1` (R23.6). (3) Burned-in captions plus a separate SRT (R23.7). Not decided: synthesized sound effects (P-23). Spike result: a headed kiosk window at 1920 x 1080, device scale 1, recorded with ffmpeg `ddagrab` and NVENC, gives about 58 captured frames per second on the measured laptop (`tools/video/capture_pattern_check.mjs`). |
 
 ## 6. Official rules digest (read in full on 2026-11-13)
 

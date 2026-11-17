@@ -82,3 +82,18 @@
 .takeoff-btn { min-height: 44px; min-width: 44px; padding: 4px 18px; font-size: 1rem; font-weight: 600; }
 .takeoff-btn[hidden] { display: none; }
 body.lead-active #controls { display: none; }
+
+/* Capture mode (revision d, R23.6): only with ?video=1. Bigger texts for 1920 x 1080 recordings, no shortcut row, no pointer.
+   The game note, the source line, the level strip and the "here / ahead" text line stay visible. Display only. */
+body[data-video="1"], body[data-video="1"] * { cursor: none !important; }
+body[data-video="1"] .bottom-buttons { display: none; }
+body[data-video="1"] .hud dt { font-size: 0.95rem; }
+body[data-video="1"] .hud dd { font-size: 1.65rem; }
+body[data-video="1"] .cp-label { font-size: 1.05rem; }
+body[data-video="1"] .cp-fuel-value { font-size: 1.75rem; }
+body[data-video="1"] .cp-tape-value { font-size: 1.7rem; }
+body[data-video="1"] .cp-ice-value, body[data-video="1"] .cp-lamp-text, body[data-video="1"] .cp-antiice { font-size: 1.15rem; }
+body[data-video="1"] .cp-text-line { font-size: 1.15rem; }
+body[data-video="1"] .cp-legend { font-size: 1.05rem; }
+body[data-video="1"] .gate-panel, body[data-video="1"] #gate-panel { font-size: 1.15rem; }
+body[data-video="1"] #gate-choices button { font-size: 1.2rem; }

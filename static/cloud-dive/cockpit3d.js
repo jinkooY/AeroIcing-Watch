@@ -10,7 +10,7 @@ import * as THREE from "./vendor/three/three.module.min.js";
 import { VIEW_KM, MAX_TRIANGLES, DEFAULT_FOV_DEG } from "./scene.js";
 import {
   EYE_HEIGHT_KM, SKY_SEGMENTS, buildDrawPlan, cameraEuler, fovForAspect, geometryKey, meshFromBoxes,
-  stippleData, gateDotData, hatchData, softData, diagonalData, stripeData, dashData, LEVEL_OBSERVED, LEVEL_POSSIBLE, LEVEL_NOT_ASSESSED, cockpitBoxes, frostData, frostOpacity, frostRect, shakeOffsetDeg, windStreakSegments, MAX_STREAKS,
+  stippleData, gateDotData, hatchData, softData, diagonalData, stripeData, dashData, LEVEL_OBSERVED, LEVEL_POSSIBLE, LEVEL_NOT_ASSESSED, cockpitBoxes, frostData, frostOpacity, frostRect, shakeOffsetDeg, windStreakSegments, MAX_STREAKS, cloudPuffs, puffAtlasData, PUFF_TILE, insideCloud, mistData, groundData, GROUND_TILE_KM,
 } from "./cockpit-geometry.js";
 
 import { chaseCamera, aircraftBoxes, chaseBudget } from "./chase.js";
@@ -25,7 +25,9 @@ const NEAR_KM = 0.05;
 // windshield white. Fully clear below CLOUD_NEAR_CLEAR_KM, full strength beyond CLOUD_NEAR_FULL_KM. Display only.
 const CLOUD_NEAR_CLEAR_KM = 4;
 const CLOUD_NEAR_FULL_KM = 24;
-const CLOUD_MAX_OPACITY = 0.8;
+const CLOUD_BOX_OPACITY = 0.1; // the old volume boxes stay as a faint body behind the puffs (revision d)
+const PUFF_NEAR_CLEAR_KM = 2.5; // puffs are smaller than the boxes, so they may come closer before they fade
+const PUFF_NEAR_FULL_KM = 14;
 
 function fadeNearEye(material) {
   material.onBeforeCompile = (sh) => {
@@ -37,6 +39,63 @@ function fadeNearEye(material) {
       .replace("#include <dithering_fragment>",
         `#include <dithering_fragment>\n  gl_FragColor.a *= smoothstep(${CLOUD_NEAR_CLEAR_KM.toFixed(1)}, ${CLOUD_NEAR_FULL_KM.toFixed(1)}, vEyeKm);`);
   };
+}
+
+// Revision d (R23.1): puffs are camera-facing quads. Each vertex carries its puff centre (aCenter) and size (aSize); the
+// corner is the position attribute (-0.5 to 0.5). The vertex shader turns the corner into the view right and up vectors,
+// so no quad is ever seen edge on. Display only.
+const puffUniforms = { uTime: { value: 0 }, uDriftOn: { value: 1 } }; // slow drift (R23.3); uDriftOn is 0 under reduced motion
+function puffMaterial(map) {
+  const m = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, map });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = puffUniforms.uTime;
+    sh.uniforms.uDriftOn = puffUniforms.uDriftOn;
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute vec3 aCenter;\nattribute vec2 aSize;\nattribute vec2 aDrift;\nuniform float uTime;\nuniform float uDriftOn;\nvarying float vEyeKm;")
+      .replace("#include <begin_vertex>",
+        "vec3 camRight = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);\n" +
+        "vec3 camUp = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);\n" +
+        "vec3 drift = vec3(sin(uTime * 0.06 + aDrift.x * 6.2831), 0.0, cos(uTime * 0.05 + aDrift.x * 12.5663)) * aDrift.y * uDriftOn;\n" +
+        "vec3 transformed = aCenter + drift + camRight * position.x * aSize.x + camUp * position.y * aSize.y;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\nvEyeKm = -mvPosition.z;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vEyeKm;")
+      .replace("#include <dithering_fragment>",
+        `#include <dithering_fragment>\n  gl_FragColor.a *= smoothstep(${PUFF_NEAR_CLEAR_KM.toFixed(1)}, ${PUFF_NEAR_FULL_KM.toFixed(1)}, vEyeKm);`);
+  };
+  return m;
+}
+
+function puffGeometry(puffs) {
+  const n = puffs.length;
+  const pos = new Float32Array(n * 12), centre = new Float32Array(n * 12), size = new Float32Array(n * 8);
+  const col = new Float32Array(n * 16), uv = new Float32Array(n * 8), idx = new Uint32Array(n * 6);
+  const drift = new Float32Array(n * 8);
+  const corners = [[-0.5, -0.5, 0, 0], [0.5, -0.5, 1, 0], [0.5, 0.5, 1, 1], [-0.5, 0.5, 0, 1]];
+  const pad = 0.015; // keep the sample inside its atlas tile
+  puffs.forEach((p, i) => {
+    const tx = p.variant % 2, ty = Math.floor(p.variant / 2);
+    corners.forEach(([cx, cy, cu, cv], k) => {
+      const v = i * 4 + k;
+      pos.set([cx, cy, 0], v * 3);
+      centre.set([p.x, p.y, p.z], v * 3);
+      size.set([p.w, p.h], v * 2);
+      drift.set([p.phase, p.drift], v * 2);
+      col.set([p.shade, p.shade, Math.min(1, p.shade + 0.03), p.alpha], v * 4);
+      uv.set([(tx + pad + cu * (1 - 2 * pad)) / 2, (ty + pad + cv * (1 - 2 * pad)) / 2], v * 2);
+    });
+    idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("aCenter", new THREE.BufferAttribute(centre, 3));
+  g.setAttribute("aSize", new THREE.BufferAttribute(size, 2));
+  g.setAttribute("aDrift", new THREE.BufferAttribute(drift, 2));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 4));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 1e6); // positions are computed in the shader
+  return g;
 }
 
 function dataTexture(bytes, wrap, size = TEX) {
@@ -91,6 +150,7 @@ function labelTexture(text) {
 export function createCockpit(canvas, options = {}) {
   const maxTriangles = options.maxTriangles || MAX_TRIANGLES;
   const viewKm = options.viewKm || VIEW_KM;
+  const labelScale = options.labelScale || 1; // capture mode: bigger world labels (R23.6)
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   renderer.autoClear = false;
   renderer.info.autoReset = false; // two passes per frame: count both, reset after reading
@@ -100,10 +160,14 @@ export function createCockpit(canvas, options = {}) {
   const camera = new THREE.PerspectiveCamera(DEFAULT_FOV_DEG, 1.78, NEAR_KM, viewKm * 1.5);
   const overlay = new THREE.Scene();
   const overlayCamera = new THREE.PerspectiveCamera(DEFAULT_FOV_DEG, 1.78, 0.05, 5);
-  world.fog = new THREE.Fog(0xbcd6ee, viewKm * 0.35, viewKm);
+  // Haze (R23.4): starts closer and is thicker toward the horizon, so far clouds and ground melt into the sky.
+  world.fog = new THREE.Fog(0xbcd6ee, viewKm * 0.2, viewKm * 0.95);
 
   const textures = {
     soft: dataTexture(softData(TEX), false),
+    puff: dataTexture(puffAtlasData(PUFF_TILE), false, PUFF_TILE * 2),
+    mist: dataTexture(mistData(128), true, 128),
+    ground: dataTexture(groundData(64), true, 64),
     stipple: dataTexture(stippleData(TEX), true),
     gateDot: dataTexture(gateDotData(TEX), true),
     hatch: dataTexture(hatchData(TEX), true),
@@ -115,7 +179,9 @@ export function createCockpit(canvas, options = {}) {
   const base = { vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide };
   const mats = {
     cloud: new THREE.MeshBasicMaterial({ ...base, map: textures.soft }),
-    observed: new THREE.MeshBasicMaterial({ ...base, blending: THREE.AdditiveBlending, fog: false }),
+    // Observed glow (R16.7). Additive blending piled up over the pale sky and turned the stacked bands into hard white
+    // blocks; ordinary blending with a soft edge keeps them orange. Meaning and level unchanged.
+    observed: new THREE.MeshBasicMaterial({ ...base, map: textures.soft, fog: false }),
     possible: new THREE.MeshBasicMaterial({ ...base, map: textures.stipple }),
     notAssessed: new THREE.MeshBasicMaterial({ ...base, map: textures.hatch, alphaTest: 0.05 }),
     guide: new THREE.MeshBasicMaterial({ ...base, map: textures.dash, alphaTest: 0.05 }),
@@ -130,6 +196,7 @@ export function createCockpit(canvas, options = {}) {
   mats.frost = new THREE.MeshBasicMaterial({
     map: textures.frost, color: 0xe8f4ff, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false,
   });
+  mats.puff = puffMaterial(textures.puff);
   fadeNearEye(mats.cloud);
   const renderOrder = { cloud: 1, notAssessed: 2, possible: 3, observed: 4, gate: 5 };
 
@@ -143,8 +210,10 @@ export function createCockpit(canvas, options = {}) {
   world.add(dome);
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(viewKm * 4, viewKm * 4).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x4d6b4a }),
+    new THREE.MeshBasicMaterial({ map: textures.ground }),
   );
+  const groundSizeKm = viewKm * 4;
+  textures.ground.repeat.set(groundSizeKm / GROUND_TILE_KM, groundSizeKm / GROUND_TILE_KM);
   ground.renderOrder = -1;
   ground.frustumCulled = false;
   world.add(ground);
@@ -161,6 +230,7 @@ export function createCockpit(canvas, options = {}) {
     return mesh;
   };
   makeSlot("clouds", mats.cloud, renderOrder.cloud);
+  makeSlot("puffs", mats.puff, renderOrder.cloud + 0.5);
   makeSlot("notAssessed", mats.notAssessed, renderOrder.notAssessed);
   makeSlot("possible", mats.possible, renderOrder.possible);
   makeSlot("observed", mats.observed, renderOrder.observed);
@@ -182,6 +252,16 @@ export function createCockpit(canvas, options = {}) {
   frostMesh.renderOrder = 20;
   frostMesh.visible = false;
   overlay.add(frostMesh);
+  // Mist inside a cloud (R23.3): thin white streaks over the windshield opening, only while the camera is inside a cloud volume.
+  mats.mist = new THREE.MeshBasicMaterial({
+    map: textures.mist, color: 0xf4f8ff, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false,
+  });
+  const mistMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mats.mist);
+  mistMesh.frustumCulled = false;
+  mistMesh.renderOrder = 18;
+  mistMesh.visible = false;
+  overlay.add(mistMesh);
+  let mistLevel = 0;
 
   // Wind streaks (R16.9): at most 12 thin lines in the windshield opening; positions from windStreakSegments.
   const streakGeom = new THREE.BufferGeometry();
@@ -221,7 +301,8 @@ export function createCockpit(canvas, options = {}) {
       if (!tex) continue;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
       sp.position.set(l.x, l.y, l.z);
-      sp.scale.set(l.width, l.width / 4, 1);
+      const ls = l.kind === "gate" ? 1 : labelScale;
+      sp.scale.set(l.width * ls, (l.width * ls) / 4, 1);
       sp.renderOrder = 10;
       labelGroup.add(sp);
     }
@@ -229,7 +310,8 @@ export function createCockpit(canvas, options = {}) {
 
   function setSky(sky) {
     const top = new THREE.Color((sky && sky.topColor) || "#2b5d9b");
-    const hor = new THREE.Color((sky && sky.horizonColor) || "#bcd6ee");
+    // Horizon glow (R23.4): the horizon is a little lighter than the scene's horizon colour; haze and clear colour match it.
+    const hor = new THREE.Color((sky && sky.horizonColor) || "#bcd6ee").lerp(new THREE.Color(0xffffff), 0.22);
     const key = `${top.getHexString()}${hor.getHexString()}`;
     if (key === skyKey) return;
     skyKey = key;
@@ -251,6 +333,7 @@ export function createCockpit(canvas, options = {}) {
   let lastAspect = 0;
   let lastFov = 0;
   let plan = null;
+  let puffCount = 0;
   let size = { w: 1, h: 1 };
   const stats = { triangles: 0, drawnTriangles: 0, drawCalls: 0, dropped: null };
 
@@ -276,6 +359,8 @@ export function createCockpit(canvas, options = {}) {
       const fr = frostRect(aspect, vfov);
       frostMesh.scale.set(fr.x1 - fr.x0, fr.y1 - fr.y0, 1);
       frostMesh.position.set((fr.x0 + fr.x1) / 2, (fr.y0 + fr.y1) / 2, fr.z);
+      mistMesh.scale.copy(frostMesh.scale);
+      mistMesh.position.copy(frostMesh.position);
       lastAspect = aspect;
       lastFov = vfov;
     }
@@ -285,6 +370,10 @@ export function createCockpit(canvas, options = {}) {
       lastKey = key;
       plan = buildDrawPlan(scene, { maxTriangles: chase ? chaseBudget(maxTriangles) : maxTriangles, aspect, fovDeg: vfov, viewKm });
       fill("clouds", plan.clouds);
+      const puffs = cloudPuffs(scene);
+      slots.puffs.geometry.dispose();
+      slots.puffs.geometry = puffGeometry(puffs);
+      puffCount = puffs.length;
       fill("observed", plan.observed);
       fill("possible", plan.possible);
       fill("notAssessed", plan.notAssessed);
@@ -296,7 +385,7 @@ export function createCockpit(canvas, options = {}) {
       fill("gateNotAssessed", gateFill(LEVEL_NOT_ASSESSED));
       fill("guides", plan.guides);
       setLabels(plan.labels);
-      stats.triangles = plan.triangles;
+      stats.triangles = plan.triangles + puffCount * 2;
       stats.dropped = plan.dropped;
     }
     setSky(scene.sky);
@@ -326,8 +415,22 @@ export function createCockpit(canvas, options = {}) {
     ground.position.set(px, scene.ground ? scene.ground.y : 0, pz);
     guides.position.set(px, py - EYE_HEIGHT_KM, 0);
     const alpha = Math.min(Math.max(scene.cloudAlpha, 0), 1);
-    mats.cloud.opacity = alpha * CLOUD_MAX_OPACITY;
+    mats.cloud.opacity = alpha * CLOUD_BOX_OPACITY;
     slots.clouds.visible = alpha > 0 && plan.clouds.length > 0;
+    mats.puff.opacity = alpha;
+    slots.puffs.visible = alpha > 0 && puffCount > 0;
+
+    // World-anchored ground texture: the plane follows the eye, so the texture offset cancels that movement.
+    const gRep = textures.ground.repeat.x;
+    textures.ground.offset.set((px * gRep) / groundSizeKm, (-pz * gRep) / groundSizeKm);
+    // Slow puff drift and mist scroll from the frame time only; both stand still under reduced motion (R23.3).
+    const nowS = (opts.nowMs || 0) / 1000;
+    puffUniforms.uTime.value = nowS;
+    puffUniforms.uDriftOn.value = opts.reducedMotion ? 0 : 1;
+    mistLevel += ((!chase && insideCloud(scene) ? 1 : 0) - mistLevel) * 0.12;
+    mats.mist.opacity = mistLevel * 0.45 * alpha;
+    mistMesh.visible = mats.mist.opacity > 0.01;
+    if (!opts.reducedMotion) textures.mist.offset.x = (nowS * 0.04) % 1;
 
     const frost = frostOpacity(scene); // draws engine state only; never writes it
     mats.frost.opacity = frost;
@@ -351,7 +454,7 @@ export function createCockpit(canvas, options = {}) {
   }
 
   function dispose() {
-    for (const m of [...Object.values(slots), frameMesh, frostMesh, streakMesh, dome, ground]) m.geometry.dispose();
+    for (const m of [...Object.values(slots), frameMesh, frostMesh, mistMesh, streakMesh, dome, ground]) m.geometry.dispose();
     Object.values(mats).forEach((m) => m.dispose());
     Object.values(textures).forEach((t) => t.dispose());
     setLabels([]);

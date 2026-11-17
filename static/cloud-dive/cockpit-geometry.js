@@ -224,6 +224,161 @@ export function cloudBoxes(scene) {
   return out;
 }
 
+// ---- Cloud puffs (design 14.4, revision d, R23.1 to R23.2) ----------------------------------------------------
+// Each cloud volume is filled with soft puffs instead of one flat card. Display only: positions come from an integer
+// hash of the volume position and the puff index, never from a random number or a clock, so one case at one step
+// always gives the same clouds. Every puff lies inside its volume (footprint and between bottom and top); the thin
+// cap of an estimated base stays thin and faint. Nothing is drawn where there is no cloud volume.
+export const MAX_PUFFS = 1200;
+export const PUFF_TILE = 64; // texture tile size; the atlas holds 2 x 2 variants
+export const PUFF_DRIFT_KM = 0.25; // largest slow drift of a puff (R23.3); the puff keeps this margin inside its volume
+const hash3 = (a, b, c) => {
+  let h = (Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 2246822519)) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 3266489917) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+};
+
+// Returns [{ x, y, z, w, h, shade, alpha, variant }] in display kilometres. w is the width across the view, h the height.
+export function cloudPuffs(scene, maxPuffs = MAX_PUFFS) {
+  const all = [];
+  for (const b of cloudBoxes(scene)) {
+    const L = b.x1 - b.x0, W = b.z1 - b.z0, T = b.y1 - b.y0;
+    if (!(L > 1e-6 && W > 1e-6 && T > 1e-6)) continue;
+    const thin = b.baseEstimated;
+    const nx = Math.max(1, Math.round(L / Math.max(3.2, L / 10)));
+    const nz = W > 5 ? 2 : 1;
+    const ny = thin ? 1 : clamp(Math.round(T / 2.2), 1, 3);
+    const sx = Math.round(b.x0 * 100), sz = Math.round((b.z0 + b.z1) * 50);
+    const dm = Math.min(PUFF_DRIFT_KM, L * 0.2, W * 0.2); // drift margin, so a drifting puff never leaves its volume
+    for (let i = 0; i < nx; i++) {
+      for (let j = 0; j < nz; j++) {
+        for (let k = 0; k < ny; k++) {
+          const id = (i * 7 + j) * 5 + k;
+          const jx = hash3(sx, sz, id * 4) - 0.5, jz = hash3(sx, sz, id * 4 + 1) - 0.5;
+          const jy = hash3(sx, sz, id * 4 + 2) - 0.5, js = hash3(sx, sz, id * 4 + 3);
+          const fy = (k + 0.5 + 0.5 * jy) / ny;
+          const top = ny === 1 ? 0.5 : k / (ny - 1); // 0 at the lowest layer, 1 at the highest
+          const room = Math.min(L, W) - 2 * dm;
+          let w = Math.min(Math.min(L, W) * (0.75 + 0.5 * js) * (0.9 + 0.2 * top), 9, room);
+          w = Math.max(w, Math.min(1.2, room));
+          const h = Math.min(T, w * (thin ? 0.3 : 0.8));
+          all.push({
+            x: clamp(b.x0 + L * ((i + 0.5 + 0.6 * jx) / nx), b.x0 + w / 2 + dm, b.x1 - w / 2 - dm),
+            z: clamp(b.z0 + W * ((j + 0.5 + 0.6 * jz) / nz), b.z0 + w / 2 + dm, b.z1 - w / 2 - dm),
+            y: clamp(b.y0 + T * fy, b.y0 + h / 2, b.y1 - h / 2),
+            w, h,
+            shade: 0.6 + 0.4 * clamp((b.y0 + T * fy - b.y0) / T, 0, 1), // light on top, grey underneath
+            alpha: thin ? 0.28 : 0.5,
+            variant: Math.floor(hash3(sx, sz, id * 4 + 3) * 4) % 4,
+            phase: hash3(sz, sx, id), // drift phase 0..1 (shader only)
+            drift: dm,
+          });
+        }
+      }
+    }
+  }
+  if (all.length <= maxPuffs) return all;
+  const out = []; // deterministic thinning: every n-th puff, evenly spread
+  for (let i = 0; i < maxPuffs; i++) out.push(all[Math.floor((i * all.length) / maxPuffs)]);
+  return out;
+}
+
+// Value noise on an integer lattice (hash2), four octaves; 0..1. Used only for the puff texture.
+const vnoise = (x, y, seed) => {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const fx = x - xi, fy = y - yi;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash2(xi + seed * 131, yi), b = hash2(xi + 1 + seed * 131, yi);
+  const c = hash2(xi + seed * 131, yi + 1), d = hash2(xi + 1 + seed * 131, yi + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+};
+const fbm = (x, y, seed) => {
+  let sum = 0, amp = 0.5, f = 1, norm = 0;
+  for (let o = 0; o < 4; o++) {
+    sum += amp * vnoise(x * f, y * f, seed + o);
+    norm += amp;
+    amp *= 0.5;
+    f *= 2;
+  }
+  return sum / norm;
+};
+// 2 x 2 atlas of four puff variants, RGBA, row 0 at the bottom of the image. Soft edge, lumpy outline, light top.
+export function puffAtlasData(tile = PUFF_TILE) {
+  const size = tile * 2;
+  const out = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const variant = (x >= tile ? 1 : 0) + (y >= tile ? 2 : 0);
+      const lx = x % tile, ly = y % tile;
+      const u = ((lx + 0.5) / tile) * 2 - 1;
+      const v = ((ly + 0.5) / tile) * 2 - 1;
+      const r = Math.hypot(u, v);
+      const n = fbm(u * 2.4 + 7 + variant * 3.1, v * 2.4 + 5, variant * 5 + 1);
+      const density = clamp(1.2 - r * 1.15 + (n - 0.5) * 1.1, 0, 1);
+      const lit = 0.8 + 0.2 * clamp((v + 1) / 2, 0, 1) - 0.14 * (1 - n);
+      const i = (y * size + x) * 4;
+      out[i] = out[i + 1] = Math.round(255 * clamp(lit, 0, 1));
+      out[i + 2] = Math.round(255 * clamp(lit + 0.03, 0, 1));
+      out[i + 3] = Math.round(255 * smooth(0, 0.75, density));
+    }
+  }
+  return out;
+}
+
+// ---- Mist, ground and the inside-cloud test (revision d, R23.3 and R23.4) ----------------------------------------
+// True when the camera lies inside a cloud volume (footprint and between bottom and top): the cockpit then shows thin mist.
+export function insideCloud(scene) {
+  const p = scene && scene.camera && scene.camera.pos;
+  if (!p) return false;
+  const [x, y, z] = [num(p[0]), num(p[1]), num(p[2])];
+  return cloudBoxes(scene).some((b) => x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1 && z >= b.z0 && z <= b.z1);
+}
+
+// Value noise that repeats every `period` lattice cells along x, so a mist strip tiles without a seam.
+const vnoiseWrapX = (x, y, seed, period) => {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const fx = x - xi, fy = y - yi;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const w = (v) => ((v % period) + period) % period;
+  const a = hash2(w(xi) + seed * 131, yi), b = hash2(w(xi + 1) + seed * 131, yi);
+  const c = hash2(w(xi) + seed * 131, yi + 1), d = hash2(w(xi + 1) + seed * 131, yi + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+};
+// Streaky mist, white, long along x, seamless in x. Window opacity is applied by the material.
+export function mistData(size = 128) {
+  const out = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const n = 0.55 * vnoiseWrapX(u * 4, v * 14, 3, 4) + 0.3 * vnoiseWrapX(u * 8, v * 30, 5, 8) + 0.15 * vnoiseWrapX(u * 16, v * 9, 7, 16);
+      const i = (y * size + x) * 4;
+      out[i] = out[i + 1] = out[i + 2] = 255;
+      out[i + 3] = Math.round(255 * smooth(0.28, 0.85, n));
+    }
+  }
+  return out;
+}
+// Ground: soft fields in greens and browns, seamless (the lattice wraps), world-anchored by the renderer. No random number.
+export const GROUND_TILE_KM = 48;
+export function groundData(size = 64) {
+  const out = new Uint8Array(size * size * 4);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const big = 0.65 * vnoiseWrapX(u * 3, v * 3, 11, 3) + 0.35 * vnoiseWrapX(u * 6, v * 6, 12, 6);
+      const fine = vnoiseWrapX(u * 16, v * 16, 13, 16);
+      const field = smooth(0.52, 0.64, big); // brown-green patches
+      const r = lerp(lerp(0.27, 0.36, fine), 0.43, field);
+      const g = lerp(lerp(0.40, 0.49, fine), 0.40, field);
+      const b = lerp(lerp(0.25, 0.31, fine), 0.26, field);
+      const i = (y * size + x) * 4;
+      out[i] = Math.round(255 * r); out[i + 1] = Math.round(255 * g); out[i + 2] = Math.round(255 * b); out[i + 3] = 255;
+    }
+  }
+  return out;
+}
 // Returns boxes with a `level` index. Not indicated makes nothing.
 export function evidenceBoxes(scene) {
   const out = [];

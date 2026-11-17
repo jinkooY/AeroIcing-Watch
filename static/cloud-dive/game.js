@@ -791,6 +791,9 @@ function maybeOpenReport(s) {
 
 const params = new URLSearchParams(location.search);
 const layoutCheck = params.get("layoutcheck") === "1";
+// Capture mode (R23.6): ?video=1 changes the look for recordings only; nothing here touches the engine or the case.
+const videoMode = params.get("video") === "1";
+if (videoMode) document.body.dataset.video = "1";
 let fitsStart = null;
 let fitsGateDone = false;
 
@@ -1116,7 +1119,7 @@ async function loadCockpit() {
   cockpit.status = "loading";
   try {
     const lib = await import("./cockpit3d.js");
-    cockpit.renderer = lib.createCockpit($("cockpit-canvas"), { pixelRatio: pixelRatio() });
+    cockpit.renderer = lib.createCockpit($("cockpit-canvas"), { pixelRatio: pixelRatio(), labelScale: videoMode ? 2.2 : 1 });
     cockpit.panel = createPanel($("cockpit-panel"), { onAntiIce });
     if (typeof ResizeObserver === "function") new ResizeObserver(resizeCockpit).observe($("cockpit-canvas"));
     cockpit.status = "ready";

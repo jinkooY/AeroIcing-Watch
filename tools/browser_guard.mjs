@@ -8,6 +8,8 @@
 //     SIGINT/SIGTERM/SIGBREAK and process 'exit' (taskkill /T /F as the last resort on Windows);
 //  5. every browser uses a user-data-dir named %TEMP%/cloud-dive-edge-*; before launch, leftover browsers whose command
 //     line contains that name are killed. The user's own Edge never matches.
+// Recording mode (video capture, tools/video): startGuard({ ..., headed: true }) opens a visible fullscreen kiosk window at
+// device scale 1 instead of the headless page. All other options and the cleanup rules are unchanged; without `headed` nothing differs.
 // Usage: const g = await startGuard({ root, extraArgs: [...], onMessage: (m) => {...} });
 //        g.base, g.send(method, params), g.evaluate(expr), g.sleep(ms), await g.close()
 import http from "node:http";
@@ -57,7 +59,7 @@ function takeLock() {
   throw new Error("could not take the browser lock");
 }
 
-export async function startGuard({ root, extraArgs = [], onMessage = null, serve = true } = {}) {
+export async function startGuard({ root, extraArgs = [], onMessage = null, serve = true, headed = false } = {}) {
   const argv = process.argv.find((x) => x.startsWith("--timeout="));
   const timeoutS = argv ? Number(argv.slice(10)) || 180 : 180;
   const browserPath = BROWSERS.find((p) => existsSync(p));
@@ -109,10 +111,15 @@ export async function startGuard({ root, extraArgs = [], onMessage = null, serve
     profile = path.join(tmpdir(), `${PROFILE_TAG}${process.pid}-${Date.now()}`);
     mkdirSync(profile, { recursive: true });
     const port = 9300 + Math.floor(Math.random() * 600);
-    proc = spawn(browserPath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "--headless=new",
+    const modeArgs = headed
+      ? ["--kiosk", "--force-device-scale-factor=1", "--noerrdialogs", "--disable-infobars", "--disable-session-crashed-bubble",
+         "--lang=en-US", "--accept-lang=en-US", "--disable-translate", "--disable-features=Translate,TranslateUI,msEdgeTranslate,msEdgeShopping", "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
+         "--disable-backgrounding-occluded-windows"]
+      : ["--headless=new", "--window-size=1400,900"];
+    proc = spawn(browserPath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, ...modeArgs,
       "--no-first-run", "--no-default-browser-check", "--disable-extensions", "--disable-background-networking", "--disable-sync",
-      "--disable-default-apps", "--disable-component-update", "--window-size=1400,900",
-      "--hide-scrollbars", ...extraArgs, "about:blank"], { stdio: "ignore", windowsHide: true });
+      "--disable-default-apps", "--disable-component-update",
+      "--hide-scrollbars", ...extraArgs, "about:blank"], { stdio: "ignore", windowsHide: !headed });
     proc.on("error", (e) => { console.error("browser failed:", e.message); cleanup(); process.exit(1); });
 
     let wsUrl = null;

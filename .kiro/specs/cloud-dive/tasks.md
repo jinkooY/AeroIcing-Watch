@@ -515,6 +515,57 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
     (`data-fits="yes"`, `data-windshield` at least 0.6); fix failures; add a row to `docs/kiro-usage-log.md`
   - _Requirements: R22.1, R22.3, R22.4, R22.6, R22.8, R22.11_
 
+- [ ] 22. (i) Cloud look and capture mode (revision d)
+- [x] 22.1 Record the "before" screenshots at 1920x1080 (before any code change in this group)
+  - KJFK-KBNA cockpit view with the headed capture path (`tools/video/capture_spike.mjs` window setup): the gate at 0 km,
+    the gate at 500 km, and a frame inside a cloud; save as `docs/screens/22.0-*.png`; add a row to `docs/kiro-usage-log.md`
+  - _Requirements: R23.1, R23.5_
+- [x] 22.2 Cloud puffs (design 14.4, revision d)
+  - `scene.js`: pure `buildPuffs(volume)` with the integer hash; `cockpit-geometry.js` plan entries; `cockpit3d.js` puff slot with a
+    start-up layered noise texture and the old soft quad as fallback; puffs counted in the triangle caps
+  - Tests: CD-P27 (same input, same puffs; every puff inside its volume and between base and top; Observed never dropped);
+    scene purity test still passes; no `Math.random` in `static/cloud-dive/` (a grep test)
+  - Done: `cloudPuffs`, `puffAtlasData` in `cockpit-geometry.js` (not `scene.js`); `cockpit3d.js` camera-facing puff slot; the old volume boxes stay at 14 percent opacity; `tests/js/cloud-puffs.test.mjs`. The Observed glow now uses ordinary blending with a soft edge (additive blending turned the stacked bands into hard white blocks); meaning, level and drawing rule are unchanged
+  - _Requirements: R23.1, R23.2, R23.5_
+- [x] 22.3 Sky, haze and ground (design 14.4, revision d)
+  - Sky gradient with horizon glow, distance haze, ground texture without the stretched dome streaks; display only
+  - Done: horizon glow, haze from 20 percent of the view distance, a world-anchored ground texture (`groundData`, 48 km tiles); no change to the engine or evidence
+  - _Requirements: R23.4, R23.5_
+- [x] 22.4 Drift and mist
+  - Shader-only drift; mist streaks while the aircraft is inside a cloud; none under reduced motion
+  - Done: shader drift of at most 0.25 km (every puff keeps that margin inside its volume), `insideCloud` and a scrolling mist strip over the windshield; both stand still under reduced motion
+  - _Requirements: R23.3, R23.5_
+- [x] 22.5 Capture mode `?video=1`
+  - `game.js` sets `document.body.dataset.video = "1"`; CSS under `body[data-video="1"]` only; `tools/video/video_mode_check.mjs`
+    (note and source line visible, label sizes at least 28 px, no console error); `tools/layout_check.mjs` result without the
+    parameter equals the result before this task
+  - Done: `body[data-video="1"]` rules in `cockpit.css`, `videoMode` in `game.js`, label scale 2.2 in `cockpit3d.js`; `tools/video/video_mode_check.mjs` (15 checks pass); the HUD value is 26.4 px, the fuel value 28 px, the text line 18.4 px at 1920x1080
+  - _Requirements: R23.6_
+- [x] 22.6 Frame rate at 1920x1080 and layout check
+  - Measure with the headed path and `?perf=1`; record the number as measured in `docs/screens/22.6-perf.json`; the engine,
+    solver and parity tests stay unchanged and pass
+  - Done (measured, not a target): `tools/video/perf_check.mjs`, `docs/screens/22.6-perf.json`: 59.3 fps on Intel UHD 770, 60.0 fps on RTX 3060 Ti at 1920x1080, gap p95 16.8 ms, longest gap 66.7 ms on the integrated GPU, 5,054 triangles (2,628 before)
+  - _Requirements: R23.5_
+- [x] 22.7 Checkpoint: "after" screenshots and full test run
+  - Same shots as 22.1 into `docs/screens/22.7-*.png`; `pytest -q` (WeatherPath), wording test, `node --check`, `node --test`,
+    `tools/layout_check.mjs`; add a row to `docs/kiro-usage-log.md`
+  - Done: `docs/screens/22.7-*.png`; `pytest -q` 297 passed; `node --test` 249 passed; `node --check` on every JS file; `layout_check` rows as before (390x844 scrolls as before, output sent to a temp folder so the 15.6 evidence files stay untouched)
+  - _Requirements: R23.1 to R23.6_
+- [ ] 23. (j) Video production tools (no game code)
+- [x] 23.1 Capture spike: headed kiosk window, ffmpeg `ddagrab` and NVENC
+  - `tools/browser_guard.mjs` option `headed`; `tools/video/capture_spike.mjs`, `tools/video/capture_pattern_check.mjs`; result about
+    58 captured frames per second, window 1920x1080 at device scale 1, no black frames (G16)
+  - _Requirements: R12.1_
+- [ ] 23.2 Automatic take recorder `tools/video/record_takes.mjs` and markers
+  - Takes T1 to T5 and the game part of T8 from `tools/video/takes.json` and `node tools/video/gate_plan.mjs --json`; markers file
+    per take; the T2 report must show the demo plan total (about $3,312, ice index 0)
+  - _Requirements: R12.1_
+- [ ] 23.3 Final edit `tools/video/make_final.py` and `docs/video/edl.json`
+  - Zoom, speed ramp, highlight, on-screen text, burned-in captions (not over the game note and source line), loudness -14 LUFS,
+    freeze detection; `tests/test_make_final.py` without ffmpeg
+  - _Requirements: R12.1, R23.7_
+- [ ] 23.4 Final recording and edit on the frozen build (owner, after 2026-11-28)
+  - _Requirements: R12.1, R23.7_
 ## Notes
 
 - F1 to F6 are approved (`requirements.md` 5.6; F3 amended with the two-sided anti-ice penalty and the balance criteria).
@@ -526,6 +577,7 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - Revision b (decisions G1 to G14): groups 13 to 20. Cuttable: 17.5, 16.2, 16.4, 19; optional: 16.7.
   Required: the rest, including 17.1 to 17.4 (departure constant, phases, runway, climb) and 18.
   If 17.5 is cut, the report opens directly at arrival or diversion.
+- Revision d (decision G16): groups 22 and 23. Group 22 changes drawing only (R23); group 23 is tooling. Feature freeze 2026-11-28: 22.7 must be done before it; 23.4 runs after it.
 - Revision c (decision G15): group 21, presentation only. Engine, cost model, case files and evidence
   values stay unchanged (R22.11). Task 21.1 must run before any other task of the group changes code.
 - Frame rates are measured in task 15.6 and 18.2 and recorded as measured, not as targets met.
@@ -583,7 +635,15 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 43, "tasks": ["21.5", "21.6"] },
     { "wave": 44, "tasks": ["21.7"] },
     { "wave": 45, "tasks": ["21.8"] },
-    { "wave": 46, "tasks": ["21.9"] }
+    { "wave": 46, "tasks": ["21.9"] },
+    { "wave": 47, "tasks": ["22.1", "23.1"] },
+    { "wave": 48, "tasks": ["22.2"] },
+    { "wave": 49, "tasks": ["22.3", "22.4"] },
+    { "wave": 50, "tasks": ["22.5"] },
+    { "wave": 51, "tasks": ["22.6"] },
+    { "wave": 52, "tasks": ["22.7", "23.2"] },
+    { "wave": 53, "tasks": ["23.3"] },
+    { "wave": 54, "tasks": ["23.4"] }
   ]
 }
 ```

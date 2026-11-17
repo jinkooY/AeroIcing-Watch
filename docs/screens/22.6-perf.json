@@ -1,0 +1,56 @@
+[
+  {
+    "gpuRequest": "low",
+    "size": "1920x1080",
+    "query": "",
+    "webglRenderer": "ANGLE (Intel, Intel(R) UHD Graphics 770 (0x0000A780) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "measuredAt": "2026-11-16T14:03:01.546Z",
+    "perf": {
+      "frames": 365,
+      "fps": 59.34669853503079,
+      "gapP50Ms": 16.699999999999818,
+      "gapP95Ms": 16.800000000000182,
+      "gapMaxMs": 66.69999999999982,
+      "cpuMeanMs": 1.2372282606590053,
+      "cpuP95Ms": 2.0999999940395355,
+      "triangles": 5054,
+      "drawCalls": 19
+    }
+  },
+  {
+    "gpuRequest": "low",
+    "size": "1920x1080",
+    "query": "&video=1",
+    "webglRenderer": "ANGLE (Intel, Intel(R) UHD Graphics 770 (0x0000A780) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "measuredAt": "2026-11-16T14:03:33.882Z",
+    "perf": {
+      "frames": 361,
+      "fps": 59.18032786885248,
+      "gapP50Ms": 16.699999999999818,
+      "gapP95Ms": 16.800000000000182,
+      "gapMaxMs": 66.59999999999991,
+      "cpuMeanMs": 1.2901098890291465,
+      "cpuP95Ms": 2.4000000059604645,
+      "triangles": 5054,
+      "drawCalls": 19
+    }
+  },
+  {
+    "gpuRequest": "high",
+    "size": "1920x1080",
+    "query": "",
+    "webglRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Ti (0x00002489) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "measuredAt": "2026-11-16T14:04:05.381Z",
+    "perf": {
+      "frames": 366,
+      "fps": 59.9999999999999,
+      "gapP50Ms": 16.699999999999818,
+      "gapP95Ms": 16.700000000000728,
+      "gapMaxMs": 16.80000000000109,
+      "cpuMeanMs": 0.875880760309819,
+      "cpuP95Ms": 2.199999988079071,
+      "triangles": 5054,
+      "drawCalls": 19
+    }
+  }
+]
