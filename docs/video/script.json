@@ -65,7 +65,7 @@
       "id": "g3",
       "scene": "3 play",
       "pause_after": 0.5,
-      "text": "The label reads: observed supercooled layer at planned altitude. <short pause> Seen by the satellite. Not guessed."
+      "text": "The label reads: observed supercooled layer at planned altitude. <short pause> The satellite sees the top. The base is estimated."
     },
     {
       "id": "n4",
@@ -77,19 +77,19 @@
       "id": "g5",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "Anti-ice off, flying on? Ice builds, drag grows, and the dollars climb."
+      "text": "Anti-ice off, flying on? The game’s ice index builds, drag grows, and the dollars climb."
     },
     {
       "id": "r1",
       "scene": "4 report",
       "pause_after": 0.3,
-      "text": "The report compares my cost with an exact solver: Best, Straight-ahead, and a Wasteful extreme."
+      "text": "The report compares my cost with three game references: Best, Straight-ahead, and a Wasteful extreme."
     },
     {
       "id": "n5",
       "scene": "4 report",
       "pause_after": 0.5,
-      "text": "Every cost is itemized: cruise, climb, detour, anti-ice, ice drag."
+      "text": "The costs are itemized: cruise, climb, detour, anti-ice, ice drag."
     },
     {
       "id": "r2",
@@ -120,7 +120,7 @@
       "id": "d4",
       "scene": "5 real data",
       "pause_after": 0.3,
-      "text": "Everything is pre-computed into static files. No server to run."
+      "text": "Everything is pre-computed into static files. No server."
     },
     {
       "id": "d5",
@@ -132,7 +132,7 @@
       "id": "k1",
       "scene": "6 kiro",
       "pause_after": 0.3,
-      "text": "We built it all in Kiro. A spec defined the requirements and correctness properties."
+      "text": "In Kiro, a spec defined the requirements and correctness properties."
     },
     {
       "id": "k2b",
@@ -144,7 +144,7 @@
       "id": "k3b",
       "scene": "6 kiro",
       "pause_after": 0.8,
-      "text": "Steering holds the wording rules, and a hook runs a wording test every time a game file is saved."
+      "text": "Steering holds the wording rules, and a hook is set to test the wording on each game-file save."
     },
     {
       "id": "c1",

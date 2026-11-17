@@ -58,7 +58,7 @@
     ],
     "r2": [
       { "take": "T2", "from": "report open+1.0", "zoom": "#dlg-report", "pad": 20, "dim": 0.55,
-        "text": [{ "text": "$38 above Best", "at": 0.3, "dur": 5.5, "pos": "center", "size": 110, "color": "orange" }] }
+        "text": [{ "text": "$38 above Best", "at": 0.3, "dur": 5.5, "pos": "center", "size": 110, "color": "orange" }, { "text": "illustrative game cost", "at": 0.3, "dur": 5.5, "pos": "lower-right", "size": 34, "color": "grey", "bold": false }] }
     ],
     "d1": [{ "still": "data/video/assets/diagram-1.png" }],
     "d2": [{ "still": "data/video/assets/diagram-2.png" }],

@@ -47,9 +47,11 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 - [ ] C9 Surfaces: use at least one surface besides the IDE (CLI for scripts or a
       GitHub Action, Web for a pull request) and record how it differed. Check
       regional availability first (rules: Regional Restrictions).
-- [ ] C10 Custom agent: create one with the custom agent creator (candidates: a
+- [x] C10 Custom agent: create one with the custom agent creator (candidates: a
       wording guardian that reviews text against the guardrails; a parameter tuner
       that reads the `tune_params.py` report). Log the impact.
+      Done 2026-11-17: `.kiro/agents/wording-guardian.md`; first run on the video script, EDL and README
+      found 14 issues the word-list test passes; 9 fixed, 5 are owner questions (usage log row).
 - [ ] C11 Browser MCP server in `.kiro/settings/mcp.json` (verify the current
       package name); check the game on a narrow viewport. Log findings.
       Revision b scope (task 20.1): the check covers the cockpit 3D view, not only the 2D

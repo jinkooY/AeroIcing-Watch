@@ -8,7 +8,7 @@ Fly a real US icing day and spend the least fuel. A regional jet flies a real ro
 
 The rest of this README documents the FastAPI development application and its separate satellite cross-section workflow.
 
-**Kiro Hackathon 2026** — Satellite-based icing risk cross-section for airline dispatchers and flight crews.
+**Kiro Hackathon 2026** — Satellite-based cloud-evidence cross-section for airline dispatchers and flight crews (repository only, not part of the game).
 
 AeroIcing Watch uses **GK-2A geostationary satellite Level-2 CTPS observations** to show the cloud vertical structure — top height, estimated base, phase, and supercooled flag — along any A–B flight segment, with a deterministic icing risk rating per sample.
 
