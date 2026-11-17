@@ -1,0 +1,163 @@
+{
+  "title": "Cloud Dive - submission video narration (target 2:50)",
+  "voice": "Charon",
+  "model": "gemini-3.8-flash-tts",
+  "default_style": "calm, clear, natural documentary narration, conversational pace",
+  "notes": "Lines with a [PLACEHOLDER] in text are skipped by the tool until filled. Keep only claims that are true in the final build and logged in docs/kiro-usage-log.md.",
+  "lines": [
+    {
+      "id": "h1",
+      "scene": "1 hook",
+      "pause_after": 0.5,
+      "style": "low, quiet, curious",
+      "text": "November twelfth. A real day. <short pause> Real clouds over the eastern United States."
+    },
+    {
+      "id": "h2",
+      "scene": "1 hook",
+      "pause_after": 0.7,
+      "text": "This is Cloud Dive. You fly. <short pause> Fuel is your score."
+    },
+    {
+      "id": "p1",
+      "scene": "2 problem",
+      "pause_after": 0.4,
+      "text": "Icing is a hazard, and avoiding it costs money. A longer path, a climb, or anti-ice fuel."
+    },
+    {
+      "id": "p2",
+      "scene": "2 problem",
+      "pause_after": 0.8,
+      "text": "Today: New York to Nashville."
+    },
+    {
+      "id": "g1",
+      "scene": "3 play",
+      "pause_after": 0.3,
+      "text": "Cruise runs fast. When a cloud is ahead, the game stops. That is a gate."
+    },
+    {
+      "id": "n1",
+      "scene": "3 play",
+      "pause_after": 0.4,
+      "text": "First gate. Here only the forecast flags possible ice, so the label says: possible, forecast only."
+    },
+    {
+      "id": "g4",
+      "scene": "3 play",
+      "pause_after": 0.3,
+      "text": "So I choose: lane, altitude, anti-ice."
+    },
+    {
+      "id": "n2",
+      "scene": "3 play",
+      "pause_after": 0.5,
+      "text": "I climb to twelve thousand feet, switch anti-ice on, and continue."
+    },
+    {
+      "id": "n3",
+      "scene": "3 play",
+      "pause_after": 0.3,
+      "text": "Next gate. This cloud comes from satellite data: its top, its phase, an estimated base."
+    },
+    {
+      "id": "g3",
+      "scene": "3 play",
+      "pause_after": 0.5,
+      "text": "The label reads: observed supercooled layer at planned altitude. <short pause> Seen by the satellite. Not guessed."
+    },
+    {
+      "id": "n4",
+      "scene": "3 play",
+      "pause_after": 0.3,
+      "text": "I could go around, but a detour costs too. I stay in lane, anti-ice on."
+    },
+    {
+      "id": "g5",
+      "scene": "3 play",
+      "pause_after": 0.3,
+      "text": "Anti-ice off, flying on? Ice builds, drag grows, and the dollars climb."
+    },
+    {
+      "id": "r1",
+      "scene": "4 report",
+      "pause_after": 0.3,
+      "text": "The report compares my cost with an exact solver: Best, Straight-ahead, and a Wasteful extreme."
+    },
+    {
+      "id": "n5",
+      "scene": "4 report",
+      "pause_after": 0.5,
+      "text": "Every cost is itemized: cruise, climb, detour, anti-ice, ice drag."
+    },
+    {
+      "id": "r2",
+      "scene": "4 report",
+      "pause_after": 0.8,
+      "needs": "final report numbers",
+      "text": "I finished [X] dollars above the best. Can you beat it?"
+    },
+    {
+      "id": "d1",
+      "scene": "5 real data",
+      "pause_after": 0.5,
+      "text": "The game is the fun part. The evidence engine is the real part."
+    },
+    {
+      "id": "d2",
+      "scene": "5 real data",
+      "pause_after": 0.3,
+      "text": "It reads GOES cloud data and an ECMWF forecast, estimates the cloud base with a published method, and corrects for parallax."
+    },
+    {
+      "id": "d3",
+      "scene": "5 real data",
+      "pause_after": 0.3,
+      "text": "No language model. No randomness. No network call in the decision."
+    },
+    {
+      "id": "d4",
+      "scene": "5 real data",
+      "pause_after": 0.3,
+      "text": "Everything is pre-computed into static files. No server to run."
+    },
+    {
+      "id": "d5",
+      "scene": "5 real data",
+      "pause_after": 0.8,
+      "text": "The same engine feeds a dispatcher view in the repository."
+    },
+    {
+      "id": "k1",
+      "scene": "6 kiro",
+      "pause_after": 0.3,
+      "text": "We built it all in Kiro. A spec defined the requirements and correctness properties."
+    },
+    {
+      "id": "k2b",
+      "scene": "6 kiro",
+      "pause_after": 0.3,
+      "text": "Writing those properties exposed gaps in our own rules."
+    },
+    {
+      "id": "k3b",
+      "scene": "6 kiro",
+      "pause_after": 0.8,
+      "text": "Steering holds the wording rules, and a hook runs a wording test every time a game file is saved."
+    },
+    {
+      "id": "c1",
+      "scene": "7 close",
+      "pause_after": 0.5,
+      "style": "calm, honest, slower",
+      "text": "The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one laptop."
+    },
+    {
+      "id": "c2",
+      "scene": "7 close",
+      "pause_after": 1.0,
+      "style": "warm, confident",
+      "text": "Cloud Dive. Real data, honestly labeled. <short pause> Play it free, in your browser. Link in the description."
+    }
+  ]
+}

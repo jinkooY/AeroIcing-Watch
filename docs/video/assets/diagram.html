@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cloud Dive video diagram</title>
+<!-- Video graphic for the "real data" scene (storyboard section 5). Plain text boxes, no logos.
+     Open with ?stage=1..5 (reveal order) and render at 1920x1080: tools/video/render_diagram.ps1.
+     The numbers (4,375 cells, 124 KB) come from the exported KJFK-KBNA case file; re-check them before recording. -->
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; background: #0b1220; color: #e8eef9;
+    font-family: "Segoe UI", Arial, sans-serif; overflow: hidden; }
+  h1 { position: absolute; left: 96px; top: 56px; margin: 0; font-size: 52px; font-weight: 600; letter-spacing: .5px; }
+  .box { position: absolute; box-sizing: border-box; padding: 22px 28px; border: 3px solid #4f8cff; border-radius: 18px;
+    background: #121c33; font-size: 34px; line-height: 1.35; opacity: 0; transition: none; }
+  .box b { display: block; font-size: 40px; margin-bottom: 8px; color: #ffffff; }
+  .box small { display: block; font-size: 28px; color: #a9b8d6; }
+  .show { opacity: 1; }
+  .in { width: 520px; height: 210px; }
+  #goes { left: 190px; top: 190px; }
+  #ifs { left: 1210px; top: 190px; }
+  #build { left: 460px; top: 480px; width: 1000px; height: 200px; border-color: #ffb454; }
+  #file { left: 330px; top: 790px; width: 520px; height: 190px; border-color: #7bd88f; }
+  #game { left: 940px; top: 790px; width: 520px; height: 190px; border-color: #7bd88f; }
+  #disp { left: 1550px; top: 790px; width: 340px; height: 190px; border-style: dashed; border-color: #8a94a8; font-size: 28px; }
+  #disp b { font-size: 34px; }
+  #badge { position: absolute; left: 680px; top: 716px; font-size: 28px; color: #ffb454; opacity: 0; white-space: nowrap; }
+  svg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  svg line { stroke: #6b7a99; stroke-width: 5; opacity: 0; marker-end: url(#arrow); }
+  footer { position: absolute; left: 96px; bottom: 22px; font-size: 22px; color: #7f8ba3; }
+</style>
+</head>
+<body>
+<h1>Real data in, one static file out</h1>
+<svg><defs><marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="20" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#6b7a99"/></marker></defs>
+  <line id="a1" x1="450" y1="404" x2="720" y2="474"/>
+  <line id="a2" x1="1470" y1="404" x2="1200" y2="474"/>
+  <line id="a3" x1="590" y1="684" x2="590" y2="786"/>
+  <line id="a4" x1="854" y1="885" x2="936" y2="885"/>
+  <line id="a5" x1="1464" y1="885" x2="1546" y2="885"/>
+</svg>
+<div id="goes" class="box in"><b>GOES-19 satellite</b>cloud-top height, phase,<br>optical depth, particle size</div>
+<div id="ifs" class="box in"><b>ECMWF forecast</b>temperature, humidity,<br>wind</div>
+<div id="build" class="box"><b>Build step, once, offline</b>evidence rule v2 &middot; parallax correction &middot; cloud base estimate &middot; fuel tables</div>
+<div id="badge">No language model &middot; No randomness &middot; No network call in the decision</div>
+<div id="file" class="box"><b>One static case file</b>4,375 evidence cells &middot; 124 KB</div>
+<div id="game" class="box"><b>Browser game</b>no server to run</div>
+<div id="disp" class="box"><b>Dispatcher view</b>in the repository</div>
+<footer>Data: GOES-R (public domain) &middot; ECMWF Open Data (CC BY 4.0). Game values are illustrative.</footer>
+<script>
+  const stage = Number(new URLSearchParams(location.search).get("stage") || 5);
+  const reveal = {
+    1: ["goes", "ifs"],
+    2: ["build", "a1", "a2"],
+    3: ["badge"],
+    4: ["file", "game", "a3", "a4"],
+    5: ["disp", "a5"],
+  };
+  for (let s = 1; s <= stage; s++) for (const id of reveal[s]) {
+    const el = document.getElementById(id);
+    if (el.tagName.toLowerCase() === "line") el.style.opacity = 1; else el.classList.add("show");
+  }
+  document.getElementById("badge").style.opacity = stage >= 3 ? 1 : 0;
+</script>
+</body>
+</html>
