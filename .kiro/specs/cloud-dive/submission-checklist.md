@@ -52,8 +52,15 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       that reads the `tune_params.py` report). Log the impact.
       Done 2026-11-17: `.kiro/agents/wording-guardian.md`; first run on the video script, EDL and README
       found 14 issues the word-list test passes; 9 fixed, 5 are owner questions (usage log row).
-- [ ] C11 Browser MCP server in `.kiro/settings/mcp.json` (verify the current
+- [x] C11 Browser MCP server in `.kiro/settings/mcp.json` (verify the current
       package name); check the game on a narrow viewport. Log findings.
+      Done 2026-11-17: `@playwright/mcp` 0.0.85 (Microsoft, Apache-2.0), headless Edge at 390x844, on the
+      public site. Pass: canvas draws (WebGL), Start takeoff and Space work, Skip is 44 px and ends the
+      lead-in, all 7 gate buttons are 44 px, key V and the 2D toggle switch both ways, 0 console errors or
+      warnings. Findings: at gate 1 the buttons start at y 900 on an 844 px screen and the page does not
+      scroll to them (a 180 px scroll shows them all with the 3D view still visible); after that scroll the
+      3D view covers the top 5 px of the gate heading. Screenshots in `data/mcp-playwright/c11-*.png`.
+      Still not checked: a real phone by a human.
       Revision b scope (task 20.1): the check covers the cockpit 3D view, not only the 2D
       game, at 390x844: the cockpit canvas is not blank, the panel text and the gate buttons
       (44 px) are reachable, the start and skip buttons work, key V and the 2D toggle work,

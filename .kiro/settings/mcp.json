@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.85", "--browser", "msedge", "--headless",
+               "--isolated", "--viewport-size", "390,844", "--output-dir", "data/mcp-playwright"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

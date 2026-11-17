@@ -75,6 +75,7 @@ C11 외에도 checklist에는 Kiro가 하는 열린 항목(C7, C8, C9, C10, C12,
 
 - P-01~P-12, P-14: 그대로 열림. `browser_guard.mjs`에 SIGHUP 처리 없음, 포트는 여전히 `9300 + random(600)`, guard 테스트 0개, `skipRequested`는 takeoff 경로에서만 초기화, `GROUP21_BASE = "1565153"`, `backToCases`에 `renderLeadUi` 없음, `BANNED_R91`에 risk와 probability 없음, KJFK-KBNA parity 테스트 없음.
 - P-13: (a)는 해결. `docs/screens/22.7-gate5.png`와 2026-11-17 T2 테이크에 Observed, Not indicated, Not assessed gate 패턴이 모두 찍혔다. (b) climb 후 "Continue" 문구, (c) layout check 재실행, (d) 390x844 gate 열은 남음.
+- P-13 (d) 확인 (C11, Playwright MCP, 390x844, 공개 사이트): gate 버튼 7개는 모두 44 px이지만 y 900부터 시작해 화면(844 px) 밖에 있고, 게임이 그쪽으로 스크롤하지 않는다. 180 px 스크롤하면 3D 뷰가 보이는 채로 버튼이 모두 보인다. 스크롤 뒤 3D 뷰가 gate 제목 위쪽 5 px를 가린다. 고칠지(게이트가 열릴 때 패널로 스크롤, 표시 코드) 소유자 결정 대기.
 - P-15, P-17: 소유자 입력 대기 그대로.
 - P-16: 영상 대사 c1에 "Frame rate measured on one laptop"이 들어갔다. 실제 폰 확인은 남음.
 - P-18, P-20, P-21, P-23: 결정 대기. P-19: 결정됨.
