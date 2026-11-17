@@ -1,0 +1,78 @@
+{
+  "note": "Edit decision list for tools/video/make_final.py (task 23.3). One entry per voice line of docs/video/script.json; the shots fill the line's slot in order (see the tool's docstring). Takes come from tools/video/record_takes.mjs, marker names from data/video/takes/<take>.markers.json. Pixel rectangles are 1920x1080 take pixels, measured on the 2026-11-17 takes; recheck them after the final recording.",
+  "fps": 60,
+  "tail": 1.5,
+  "push": 0.05,
+  "stillLines": ["r1", "r2", "d1", "d2", "d3", "d4", "d5", "k1", "k2b", "k3b", "c1", "c2"],
+  "lines": {
+    "h1": [
+      { "take": "T3", "from": 1.3, "text": [{ "text": "12 Nov 2026, 19:30 UTC", "at": 0.8, "dur": 4.5, "pos": "top-left", "size": 40 }] }
+    ],
+    "h2": [
+      { "take": "T2", "from": "continue 2+0.2", "to": "gate 3-0.1",
+        "text": [{ "text": "Cloud Dive", "at": 0.8, "dur": 4.2, "pos": "center", "size": 120 }] }
+    ],
+    "p1": [
+      { "take": "T1-list", "from": 0.6, "to": "case open click", "dur": 4.0 },
+      { "take": "T1-ready", "from": 0.7,
+        "text": [{ "text": "JFK to Nashville  |  1,232 km  |  5 lanes  |  real satellite and forecast", "at": 0.3, "dur": 4.0, "pos": "lower-left", "size": 38 }] }
+    ],
+    "p2": [
+      { "clip": "data/video/assets/route-anim.mp4", "from": 0.0, "to": 8.0 }
+    ],
+    "g1": [
+      { "take": "T2", "from": 0.2, "to": "gate 1+0.5", "dur": 2.4 },
+      { "take": "T2", "from": "gate 1+0.5", "text": [{ "text": "GATE", "at": 0.2, "dur": 2.6, "pos": "top-left", "size": 56, "color": "orange" }] }
+    ],
+    "n1": [
+      { "take": "T2", "from": "gate 1+5.6", "dur": 4.0, "zoom": [90, 440, 1360, 160], "pad": 30 },
+      { "take": "T2", "from": "gate 1+9.6", "zoom": "#gate-panel", "pad": 60 }
+    ],
+    "g4": [
+      { "take": "T2", "from": "gate 1+13.7", "box": [{ "rect": "#gate-choices", "at": 0.2, "dur": 2.8 }] }
+    ],
+    "n2": [
+      { "take": "T2", "from": "gate 1+17.6", "zoom": ["#hud-alt", "#hud-anti-ice"], "pad": 30 }
+    ],
+    "n3": [
+      { "take": "T2", "from": "continue 1", "to": "gate 4", "dur": 1.2 },
+      { "clip": "data/video/blender/anim/pv2_A_approach.mp4", "from": 1.0, "dur": 3.0, "caption": "Illustration from satellite cloud-top data" },
+      { "clip": "data/video/blender/anim/pv4_B_dip.mp4", "from": 0.0, "dur": 5.0, "caption": "Illustration from satellite cloud-top data" },
+      { "take": "T2", "from": "gate 5+0.2", "text": [{ "text": "Observed", "at": 0.1, "dur": 1.2, "pos": "top-left", "size": 48, "color": "orange" }] }
+    ],
+    "g3": [
+      { "take": "T2", "from": "gate 5+1.4", "dur": 3.6, "zoom": [600, 440, 700, 150], "pad": 40 },
+      { "take": "T2", "from": "2D view on+0.3" }
+    ],
+    "n4": [
+      { "take": "T2", "from": "go left-0.3", "to": "continue 5" }
+    ],
+    "g5": [
+      { "take": "T3", "from": 3.0, "text": [{ "text": "Different take: anti-ice off", "at": 0, "dur": 6.0, "pos": "top-right", "size": 32, "color": "grey", "bold": false }] }
+    ],
+    "r1": [
+      { "take": "T2", "from": "report open+0.3", "zoom": "#dlg-report", "pad": 20 }
+    ],
+    "n5": [
+      { "take": "T2", "from": "report scroll start", "to": "report scroll end", "zoom": "#dlg-report", "pad": 20 }
+    ],
+    "r2": [
+      { "take": "T2", "from": "report open+1.0", "zoom": "#dlg-report", "pad": 20, "dim": 0.55,
+        "text": [{ "text": "$38 above Best", "at": 0.3, "dur": 5.5, "pos": "center", "size": 110, "color": "orange" }] }
+    ],
+    "d1": [{ "still": "data/video/assets/diagram-1.png" }],
+    "d2": [{ "still": "data/video/assets/diagram-2.png" }],
+    "d3": [{ "still": "data/video/assets/diagram-3.png" }],
+    "d4": [{ "still": "data/video/assets/diagram-4.png" }],
+    "d5": [{ "still": "data/video/assets/diagram-5.png" }],
+    "k1": [{ "card": "Kiro IDE|spec files: requirements.md, design.md, tasks.md", "placeholder": true }],
+    "k2b": [{ "card": "Kiro IDE|requirements and properties", "placeholder": true }],
+    "k3b": [{ "card": "Kiro IDE|hooks panel, wording test run, steering", "placeholder": true }],
+    "c1": [
+      { "card": "README: Limits|flat ground, game state not an icing model, illustrative costs", "placeholder": true, "dur": 7.0 },
+      { "take": "T1-ready", "from": 0.7, "zoom": "#game-note", "pad": 24,
+        "text": [{ "text": "Game state, not an icing model  |  Illustrative costs", "at": 0.3, "dur": 5.2, "pos": "top-left", "size": 36 }] }
+    ],
+    "c2": [{ "card": "Cloud Dive|demo URL and repository URL (owner decision D2)", "placeholder": true }]
+  }
+}

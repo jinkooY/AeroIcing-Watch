@@ -57,8 +57,9 @@
     {
       "id": "n3",
       "scene": "3 play",
-      "pause_after": 0.3,
-      "text": "Next gate. This cloud comes from satellite data: its top, its phase, an estimated base."
+      "pause_after": 3.3,
+      "text": "Next gate. This cloud comes from satellite data: its top, its phase, an estimated base.",
+      "picture": "game ramp, then the Blender shots A and B (storyboard section 9); the pause holds the picture"
     },
     {
       "id": "g3",
@@ -94,8 +95,8 @@
       "id": "r2",
       "scene": "4 report",
       "pause_after": 0.8,
-      "needs": "final report numbers",
-      "text": "I finished [X] dollars above the best. Can you beat it?"
+      "text": "I finished 38 dollars above the best. Can you beat it?",
+      "source": "T2 take 2026-11-17: report total 3,312 dollars, 38 above Best (3,274); recheck on the frozen build"
     },
     {
       "id": "d1",

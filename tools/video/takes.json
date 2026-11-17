@@ -1,0 +1,14 @@
+{
+  "note": "Takes for tools/video/record_takes.mjs (task 23.2). Times in seconds. The flight logic is the demo plan of tools/video/gate_plan.mjs. Holds are long enough for the voice lines laid over them (docs/video/edl.json), so the edit never freezes a frame.",
+  "case": "20261112-kjfk-kbna-1930z",
+  "query": "&video=1",
+  "fps": 60,
+  "takes": [
+    { "id": "T1", "kind": "start", "what": "Case list, open KJFK-KBNA, the ready screen with the map", "listHold": 4, "readyHold": 8 },
+    { "id": "T2", "kind": "demo", "what": "Demo flight from Start takeoff to the report; the Observed gate (gate 5) also gives T4 (2D view, image kind) and n4 (Go left, then cancel)",
+      "gateHold": 0.9, "gate1Hold": 18, "gate1StepPause": 1.1,
+      "gate5": { "hold": 4.5, "view2d": 4.5, "imageKind": 2.5, "goLeft": 2.5, "flyThrough": 2.0, "after": 1.5 },
+      "reportHold": 8, "reportScroll": 8, "reportScrollPx": 2, "reportEndHold": 6 },
+    { "id": "T3", "kind": "failure", "what": "Anti-ice off, Continue at every gate, stop at the ice gate (ice index 50)", "gateHold": 0.6, "iceHold": 4 }
+  ]
+}

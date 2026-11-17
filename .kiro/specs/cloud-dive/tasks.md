@@ -556,13 +556,21 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
   - `tools/browser_guard.mjs` option `headed`; `tools/video/capture_spike.mjs`, `tools/video/capture_pattern_check.mjs`; result about
     58 captured frames per second, window 1920x1080 at device scale 1, no black frames (G16)
   - _Requirements: R12.1_
-- [ ] 23.2 Automatic take recorder `tools/video/record_takes.mjs` and markers
+- [x] 23.2 Automatic take recorder `tools/video/record_takes.mjs` and markers
   - Takes T1 to T5 and the game part of T8 from `tools/video/takes.json` and `node tools/video/gate_plan.mjs --json`; markers file
     per take; the T2 report must show the demo plan total (about $3,312, ice index 0)
+  - Done 2026-11-17: takes T1-list, T1-ready, T2 (also T4 and n4 at gate 5, the report), T3 in `data/video/takes/` with markers
+    (time and element rectangles). T2 report $3,312 = plan, 38 above Best; T3 stops at the ice gate, 150 km, $526. Capture
+    changed from `ddagrab` (desktop: it also recorded a window on top and the taskbar; that file was deleted) to `gfxcapture`
+    of the kiosk window by handle, 60 fps; a one-step corner-pixel keepalive stops the capture stalling on a still screen;
+    T1 is two files because the capture stops when the 3D view first starts
   - _Requirements: R12.1_
-- [ ] 23.3 Final edit `tools/video/make_final.py` and `docs/video/edl.json`
+- [x] 23.3 Final edit `tools/video/make_final.py` and `docs/video/edl.json`
   - Zoom, speed ramp, highlight, on-screen text, burned-in captions (not over the game note and source line), loudness -14 LUFS,
     freeze detection; `tests/test_make_final.py` without ffmpeg
+  - Done 2026-11-17: rough cut `data/video/final-estimated.mp4` (2:54.6 estimated, silent, captions burned in, 1080p60) and
+    `final-estimated.srt`; slow push-in on held gates; freeze check clean outside stills and cards; 17 tests. Kiro scenes
+    (T7), README Limits and the end card are placeholder cards until 23.4
   - _Requirements: R12.1, R23.7_
 - [ ] 23.4 Final recording and edit on the frozen build (owner, after 2026-11-28)
   - _Requirements: R12.1, R23.7_

@@ -90,7 +90,7 @@ Notes for the recording:
 | Time (est.) | Line ids | Picture | On-screen text (own graphics, no logos) | Edit |
 |---|---|---|---|---|
 | 0:00-0:11 | h1 h2 | T3 frost footage in the cockpit: windshield frost, shake, the dollar counter jumping. At 0:06 cut to the cockpit cruising | 0:01 "12 Nov 2026, 19:30 UTC", at 0:07 "Cloud Dive" | Slow push-in. No title card first |
-| 0:11-0:23 | p1 p2 | T1: case list, then the ready screen, then the map with the satellite image and the route line | Chips: "JFK to Nashville", "1,232 km", "5 lanes", "real satellite and forecast" | Keep the HUD chips visible. 2 s on the map |
+| 0:11-0:23 | p1 p2 | T1: case list, then the ready screen, then the map with the satellite image and the route line (the map view opens only in flight, so p2 uses our route graphic `route-anim.mp4` from the case data) | Chips: "JFK to Nashville", "1,232 km", "5 lanes", "real satellite and forecast" | Keep the HUD chips visible. 2 s on the map |
 | 0:23-0:30 | g1 | T2 step 1: click Start takeoff, skip, cut to the gate 1 stop | "GATE" tag appears on the stop | Speed ramp for the skip. Dim the background 30 percent at the stop |
 | 0:31-0:39 | n1 | Gate 1: the five "Possible (forecast only)" tiles. Zoom to the label tiles only | Underline the words "Possible (forecast only)" | Two cuts, not one 8 s hold. No zoom on the mini-map (section 3 notes) |
 | 0:40-0:43 | g4 | The button row: Fly through, Climb over, Descend, Go left, Go right, Anti-ice, Continue | Highlight frame around the button row | 3 s |
