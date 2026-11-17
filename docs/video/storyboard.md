@@ -196,7 +196,11 @@ the scenario sign-off (720p or 1080p, 24 fps).
 |---|---|---|---|---|
 | A approach | 440 to 466 | 12,000 ft, lane 3, pitch -12 | Over the tops: the satellite tops here are 9,800 to 10,100 ft, below the flight level | Use 3 s of the 6 s render |
 | B dip | 468 to 486 (3 km/s, about half the speed of A) | same | Enters the 14,571 ft deck at about 472 km; inside it is white-grey (fill light on from 471.5 km), no dark frames | Use 5 s, end on white, cut to the game at gate 5 |
+| C establish (line h1, replaces the T3 frost opening; frost stays in g5) | 500 to 530 | 18,000 ft, pitch -14 | High view over the deck the game flies into at gate 5 | Use 6 s, date top right |
+| D close (line c2, behind the end card) | 515 to 540 | 15,500 ft, pitch -4 | Skimming the tops with sky above for the title and URLs | Use the first 4.8 s (a tower fills the frame after that), slowed to 9 s, dimmed 35 percent |
 
-Rules: the caption "Illustration from satellite cloud-top data" stays on both shots. No evidence level, severity word or ice
+Owner decision 2026-11-17 (option A): more Blender time in the video instead of restyling the game. Blender shots now cover h1, n3 and c2, about 23 s of 2:54; the game footage still carries the play, gate and report scenes.
+
+Rules: the caption "Illustration from satellite cloud-top data" stays on every Blender shot. No evidence level, severity word or ice
 index is drawn on them. The encode uses `deflicker`, and `tools/video/blender/flicker_check.ps1` must report no dips on the
 final mp4 (a frame darker than both neighbours by more than 6 of 255).

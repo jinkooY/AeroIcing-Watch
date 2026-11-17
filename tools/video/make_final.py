@@ -183,9 +183,9 @@ def text_filter(item: dict, offset: float = 0.0) -> str:
     pos = item.get("pos", "top-left")
     size = int(item.get("size", 44))
     x = {"top-left": "64", "lower-left": "64", "top-right": "w-tw-64", "lower-right": "w-tw-64", "center": "(w-tw)/2",
-         "top-center": "(w-tw)/2"}[pos]
+         "top-center": "(w-tw)/2", "below-center": "(w-tw)/2"}[pos]
     y = {"top-left": "64", "top-right": "64", "top-center": "64", "lower-left": "h-th-200", "lower-right": "h-th-200",
-         "center": "(h-th)/2"}[pos]
+         "center": "(h-th)/2", "below-center": "(h-th)/2+120"}[pos]
     a = float(item.get("at", 0)) + offset
     b = a + float(item.get("dur", 3))
     color = COLORS.get(item.get("color", "white"), "white")
@@ -277,8 +277,8 @@ def render_piece(ffmpeg: str, p: Piece, idx: int, fps: int, markers_of, work: Pa
                 raise KeyError(f"{p.line}: no rectangle recorded for {z}")
             x, y, w, h = zoom_crop(r, float(p.shot.get("pad", 40)))
             vf.append(f"crop={w}:{h}:{x}:{y}")
-        if p.shot.get("dim"):
-            vf.append(f"colorlevels=romax={1 - p.shot['dim']}:gomax={1 - p.shot['dim']}:bomax={1 - p.shot['dim']}")
+    if p.shot.get("dim"):  # takes and clips: darkens the picture under a large text
+        vf.append(f"colorlevels=romax={1 - p.shot['dim']}:gomax={1 - p.shot['dim']}:bomax={1 - p.shot['dim']}")
     vf.append(f"scale={W}:{H}:force_original_aspect_ratio=decrease:flags=lanczos,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=0x0B1220")
     if abs(p.speed - 1.0) > 1e-3 and p.kind in ("take", "clip"):
         vf.append(f"setpts=PTS/{p.speed:.5f}")

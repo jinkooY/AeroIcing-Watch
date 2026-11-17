@@ -16,11 +16,14 @@ $blender = "$env:USERPROFILE\.cache\weatherpath-blender\blender-4.5.9-windows-x6
 $maps = "$root\data\video\blender\maps"
 $out = "$root\data\video\blender\anim"
 $frames = $Fps * $Seconds
-# shot A: approach over the tops; shot B: the dip into the top layer (km along the route)
+# shot A: approach over the tops; shot B: the dip into the top layer; shot C: high establishing view over the deck
+# (hook, line h1); shot D: skimming the tops with sky above (end card, line c2). Distances in km along the route.
 $shots = @(
     @{ name = "${Tag}_A_approach"; from = 440; to = 466; extra = @() },
     # the in-cloud fill light is on only while the camera is inside the deck (see cloud_dive_clouds.py --ambient-keys)
-    @{ name = "${Tag}_B_dip"; from = 468; to = 486; extra = @("--ambient", "5", "--ambient-keys", "468:0,471.5:1") }
+    @{ name = "${Tag}_B_dip"; from = 468; to = 486; extra = @("--ambient", "5", "--ambient-keys", "468:0,471.5:1") },
+    @{ name = "${Tag}_C_establish"; from = 500; to = 530; extra = @("--alt-ft", "18000", "--pitch", "-14") },
+    @{ name = "${Tag}_D_close"; from = 515; to = 540; extra = @("--alt-ft", "15500", "--pitch", "-4") }
 )
 foreach ($s in $shots) {
     if (-not ($Pick.Split(",") | Where-Object { $s.name -like "*_$($_)_*" })) { continue }
