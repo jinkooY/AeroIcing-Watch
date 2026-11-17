@@ -73,6 +73,6 @@
       { "take": "T1-ready", "from": 0.7, "zoom": "#game-note", "pad": 24,
         "text": [{ "text": "Game state, not an icing model  |  Illustrative costs", "at": 0.3, "dur": 5.2, "pos": "top-left", "size": 36 }] }
     ],
-    "c2": [{ "card": "Cloud Dive|demo URL and repository URL (owner decision D2)", "placeholder": true }]
+    "c2": [{ "card": "Cloud Dive|jinkooy.github.io/AeroIcing-Watch   |   github.com/jinkooY/AeroIcing-Watch" }]
   }
 }

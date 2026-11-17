@@ -1,12 +1,10 @@
 # AeroIcing Watch
 
-## Kiroween route comparison demo
+## Cloud Dive (Kiroween 2026 entry)
 
-Compare two illustrative Incheon–Haneda routes using an archived ECMWF IFS forecast and OpenAP cruise fuel estimates. Select a segment to see the weather behind its time and fuel estimate. The fixed scenario uses the same aircraft, departure time, cruise level and initial mass for both routes.
+Fly a real US icing day and spend the least fuel. A regional jet flies a real route on a real day using GOES satellite cloud data and an ECMWF forecast. At each gate you pick lane, altitude and anti-ice, each with a dollar price; the score is the total fuel cost in the game model, lower wins. It is a game model, not a flight procedure and not an icing severity. Costs are illustrative.
 
-[Open the public demo](https://jinkooy.github.io/AeroIcing-Watch/)
-
-From the repository root, run `python -m http.server 8080 --bind 127.0.0.1 --protocol HTTP/1.1 --directory static/route-demo` and open [localhost:8080](http://localhost:8080/). The demo needs a static HTTP server and a browser. It uses bundled results with no API key, live weather feed or Python packages required. See the [submission notes](docs/AeroIcing_Watch_Submission_Package.md) for reproduction and deployment.
+[Play Cloud Dive](https://jinkooy.github.io/AeroIcing-Watch/) (free, no login; the dispatcher cross-section viewer is at [/viewer/](https://jinkooy.github.io/AeroIcing-Watch/viewer/)). To run it locally: `python -m http.server 8080 --directory static/cloud-dive`, no build step and no API key. Details, features and limits: [Cloud Dive section](#cloud-dive-the-kiroween-2026-entry) below.
 
 The rest of this README documents the FastAPI development application and its separate satellite cross-section workflow.
 
@@ -272,8 +270,9 @@ history but are not part of the entry and are not described in the write-up:
 - Fuel route review (OpenAP) and flight lookup: `src/api/route_review.py`,
   `src/analysis/route_weather.py`, `src/analysis/aircraft_performance.py`,
   `src/integration/flight_lookup.py`, `tools/validate_ifs_icing.py`.
-- Incheon-Haneda route comparison demo: `static/route-demo/`,
-  `tools/export_route_demo.py`, `.github/workflows/route-demo-pages.yml`.
+- Incheon-Haneda route comparison demo: `static/route-demo/`, `tools/export_route_demo.py`.
+  It is no longer published; the workflow `.github/workflows/route-demo-pages.yml` keeps its
+  file name and now publishes Cloud Dive.
 - Night cloud-water path in `src/analysis/cloud_base.py` (cases are daytime only).
 
 Origin of every file (WeatherPath, Kiro, Claude, Codex) is listed in
