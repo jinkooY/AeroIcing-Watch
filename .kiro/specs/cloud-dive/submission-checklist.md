@@ -69,7 +69,13 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       `tools/layout_check.mjs`, not from an MCP server, so they do not count for C11.
       Nothing has been checked by a human on a real phone.
 - [ ] C12 One Kiro power relevant to the stack; keep it only if it changed something.
-- [ ] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
+- [x] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
+      Done 2026-11-17, outside tasks 2.6 and 5.3 (those found none): `tests/test_caption_properties.py` CAP-3
+      (at most two caption lines of 42 characters) failed on the unchanged caption splitter. Hypothesis shrank
+      it to `'a. a aaaaaaaaaaaa aaaaaaaaaaaa aaaaaaaaaaaa aaaa aaaa aaaaaa aaaaaaaaaaaa.'` (3 lines): a sentence under
+      30 characters was always merged into the next one. The real script failed too (n1; the rough cut had 3- and
+      4-line captions). Fixed in `tools/video/make_narration.py` (`caption_parts`); log in
+      `docs/screens/c13-hypothesis-before.txt`.
 - [x] C14 Keep `docs/kiro-usage-log.md`: one row per completed task.
       Kept: 110 dated rows on 2026-11-17. Keep adding rows until submission.
 

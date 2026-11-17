@@ -1,0 +1,51 @@
+..FF                                                                     [100%]
+================================== FAILURES ===================================
+___________ test_synthetic_cap3_at_most_two_lines_of_42_characters ____________
+
+    @settings(max_examples=300, deadline=None)
+>   @given(with_tags, start_s, dur_s)
+                   ^^^
+
+tests\test_caption_properties.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+text = 'a. a aaaaaaaaaaaa aaaaaaaaaaaa aaaaaaaaaaaa aaaa aaaa aaaaaa aaaaaaaaaaaa.'
+start = 0.0, dur = 1.0
+
+    @settings(max_examples=300, deadline=None)
+    @given(with_tags, start_s, dur_s)
+    def test_synthetic_cap3_at_most_two_lines_of_42_characters(text, start, dur):
+        for _a, _b, caption in mn.cues_for(text, start, start + dur):
+            lines = caption.split("\n")
+>           assert len(lines) <= 2, caption
+E           AssertionError: a. a aaaaaaaaaaaa aaaaaaaaaaaa
+E             aaaaaaaaaaaa aaaa aaaa aaaaaa
+E             aaaaaaaaaaaa.
+E           assert 3 <= 2
+E            +  where 3 = len(['a. a aaaaaaaaaaaa aaaaaaaaaaaa', 'aaaaaaaaaaaa aaaa aaaa aaaaaa', 'aaaaaaaaaaaa.'])
+E           Failing test case: test_synthetic_cap3_at_most_two_lines_of_42_characters(
+E               text='a. a aaaaaaaaaaaa aaaaaaaaaaaa aaaaaaaaaaaa aaaa aaaa aaaaaa aaaaaaaaaaaa.',
+E               start=0.0,
+E               dur=1.0,
+E           )
+
+tests\test_caption_properties.py:57: AssertionError
+_______________ test_real_script_captions_meet_the_layout_rule ________________
+
+    def test_real_script_captions_meet_the_layout_rule():
+        import json
+        script = json.loads((ROOT / "docs/video/script.json").read_text(encoding="utf-8"))
+        for line in script["lines"]:
+            for _a, _b, caption in mn.cues_for(line["text"], 0.0, 8.0):
+>               assert len(caption.split("\n")) <= 2, (line["id"], caption)
+E               AssertionError: ('n1', 'First gate. Here only the forecast flags
+E                 possible ice, so the label says: possible,
+E                 forecast only.')
+E               assert 3 <= 2
+E                +  where 3 = len(['First gate. Here only the forecast flags', 'possible ice, so the label says: possible,', 'forecast only.'])
+E                +    where ['First gate. Here only the forecast flags', 'possible ice, so the label says: possible,', 'forecast only.'] = <built-in method split of str object at 0x0000026BAFE8A510>('\n')
+E                +      where <built-in method split of str object at 0x0000026BAFE8A510> = 'First gate. Here only the forecast flags\npossible ice, so the label says: possible,\nforecast only.'.split
+
+tests\test_caption_properties.py:67: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_caption_properties.py::test_synthetic_cap3_at_most_two_lines_of_42_characters

@@ -112,14 +112,46 @@ def wrap(text: str) -> list[str]:
     return lines
 
 
+MAX_LINES = 2  # lines per caption (timed-text convention, with MAX_LINE characters per line)
+
+
+def _fits(text: str) -> bool:
+    return len(wrap(text)) <= MAX_LINES
+
+
+def _pack(units: list[str]) -> list[str]:
+    """Join neighbouring units greedily while the result still fits one caption."""
+    out: list[str] = []
+    for u in units:
+        if out and _fits(f"{out[-1]} {u}"):
+            out[-1] = f"{out[-1]} {u}"
+        else:
+            out.append(u)
+    return out
+
+
+def caption_parts(clean: str) -> list[str]:
+    """Split one voice line into captions of at most MAX_LINES lines: whole sentences where they fit, then clauses
+    (after a comma), then plain line pairs for a clause that is still too long. Words stay in order.
+    Found by the property test CAP-3 (tests/test_caption_properties.py): the earlier rule always merged a sentence
+    under 30 characters into the next one, which gave three- and four-line captions."""
+    parts: list[str] = []
+    for piece in _pack([s for s in re.split(r"(?<=[.!?])\s+", clean) if s]):
+        if _fits(piece):
+            parts.append(piece)
+            continue
+        for clause in _pack([c for c in re.split(r"(?<=,)\s+", piece) if c]):
+            if _fits(clause):
+                parts.append(clause)
+            else:
+                lines = wrap(clause)
+                parts += [" ".join(lines[i:i + MAX_LINES]) for i in range(0, len(lines), MAX_LINES)]
+    return parts
+
+
 def cues_for(text: str, start: float, end: float) -> list[tuple[float, float, str]]:
     clean = re.sub(r"\s+", " ", TAG.sub("", text)).strip()
-    parts: list[str] = []
-    for p in (p.strip() for p in re.split(r"(?<=[.!?])\s+", clean) if p.strip()):
-        if parts and len(parts[-1]) < 30:  # merge very short sentences into one readable cue
-            parts[-1] = f"{parts[-1]} {p}"
-        else:
-            parts.append(p)
+    parts = caption_parts(clean)
     total = sum(len(p) for p in parts) or 1
     cues, t = [], start
     for p in parts:
