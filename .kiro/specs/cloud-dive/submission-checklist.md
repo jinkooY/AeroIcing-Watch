@@ -13,9 +13,11 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 ## Eligibility and provenance
 
 - [x] C1 Read the full official rules (2026-11-13; digest in `requirements.md` section 6).
-- [ ] C2 Confirm F1 to F6 in `requirements.md` section 5.6. Owner. (D1 decided: replace.)
-- [ ] C3 Submit the Kiro Credit Request Form by **Tue Dec 1, 12:00 pm PT
+- [x] C2 Confirm F1 to F6 in `requirements.md` section 5.6. Owner. (D1 decided: replace.)
+      Done: section 5.6 reads "approved 2026-11-13, F3 amended".
+- [x] C3 Submit the Kiro Credit Request Form by **Tue Dec 1, 12:00 pm PT
       (Dec 2 05:00 KST)**; redeem the code by Dec 4. Owner.
+      Done: the owner reports the credits are received (2026-11-17).
 - [ ] C4 Disclosure: attribution settled (files git cannot attribute = Claude, owner
       statement 2026-11-13). Remaining: add `THIRD_PARTY_NOTICES.md` (ECMWF CC BY 4.0, NOAA
       GOES, IEM PIREP, Noh et al. 2017, CIRA as referenced work, OpenAP LGPL build-time
@@ -33,11 +35,12 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 
 - [x] C6 Case scan: strongest routes found (`requirements.md` 5.4 and 5.5);
       GOES-West check for DEN-LAX done (coverage and tops match GOES-East).
-- [ ] C7 Collect: GOES hours for the three cases (ACTPC, ACHAC, CODC, CPSC);
+- [x] C7 Collect: GOES hours for the three cases (ACTPC, ACHAC, CODC, CPSC);
       IFS 2026-11-12 00 UTC run, steps +18 and +21 (the +18 index returned HTTP 503
       once; retry), and runs for 11-01 and 11-07 with the extended levels;
       PIREPs from IEM for the case windows. Kiro (task 6.5).
-- [ ] C8 Export, tune and commit the case files (task 6.5). Kiro.
+- [x] C8 Export, tune and commit the case files (task 6.5). Kiro.
+      Done: task 6.5; three cases committed in `static/cloud-dive/cases/` (the C7 data went into them).
 
 ## Kiro depth (every item in the rules' write-up list)
 
@@ -58,7 +61,8 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       Nothing has been checked by a human on a real phone.
 - [ ] C12 One Kiro power relevant to the stack; keep it only if it changed something.
 - [ ] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
-- [ ] C14 Keep `docs/kiro-usage-log.md`: one row per completed task.
+- [x] C14 Keep `docs/kiro-usage-log.md`: one row per completed task.
+      Kept: 110 dated rows on 2026-11-17. Keep adding rows until submission.
 
 ## Presentation
 
@@ -91,6 +95,10 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       thing about Kiro and how it changed your approach; add the link in the form. Owner.
 - [ ] C20 Kiro Crew app in a separate GitHub repo, newly created in the period.
       Only after tasks 1-9 are done.
+      Note (2026-11-17, official rules): this bonus needs a Kiro Crew app, its own public GitHub
+      repo and a write-up of its features. This repository (first commit 2026-11-11) meets the
+      "newly created" rule for the main entry, but Cloud Dive is not a Kiro Crew app, so it does
+      not count here.
 
 ## Submit (Dec 3)
 
@@ -98,3 +106,6 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       without login; Apache-2.0 visible in the repository About section; `/.kiro`
       present and not ignored; all tests pass; draft saved; submitted by Dec 3
       KST evening.
+      Status 2026-11-17: Pages serves Cloud Dive (workflow run 44061570151, checked in a browser:
+      ready screen, 3D canvas, no script errors); repository public, Apache-2.0 detected by
+      GitHub; `/.kiro` tracked. Still open: tests on the final commit, the draft, the submit.

@@ -69,6 +69,17 @@ C11 외에도 checklist에는 Kiro가 하는 열린 항목(C7, C8, C9, C10, C12,
 
 브라우저 규칙: **한 번에 하나의 guard 실행만, 포그라운드로만.** 항상 `tools/browser_guard.mjs`를 거치고, 실행 전후에 headless `cloud-dive-edge-*` Edge 프로세스가 0개인지 확인한다. 소유자가 허용하기 전에는 브라우저를 시작하지 않는다.
 
+## 3a. 점검 2026-11-17
+
+코드와 산출물로 다시 확인했다.
+
+- P-01~P-12, P-14: 그대로 열림. `browser_guard.mjs`에 SIGHUP 처리 없음, 포트는 여전히 `9300 + random(600)`, guard 테스트 0개, `skipRequested`는 takeoff 경로에서만 초기화, `GROUP21_BASE = "1565153"`, `backToCases`에 `renderLeadUi` 없음, `BANNED_R91`에 risk와 probability 없음, KJFK-KBNA parity 테스트 없음.
+- P-13: (a)는 해결. `docs/screens/22.7-gate5.png`와 2026-11-17 T2 테이크에 Observed, Not indicated, Not assessed gate 패턴이 모두 찍혔다. (b) climb 후 "Continue" 문구, (c) layout check 재실행, (d) 390x844 gate 열은 남음.
+- P-15, P-17: 소유자 입력 대기 그대로.
+- P-16: 영상 대사 c1에 "Frame rate measured on one laptop"이 들어갔다. 실제 폰 확인은 남음.
+- P-18, P-20, P-21, P-23: 결정 대기. P-19: 결정됨.
+- 2절의 C3은 소유자가 크레딧을 받았다고 알려 와서 체크리스트에서 체크했다.
+
 ## 4. 결정 요청
 
 각 항목에 "승인" 또는 "보류"로 답해 주세요.
