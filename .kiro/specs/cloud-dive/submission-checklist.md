@@ -44,9 +44,15 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 
 ## Kiro depth (every item in the rules' write-up list)
 
-- [ ] C9 Surfaces: use at least one surface besides the IDE (CLI for scripts or a
+- [x] C9 Surfaces: use at least one surface besides the IDE (CLI for scripts or a
       GitHub Action, Web for a pull request) and record how it differed. Check
       regional availability first (rules: Regional Restrictions).
+      Done 2026-11-18: Kiro CLI 3.4.0, headless (`kiro-cli chat --no-interactive --agent wording-guardian-cli
+      --trust-tools=fs_read`), 63 s. Differences from the IDE: the CLI does not load the IDE's Markdown agent
+      (`wording-guardian.md`: "Mode not found"); it needs a JSON agent, and `kiro-cli agent upgrade` converted it
+      to the format both engines load (`.kiro/agents/wording-guardian-cli.json`, same prompt file). The CLI run
+      is scriptable and read-only by flag. It returned 12 verdicts: PASS, 4 should-fix; 3 applied to the
+      script (g1, d4, k3b) and h2 "Fuel cost is your score"; item 1 was already true in the code.
 - [x] C10 Custom agent: create one with the custom agent creator (candidates: a
       wording guardian that reviews text against the guardrails; a parameter tuner
       that reads the `tune_params.py` report). Log the impact.
@@ -68,8 +74,12 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       exist. The headless Edge runs in `docs/screens/15.6-*390x844*` came from
       `tools/layout_check.mjs`, not from an MCP server, so they do not count for C11.
       Nothing has been checked by a human on a real phone.
-- [ ] C12 One Kiro power relevant to the stack; keep it only if it changed something.
-      Status 2026-11-18: BrowserStack power used once (Live, Samsung Galaxy S25 Ultra, Android 15, Chrome, case 20261112-kjfk-kbna-1930z). Only a session link was created, so no page result exists yet. Not checked off: the power must be kept only if it changed something.
+- [x] C12 One Kiro power relevant to the stack; keep it only if it changed something.
+      Done 2026-11-18: BrowserStack power, Device Control on a real Samsung Galaxy S25 Ultra (SM-S938B,
+      Android 15, Chrome; viewport 384 x 697 CSS px). Found a bug the 390 x 844 Playwright check missed: after
+      the climb, Continue sat at page y 703, below the 697 px fold (the one-scroll reveal ran only at gates).
+      Fixed in `gate-panel.js` (`reveal()` also at the climb hand-over); second session passed: auto-scroll
+      144 px after the climb, gate 1 shows the 3D view (416 of 419 px), all 7 buttons and the gate panel. Kept.
 - [x] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
       Done 2026-11-17, outside tasks 2.6 and 5.3 (those found none): `tests/test_caption_properties.py` CAP-3
       (at most two caption lines of 42 characters) failed on the unchanged caption splitter. Hypothesis shrank

@@ -112,7 +112,7 @@ export function initControls(deps) {
   function gateHeading(reasons) {
     if (reasons.length > 1) return "Decision gate: several reasons";
     if (reasons[0] === "ice") return "Decision gate: ice index";
-    return reasons[0] === "exit" ? "Decision gate: left the cells" : "Decision gate: cloud evidence ahead";
+    return reasons[0] === "exit" ? "Decision gate: left the cells" : "Decision gate: Possible or Observed cells ahead";
   }
   let lastAnnounced = "";
 

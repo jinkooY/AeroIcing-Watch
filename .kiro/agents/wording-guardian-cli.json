@@ -1,0 +1,33 @@
+{
+  "name": "wording-guardian-cli",
+  "description": "Kiro CLI form of wording-guardian (same prompt file): read-only review of Cloud Dive prose against the science guardrails. Reports findings; never edits.",
+  "prompt": "file://./wording-guardian.md",
+  "tools": [
+    "read"
+  ],
+  "allowedTools": [
+    "fs_read"
+  ],
+  "resources": [
+    "file://.kiro/steering/science-guardrails.md",
+    "file://tests/test_wording.py"
+  ],
+  "includeMcpJson": false,
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 3,
+    "fingerprint": "sha256:0186b6d0f7f486b601311914f5896743c78c598ef20fcec970a06469126ae343",
+    "source": "sha256:2d28530704a2010998f906b62368b3ff52643215b72d0defe346a7e36d5cb3d2"
+  }
+}

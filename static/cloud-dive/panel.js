@@ -31,7 +31,7 @@ const TEXT = Object.freeze({
   legend: "Evidence legend",
   source: "Source",
   noSource: "not stated",
-  mapNoCell: "No cell ahead (end of route)",
+  mapNoCell: "End of route",
 });
 
 // Pattern word for each engine level, matching FILLS used by the 2D views (R13.5). Not indicated has no fill.
