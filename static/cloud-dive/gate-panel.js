@@ -87,23 +87,34 @@ export function initGatePanel(deps) {
     // Revision e (R24.7): on a narrow screen the buttons and the settings line can sit below the fold when a gate
     // opens; scroll the page (only the page) once per gate so both show. No effect when they are already visible,
     // as on a desktop screen.
-    if (mode === "gate" && lastMode !== "gate" && typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(() => {
-        if (typeof innerHeight !== "number" || typeof scrollBy !== "function") return;
-        const parts = [buttons.get("toggleRun"), document.getElementById("gate-path")].filter((e) => e && e.getClientRects().length);
-        if (!parts.length) return;
-        const bottom = Math.max(...parts.map((e) => e.getBoundingClientRect().bottom));
-        if (bottom > innerHeight) scrollBy(0, Math.ceil(bottom - innerHeight + 8));
-      });
-    }
+    if (mode === "gate" && lastMode !== "gate") reveal();
     lastMode = mode;
+  }
+  // Scrolls the page (only the page) just enough that Continue and the settings line show. Runs once when a gate
+  // opens, and once when the panel appears at the end of the climb (the player then presses Continue to start;
+  // on a Galaxy S25 Ultra, 697 px tall in Chrome, Continue sat 6 px below the fold there). No effect when both
+  // are already visible, as on a desktop screen.
+  function reveal() {
+    if (typeof requestAnimationFrame !== "function") return;
+    requestAnimationFrame(() => {
+      if (typeof innerHeight !== "number" || typeof scrollBy !== "function") return;
+      const parts = [buttons.get("toggleRun"), document.getElementById("gate-path")].filter((e) => e && e.getClientRects().length);
+      if (!parts.length) return;
+      const bottom = Math.max(...parts.map((e) => e.getBoundingClientRect().bottom));
+      if (bottom > innerHeight) scrollBy(0, Math.ceil(bottom - innerHeight + 8));
+    });
   }
 
   subscribe(() => { controller.sync(); render(); });
   root.hidden = true;
 
   return {
-    setCockpit(on) { cockpit = Boolean(on); render(); },
+    setCockpit(on) {
+      const was = cockpit;
+      cockpit = Boolean(on);
+      render();
+      if (cockpit && !was) reveal(); // the end of the climb: Continue starts the flight
+    },
     dispose() { if (typeof stopFit === "function") stopFit(); root.replaceChildren(); },
   };
 }
