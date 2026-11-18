@@ -10,7 +10,17 @@ The rest of this README documents the FastAPI development application and its se
 
 **Kiro Hackathon 2026** — Satellite-based cloud-evidence cross-section for airline dispatchers and flight crews (repository only, not part of the game).
 
-AeroIcing Watch uses **GK-2A geostationary satellite Level-2 CTPS observations** to show the cloud vertical structure — top height, estimated base, phase, and supercooled flag — along any A–B flight segment, with a deterministic icing risk rating per sample.
+AeroIcing Watch uses **GK-2A geostationary satellite Level-2 CTPS observations** to show the cloud vertical structure — top height, estimated base, phase, and supercooled flag — along any A–B flight segment.
+
+> **Earlier prototype, kept for reference.** The `/api/icing/cross-section` endpoint below still returns the
+> first plan's labels (`icingRisk`, `icingLevel`; legacy field values, not icing severity) and altitude
+> suggestions (earlier prototype only, not advice, not shown in Cloud Dive). They are uncalibrated screening
+> labels written in the first plan (see the 2026-11-12 rows of `docs/kiro-usage-log.md`), not a forecast, and
+> Cloud Dive does not use them. The current evidence rule is `cloud-dive-evidence-v2` in
+> `src/analysis/evidence.py` (forecast screen `ifs-temperature-rh-v1`). It reports only the four levels
+> Observed supercooled layer at planned altitude, Possible (forecast only), Not indicated and Not assessed.
+> `evidence.py` never sets `icingRisk`; only the earlier prototype endpoint returns it
+> (see `.kiro/steering/science-guardrails.md`).
 
 ---
 
@@ -71,7 +81,7 @@ uvicorn main:app --host 0.0.0.0 --port 8080 --reload
 
 ### `GET /api/icing/cross-section`
 
-Returns a viewer.js-compatible cloud profile with icing risk assessment.
+Returns a viewer.js-compatible cloud profile with the earlier prototype's screening labels (see the note above).
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -110,7 +120,7 @@ Returns a viewer.js-compatible cloud profile with icing risk assessment.
 }
 ```
 
-**Icing risk rules (deterministic — no LLM):**
+**Prototype screening labels (deterministic, no LLM; uncalibrated, not icing severity, not used by Cloud Dive):**
 
 | Level | Condition |
 |---|---|
