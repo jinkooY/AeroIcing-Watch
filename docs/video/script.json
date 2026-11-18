@@ -22,7 +22,7 @@
       "id": "p1",
       "scene": "2 problem",
       "pause_after": 0.4,
-      "text": "Icing is a hazard, and avoiding it costs money. A longer path, a climb, or anti-ice fuel."
+      "text": "Icing matters to flights, and avoiding it costs money. A longer path, a climb, or anti-ice fuel."
     },
     {
       "id": "p2",
@@ -34,7 +34,7 @@
       "id": "g1",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "Cruise runs fast. When a cloud is ahead, the game stops. That is a gate."
+      "text": "Cruise runs fast. When evidence of icing is ahead, the game stops. That is a gate."
     },
     {
       "id": "n1",
@@ -58,7 +58,7 @@
       "id": "n3",
       "scene": "3 play",
       "pause_after": 3.3,
-      "text": "Next gate. This cloud comes from satellite data: its top, its phase, an estimated base.",
+      "text": "At the fifth gate. This cloud comes from satellite data: its top, its phase, an estimated base.",
       "picture": "game ramp, then the Blender shots A and B (storyboard section 9); the pause holds the picture"
     },
     {

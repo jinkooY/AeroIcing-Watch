@@ -69,6 +69,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       `tools/layout_check.mjs`, not from an MCP server, so they do not count for C11.
       Nothing has been checked by a human on a real phone.
 - [ ] C12 One Kiro power relevant to the stack; keep it only if it changed something.
+      Status 2026-11-18: BrowserStack power used once (Live, Samsung Galaxy S25 Ultra, Android 15, Chrome, case 20261112-kjfk-kbna-1930z). Only a session link was created, so no page result exists yet. Not checked off: the power must be kept only if it changed something.
 - [x] C13 Log at least one real property-test counterexample (task 2.6 or 5.3).
       Done 2026-11-17, outside tasks 2.6 and 5.3 (those found none): `tests/test_caption_properties.py` CAP-3
       (at most two caption lines of 42 characters) failed on the unchanged caption splitter. Hypothesis shrank
