@@ -1,5 +1,5 @@
 // Automatic take recorder for the submission video (task 23.2). Opens the game in a visible fullscreen kiosk window
-// (browser_guard headed mode, 1920x1080, device scale 1), records that window only (ffmpeg gfxcapture, NVENC), and plays
+// (browser_guard headed mode, laid out at 1920x1080 CSS pixels on any 16:9 screen), records that window only (ffmpeg gfxcapture, NVENC), and plays
 // the takes of tools/video/takes.json with the page's own buttons:
 //   T1 start    case list, open the case, the ready screen with the map
 //   T2 demo     the demo plan of tools/video/gate_plan.mjs from Start takeoff to the report; at gate 5 (first Observed gate)
@@ -42,7 +42,24 @@ const ffprobe = findTool("ffprobe");
 const plan = JSON.parse(spawnSync("node", [path.join(root, "tools/video/gate_plan.mjs"), "--json"], { encoding: "utf8" }).stdout.trim().split(/\r?\n/).pop());
 const byKm = new Map(plan.gates.map((g) => [g.km, g]));
 
-const g = await startGuard({ root, headed: true });
+// The page is always laid out at 1920x1080 CSS pixels. On a larger screen (a 4K panel gives a 3840-wide kiosk window
+// at device scale 1, with tiny text) the browser is started again with device scale = window width / 1920, so the
+// layout matches the 1080p takes and the capture is sharper. (A DevTools viewport override does not work here: the
+// headed window then draws the page into one corner.) Marker rectangles stay in CSS pixels; `scale` in each markers
+// file maps them to take pixels (tools/video/make_final.py).
+const CSS_W = 1920, CSS_H = 1080;
+let g = await startGuard({ root, headed: true });
+let win = await g.evaluate(`({ w: innerWidth, h: innerHeight })`);
+const scale = Number((win.w / CSS_W).toFixed(4));
+if (Math.abs(win.h / CSS_H - scale) > 0.01) throw new Error(`the kiosk window is ${win.w}x${win.h}, not 16:9; use a 16:9 screen`);
+if (scale !== 1) {
+  await g.close();
+  await new Promise((r) => setTimeout(r, 3000)); // let the first browser exit before the second starts
+  g = await startGuard({ root, headed: true, deviceScale: scale });
+  win = await g.evaluate(`({ w: innerWidth, h: innerHeight })`);
+  if (Math.abs(win.w - CSS_W) > 2 || Math.abs(win.h - CSS_H) > 2) throw new Error(`device scale ${scale} gave a ${win.w}x${win.h} viewport, not ${CSS_W}x${CSS_H}`);
+  console.log(`screen ${Math.round(CSS_W * scale)} px wide: browser at device scale ${scale}, viewport ${win.w}x${win.h}`);
+}
 const { base, send, evaluate, sleep } = g;
 
 // ---- recording ----------------------------------------------------------------------------------------------------
@@ -104,7 +121,7 @@ async function stopRecording(meta = {}) {
   writeFileSync(file, JSON.stringify({
     take: rec.id, video: path.relative(root, rec.out).replace(/\\/g, "/"), fps: cfg.fps, durationS: duration,
     note: "t is seconds from the ffmpeg start; the first frame comes about 0.2 to 0.5 s after it, so treat t as accurate to half a second",
-    ...meta, markers: rec.markers,
+    scale, cssViewport: [CSS_W, CSS_H], ...meta, markers: rec.markers,
   }, null, 2));
   console.log(`${rec.id}: ${duration.toFixed(1)} s, ${rec.markers.length} markers, ffmpeg exit ${code}`);
   rec = null;
@@ -127,11 +144,60 @@ const clickChoice = (re) => evaluate(`(() => { const b = [...document.querySelec
 const antiIceOn = () => evaluate(`(() => { const b = [...document.querySelectorAll("#gate-choices button")].find((x) => /anti-ice/i.test(x.textContent)); return b ? b.getAttribute("aria-pressed") === "true" : null; })()`);
 async function setAntiIce(want) {
   const s = await antiIceOn();
-  if (s !== null && s !== want) { await clickChoice("/anti-ice/i"); await mark(want ? "anti-ice on" : "anti-ice off", await rects("#hud-anti-ice")); }
+  if (s !== null && s !== want) {
+    await pressKey("a", "A  Anti-ice");
+    await mark(want ? "anti-ice on" : "anti-ice off", await rects("#gate-path", ".cp-switch"));
+  }
 }
-const skipCinematic = () => evaluate(`(() => { const s = document.getElementById("skip-btn"); if (s && !s.hidden) { s.click(); return true; } return false; })()`);
-const resumeIfPaused = () => evaluate(`(() => { const p = document.getElementById("gate-panel"); if (!p || !/^\\s*Flight status\\s*Paused at/i.test(p.innerText)) return false;
-  const b = [...document.querySelectorAll("#gate-choices button")].find((x) => /^continue$/i.test(x.textContent.trim()) && !x.disabled); if (b) { b.click(); return true; } return false; })()`);
+// ---- real input (revision e, R24.8) ---------------------------------------------------------------------------------
+// Keys and clicks go through the browser's input pipeline (CDP Input.*), exactly as a player's would: the page sees
+// trusted keydown/keyup and pointer events, buttons show their pressed state, and focus moves as usual. Each press
+// writes a "key" or "click" marker, from which make_final.py draws a key chip or a click ring.
+const KEYS = {
+  " ": { code: "Space", vk: 32, text: " " },
+  ArrowUp: { code: "ArrowUp", vk: 38 }, ArrowDown: { code: "ArrowDown", vk: 40 },
+  ArrowLeft: { code: "ArrowLeft", vk: 37 }, ArrowRight: { code: "ArrowRight", vk: 39 },
+  a: { code: "KeyA", vk: 65, text: "a" }, v: { code: "KeyV", vk: 86, text: "v" }, m: { code: "KeyM", vk: 77, text: "m" },
+};
+async function pressKey(key, label) {
+  const k = KEYS[key];
+  if (!k) throw new Error(`no key definition for ${key}`);
+  const base = { key, code: k.code, windowsVirtualKeyCode: k.vk, nativeVirtualKeyCode: k.vk };
+  await send("Input.dispatchKeyEvent", { type: k.text ? "keyDown" : "rawKeyDown", ...base, ...(k.text ? { text: k.text, unmodifiedText: k.text } : {}) });
+  await sleep(70 + Math.round(Math.random() * 40)); // a key is held for about a tenth of a second
+  await send("Input.dispatchKeyEvent", { type: "keyUp", ...base });
+  if (rec) await mark("key", { key: label });
+}
+// Mouse click at the centre of the first visible element matching `selector` (and `re` on its text, if given).
+async function clickAt(selector, re = null, label = "") {
+  const r = await evaluate(`(() => { const list = [...document.querySelectorAll(${JSON.stringify(selector)})].filter((e) => e.getClientRects().length && !e.disabled
+      && ${re ? `${re}.test(e.textContent)` : "true"}); const e = list[0]; if (!e) return null; e.scrollIntoView({ block: "nearest" });
+    const b = e.getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+  if (!r) return false;
+  await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: r.x, y: r.y });
+  await sleep(120);
+  await send("Input.dispatchMouseEvent", { type: "mousePressed", x: r.x, y: r.y, button: "left", clickCount: 1 });
+  await sleep(80);
+  await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: r.x, y: r.y, button: "left", clickCount: 1 });
+  if (rec) await mark("click", { x: r.x, y: r.y, label });
+  return true;
+}
+async function wheel(selector, dy) {
+  const r = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null; const b = e.getBoundingClientRect();
+    return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+  if (r) await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: r.x, y: r.y, deltaX: 0, deltaY: dy });
+}
+const visible = (id) => evaluate(`(() => { const e = document.getElementById(${JSON.stringify(id)}); return !!e && !e.hidden && e.getClientRects().length > 0; })()`);
+const skipCinematic = async () => {
+  if (!(await visible("skip-btn"))) return false;
+  await pressKey(" ", "Space  Skip");
+  return true;
+};
+const resumeIfPaused = async () => {
+  if (!(await evaluate(`/^\\s*Flight status\\s*Paused at/i.test(document.getElementById("gate-panel")?.innerText || "")`))) return false;
+  await pressKey(" ", "Space  Continue");
+  return true;
+};
 
 async function openCase() {
   await send("Page.navigate", { url: `${base}/static/cloud-dive/index.html?case=${cfg.case}${cfg.query}` });
@@ -141,17 +207,18 @@ async function openCase() {
 }
 // Takeoff, skip the cinematic, wait for "Ready at the start", one Continue opens gate 1 (see shots_22.mjs).
 async function takeoffToGate1() {
-  await click("takeoff-btn");
+  await pressKey(" ", "Space  Start takeoff");
   await mark("takeoff click", await rects("#hud"));
   const t0 = Date.now();
   let skipped = false;
+  await sleep(600); // the runway roll starts before the player skips, as a person would
   while (Date.now() - t0 < 60000) {
     if (!skipped && (await skipCinematic())) { skipped = true; await mark("skip cinematic"); }
     if (/Ready at the start/.test(await panelText()) && !(await evaluate(`document.body.classList.contains("lead-active")`))) break;
     await sleep(200);
   }
-  await sleep(500);
-  await clickChoice("/^continue$/i");
+  await sleep(700);
+  await pressKey(" ", "Space  Continue");
   for (let i = 0; i < 40 && !(await atGate()); i++) await sleep(150);
 }
 
@@ -166,11 +233,21 @@ async function takeStart(t) {
   await sleep(600);
   await mark("case list", await rects("#case-list", "#picker"));
   await sleep(t.listHold * 1000);
+  // The capture stops when the 3D view starts, so the take ends at the click: the marker carries the click point and
+  // the edit draws the click there; the real mouse click follows at once, after the recording has closed.
+  const target = await evaluate(`(() => { const li = [...document.querySelectorAll("#case-list .case-item")].find((x) => /KJFK|New York|JFK/i.test(x.innerText));
+    const b = li && [...li.querySelectorAll("button")].find((x) => /fly this case/i.test(x.textContent)); if (!b) return null;
+    b.id = b.id || "take-open-case"; const r = b.getBoundingClientRect(); return { id: b.id, x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) }; })()`);
+  if (!target) throw new Error("T1: the KJFK-KBNA case button was not found");
+  await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
+  await sleep(400);
+  await mark("click", { x: target.x, y: target.y, label: "Fly this case" });
   await mark("case open click");
+  await sleep(300);
   await stopRecording();
-  const opened = await evaluate(`(() => { const li = [...document.querySelectorAll("#case-list .case-item")].find((x) => /KJFK|New York|JFK/i.test(x.innerText));
-    const b = li && [...li.querySelectorAll("button")].find((x) => /fly this case/i.test(x.textContent)); if (!b) return false; b.click(); return true; })()`);
-  if (!opened) throw new Error("T1: the KJFK-KBNA case button was not found");
+  await send("Input.dispatchMouseEvent", { type: "mousePressed", x: target.x, y: target.y, button: "left", clickCount: 1 });
+  await sleep(80);
+  await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: target.x, y: target.y, button: "left", clickCount: 1 });
   for (let i = 0; i < 200 && !(await evaluate(`(() => { const t = document.getElementById("takeoff-btn"); return !!t && !t.hidden; })()`)); i++) await sleep(150);
   await sleep(1500);
   await startRecording(`${t.id}-ready`);
@@ -197,29 +274,60 @@ async function takeDemo(t) {
       if (gate && gate.n !== handled) {
         handled = gate.n;
         await mark(`gate ${gate.n}`, { km: d, reasons: gate.reasons, hudTotal: await hudTotal(),
-          rects: await rects("#gate-panel", "#gate-choices", "#hud", "#hud-alt", "#hud-anti-ice", "#hud-total", "#hud-ice-bar", "#lead-box", "#src-line", "#game-note", "#map-section") });
-        await sleep((gate.n === 1 ? t.gate1Hold ?? t.gateHold : t.gateHold) * 1000);
+          rects: await rects("#gate-panel", "#gate-path", "#gate-choices", "#cost-rules", ".gate-keys", ".cp-bar", ".cp-tape-value", ".cp-switch",
+            "#hud", "#hud-lane", "#hud-ice-bar", "#lead-box", "#src-line", "#game-note", "#map-section") });
         if (gate.n === 1) {
-          for (let i = 0; i < 3; i++) { await clickChoice("/climb over/i"); await mark("climb", await rects("#hud-alt")); await sleep(t.gate1StepPause * 1000); }
+          // a player reads the gate, opens the cost rules, closes them, then sets the climb and anti-ice
+          const g1 = t.gate1;
+          await sleep(g1.read * 1000);
+          if (await clickAt("#cost-rules summary", null, "How costs work")) {
+            await mark("cost rules open", await rects("#cost-rules", "#gate-choices"));
+            await sleep(g1.cardOpen * 1000);
+            await clickAt("#cost-rules summary", null, "How costs work");
+            await mark("cost rules closed");
+          }
+          await sleep(g1.afterCard * 1000);
+          for (let i = 0; i < 3; i++) {
+            await pressKey("ArrowUp", "\u2191  Climb over");
+            await mark("climb", await rects("#gate-path", "#gate-panel", ".cp-tape-value"));
+            await sleep(t.stepPause * 1000);
+          }
           await setAntiIce(true);
-          await sleep(t.gate1StepPause * 1000);
+          await sleep(t.stepPause * 1000);
         } else if (gate.n === 5) {
           const g5 = t.gate5;
           await sleep(g5.hold * 1000);
-          if (await click("view-toggle")) { await mark("2D view on", await rects("#cockpit-view", "#scene", "#view-notice")); await sleep(g5.view2d * 1000); await click("view-toggle"); await mark("2D view off"); await sleep(600); }
-          if (await click("map-kind-toggle")) { await mark("image kind: phase", await rects("#map-section", "#map-key")); await sleep(g5.imageKind * 1000); await click("map-kind-toggle"); await mark("image kind: IR"); await sleep(600); }
-          if (await clickChoice("/go left/i")) { await mark("go left", { hudTotal: await hudTotal(), rects: await rects("#hud-lane", "#hud-total") }); await sleep(g5.goLeft * 1000); }
-          if (await clickChoice("/fly through/i")) { await mark("fly through (cancel)", { hudTotal: await hudTotal() }); await sleep((g5.flyThrough ?? 0.8) * 1000); }
+          await pressKey("v", "V  2D view");
+          await mark("2D view on", await rects("#cockpit-view", "#scene", "#map-section", "#view-notice"));
+          await sleep(g5.view2d * 1000);
+          await pressKey("m", "M  Image: phase");
+          await mark("image kind: phase", await rects("#map-section", "#map-key"));
+          await sleep(g5.imageKind * 1000);
+          await pressKey("m", "M  Image: IR");
+          await mark("image kind: IR");
+          await sleep(700);
+          await pressKey("v", "V  Cockpit view");
+          await mark("2D view off");
+          await sleep(900);
+          await pressKey("ArrowLeft", "\u2190  Go left");
+          await mark("go left", { hudTotal: await hudTotal(), rects: await rects("#hud-lane", "#gate-path", "#gate-panel") });
+          await sleep(g5.goLeft * 1000);
+          if (await clickAt("#gate-choices button", "/fly through/i", "Fly through")) {
+            await mark("fly through (cancel)", { hudTotal: await hudTotal() });
+            await sleep(g5.flyThrough * 1000);
+          }
           await setAntiIce(true);
-          await sleep((g5.after ?? 0.6) * 1000);
-        } else if (gate.reasons.includes("exit")) await setAntiIce(false);
-        else await setAntiIce(true);
-        await sleep(300);
-        await clickChoice("/continue/i");
+          await sleep(g5.after * 1000);
+        } else {
+          await sleep(t.gateHold * 1000);
+          await setAntiIce(!gate.reasons.includes("exit"));
+        }
+        await sleep(350);
+        await pressKey(" ", "Space  Continue");
         await mark(`continue ${gate.n}`);
       } else if (!gate) {
         await mark("gate at an unplanned km", { km: d });
-        await clickChoice("/continue/i");
+        await pressKey(" ", "Space  Continue");
       }
     } else if (await resumeIfPaused()) {
       await mark("resume after pause");
@@ -234,11 +342,15 @@ async function takeDemo(t) {
   // slow scroll through the report (whichever of the dialog and its section scrolls)
   await mark("report scroll start");
   const steps = Math.round(t.reportScroll * 30);
+  // mouse-wheel scrolling over the dialog, in small steps like a trackpad
   for (let i = 0; i < steps; i++) {
-    const moved = await evaluate(`(() => { const els = [document.getElementById("dlg-report"), document.getElementById("report")];
-      for (const e of els) if (e && e.scrollHeight > e.clientHeight + 2 && e.scrollTop + e.clientHeight < e.scrollHeight - 1) { e.scrollTop += ${t.reportScrollPx ?? 4}; return true; } return false; })()`);
-    if (!moved) break;
+    const before = await evaluate(`[document.getElementById("dlg-report")?.scrollTop || 0, document.getElementById("report")?.scrollTop || 0].join(",")`);
+    await wheel("#dlg-report", t.reportScrollPx);
     await sleep(33);
+    if (i > 10 && i % 10 === 0) {
+      const after = await evaluate(`[document.getElementById("dlg-report")?.scrollTop || 0, document.getElementById("report")?.scrollTop || 0].join(",")`);
+      if (after === before) break; // the end of the report
+    }
   }
   await mark("report scroll end");
   await sleep((t.reportEndHold ?? 1.5) * 1000);
@@ -268,7 +380,7 @@ async function takeFailure(t) {
         await mark("gate", { km: d, hudTotal: await hudTotal() });
         await sleep(t.gateHold * 1000);
         await setAntiIce(false);
-        await clickChoice("/continue/i");
+        await pressKey(" ", "Space  Continue");
       }
     } else await resumeIfPaused();
     await sleep(150);

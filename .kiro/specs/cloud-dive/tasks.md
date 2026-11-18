@@ -572,6 +572,24 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
     `final-estimated.srt`; slow push-in on held gates; freeze check clean outside stills and cards; 17 tests. Kiro scenes
     (T7), README Limits and the end card are placeholder cards until 23.4
   - _Requirements: R12.1, R23.7_
+- [ ] 24. (k) Gate clarity and real input (revision e, decision G17)
+- [x] 24.1 Settings line, evidence at the target and arrows (design 16)
+  - `gate-controls.js` `pathSummary`, `pathLines`; `controls.js` `#gate-path`; `panel.js` `altitudeReadout`; HUD lane arrow
+  - _Requirements: R24.1, R24.2_
+- [x] 24.2 Key line, cost rules card and ice marks
+  - `KEY_HINT`; `cost-rules.js` and `<details id="cost-rules">`; tick at 50 and the marks in words
+  - _Requirements: R24.3, R24.4, R24.5_
+- [x] 24.3 Each value once in the cockpit view, and the phone gate layout
+  - `game.css`; `gate-panel.js` one scroll per gate; checked with the Playwright MCP server at 390 x 844
+  - _Requirements: R24.6, R24.7_
+- [x] 24.4 Tests and checks
+  - `tests/js/gate-clarity.test.mjs`; wording scan; `node --test`; `layout_check` (temp output); `video_mode_check`
+  - _Requirements: R24.1 to R24.7, R24.9_
+- [x] 24.5 Real key and mouse input in the take recorder, key chips in the edit
+  - `record_takes.mjs` (CDP input events, `key` markers); `make_final.py` key chips; new takes and rough cut
+  - Layout fixed at 1920x1080 CSS pixels on any 16:9 screen (`browser_guard` `deviceScale`; a 4K screen gives
+    3840x2160 takes, `scale` 2 in the markers file, mapped in `make_final.py`)
+  - _Requirements: R24.8_
 - [ ] 23.4 Final recording and edit on the frozen build (owner, after 2026-11-28)
   - _Requirements: R12.1, R23.7_
 ## Notes
@@ -651,7 +669,10 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 51, "tasks": ["22.6"] },
     { "wave": 52, "tasks": ["22.7", "23.2"] },
     { "wave": 53, "tasks": ["23.3"] },
-    { "wave": 54, "tasks": ["23.4"] }
+    { "wave": 54, "tasks": ["24.1", "24.2"] },
+    { "wave": 55, "tasks": ["24.3", "24.4"] },
+    { "wave": 56, "tasks": ["24.5"] },
+    { "wave": 57, "tasks": ["23.4"] }
   ]
 }
 ```

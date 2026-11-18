@@ -128,3 +128,55 @@ def test_synthetic_push_only_on_real_speed_takes_unless_set():
     assert mf.push_amount(still, 0.05) == 0.0
     assert mf.push_amount(forced, 0.05) == 0.02
     assert mf.push_amount(off, 0.05) == 0.0
+
+
+KEYS = [
+    {"t": 10.0, "event": "key", "key": "\u2191  Climb over"},
+    {"t": 10.5, "event": "key", "key": "\u2191  Climb over"},
+    {"t": 12.0, "event": "key", "key": "A  Anti-ice"},
+    {"t": 13.0, "event": "click", "x": 1700, "y": 600, "label": "Fly through"},
+    {"t": 13.2, "event": "click", "x": 100, "y": 100, "label": "outside"},
+    {"t": 30.0, "event": "key", "key": "Space  Continue"},
+]
+
+
+def test_synthetic_input_overlays_chips_in_video_time_and_no_overlap():
+    chips, rings = mf.input_overlays(KEYS, 9.0, 6.0, 1.0)
+    assert [c["text"] for c in chips] == ["\u2191  Climb over", "\u2191  Climb over", "A  Anti-ice"]
+    assert chips[0]["at"] == 1.0 and chips[0]["dur"] == 0.5  # cut at the next key
+    assert chips[2]["dur"] == mf.CHIP_S
+    assert [r["label"] for r in rings] == ["Fly through", "outside"]
+
+
+def test_synthetic_input_overlays_map_clicks_through_the_crop():
+    crop = (1500, 400, 400, 225)
+    _chips, rings = mf.input_overlays(KEYS, 9.0, 6.0, 1.0, crop)
+    assert len(rings) == 1  # the click outside the crop is dropped
+    assert rings[0]["x"] == round((1700 - 1500) * mf.W / 400) and rings[0]["y"] == round((600 - 400) * mf.H / 225)
+
+
+def test_synthetic_scale_markers_maps_css_rects_and_clicks_to_take_pixels():
+    marks = mf.scale_markers(MARKERS + [{"t": 3.0, "event": "click", "x": 100, "y": 50, "label": "b"}], 2.0)
+    assert marks[0]["#hud"] == {"x": 0, "y": 0, "w": 3840, "h": 120}
+    assert marks[1]["rects"]["#gate-panel"] == {"x": 3000, "y": 80, "w": 800, "h": 240}
+    assert marks[-1]["x"] == 200 and marks[-1]["y"] == 100 and marks[-1]["t"] == 3.0
+    assert MARKERS[0]["#hud"]["w"] == 1920  # the input is not changed
+    assert mf.scale_markers(MARKERS, 1.0) is MARKERS
+
+
+def test_synthetic_zoom_on_a_scale_2_take_is_the_same_view_as_scale_1():
+    """A 4K take of the 1920x1080 layout gives the same crop, doubled, so the edit looks the same on any screen."""
+    one = mf.zoom_crop(mf.zoom_rect([600, 440, 700, 150], MARKERS, 9.0), 40)
+    two = mf.zoom_crop(mf.zoom_rect([600, 440, 700, 150], mf.scale_markers(MARKERS, 2.0), 9.0, 2.0), 40, scale=2.0)
+    assert all(abs(b - 2 * a) <= 2 for a, b in zip(one, two))
+    right = mf.zoom_crop(mf.zoom_rect("#gate-panel", mf.scale_markers(MARKERS, 2.0), 9.0), 40, scale=2.0)
+    assert right[0] + right[2] <= 3840 and right[0] > 1920  # kept inside the 4K frame, not clamped to 1920
+    _c, rings = mf.input_overlays(mf.scale_markers(KEYS, 2.0), 9.0, 6.0, 1.0, None, 2.0)
+    _c, rings1 = mf.input_overlays(KEYS, 9.0, 6.0, 1.0)
+    assert [(r["x"], r["y"]) for r in rings] == [(r["x"], r["y"]) for r in rings1]
+
+
+def test_synthetic_input_overlays_none_on_fast_ramps_and_slow_motion_scales_time():
+    assert mf.input_overlays(KEYS, 9.0, 6.0, 2.0) == ([], [])
+    chips, _ = mf.input_overlays(KEYS, 9.0, 6.0, 0.5)
+    assert chips[0]["at"] == 2.0

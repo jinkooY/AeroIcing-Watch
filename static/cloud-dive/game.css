@@ -72,7 +72,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .hud-ice dd { display: flex; align-items: center; gap: 6px; }
 
 /* Ice bar: stripes plus a number, so it reads in greyscale (R10.1). */
-.ice-bar { width: 56px; height: 10px; border: 1px solid var(--muted); border-radius: 3px; overflow: hidden; background: #0c1015; }
+.ice-bar { position: relative; width: 56px; height: 10px; border: 1px solid var(--muted); border-radius: 3px; overflow: hidden; background: #0c1015; }
+/* Tick at 50 = the ice gate (revision e, R24.5). */
+.ice-bar::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--text); opacity: 0.85; }
 .ice-fill {
   height: 100%; width: 0%;
   background: repeating-linear-gradient(45deg, #d6dde6 0 4px, #6b7888 4px 8px);
@@ -281,7 +283,25 @@ body.view-cockpit .col-left,
 body.view-cockpit .scene-wrap,
 body.view-cockpit #controls .ctl-row { display: none; }
 body.view-cockpit .col-right { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
-body.view-cockpit .gate-panel { height: auto; min-height: 88px; max-height: 150px; flex: 0 0 auto; }
+body.view-cockpit .gate-panel { height: auto; min-height: 88px; max-height: 280px; flex: 0 0 auto; }
+/* Revision e (R24.6): the cockpit bottom bar carries fuel, ice index, anti-ice and altitude, so the HUD keeps lane and
+   distance only and each value shows once. The 2D view keeps the full HUD (it has no bottom bar). */
+body.view-cockpit .hud-total,
+body.view-cockpit .hud-ice,
+body.view-cockpit .hud-antiice,
+body.view-cockpit .hud-altitude { display: none; }
+/* Settings line of the gate panel (R24.1, R24.2): cockpit view only. */
+.gate-path { display: none; margin: 4px 0 0; }
+body.view-cockpit .gate-path:not([hidden]) { display: block; }
+.gate-path-line { display: block; font-weight: 600; }
+.gate-path-line + .gate-path-line { font-weight: 400; }
+/* Keys in words and the cost rules card (R24.3, R24.4). */
+.gate-keys { margin: 6px 0 0; font-size: 0.8rem; color: var(--muted); }
+.cost-rules { margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px; background: #16202b; }
+.cost-rules summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.cost-rules summary:focus-visible { outline: 3px solid #1a5fb4; outline-offset: 2px; }
+.cost-rules ul { margin: 0 0 6px; padding-left: 18px; font-size: 0.85rem; line-height: 1.35; }
+.cost-rules li + li { margin-top: 3px; }
 body.view-cockpit .gate-inset { height: 140px; }
 /* Stacked layouts (narrow or portrait): the overlay cockpit needs its own height, because the page scrolls. */
 @media (max-width: 1279px), (orientation: portrait) {
@@ -290,5 +310,13 @@ body.view-cockpit .gate-inset { height: 140px; }
 @media (max-width: 760px) {
   body.view-cockpit .flight { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
   body.view-cockpit .cockpit-view { aspect-ratio: auto; min-height: 420px; }
-  body.view-cockpit .col-right { max-height: 45dvh; }
+  /* Revision e (R24.7): on a phone the page scrolls (no inner scroll box), and the gate buttons come right under the
+     windshield, then the gate text, the key line, the side-view inset and the cost rules. */
+  body.view-cockpit .col-right { max-height: none; overflow: visible; }
+  body.view-cockpit #gate-choices:not([hidden]) { display: contents; }
+  body.view-cockpit #gate-choices .gate-choices { order: 1; margin-top: 0; }
+  body.view-cockpit #controls { order: 2; }
+  body.view-cockpit #gate-choices .gate-keys { order: 3; margin-top: 0; }
+  body.view-cockpit #gate-choices .gate-inset { order: 4; }
+  body.view-cockpit #gate-choices .cost-rules { order: 5; margin-top: 0; }
 }

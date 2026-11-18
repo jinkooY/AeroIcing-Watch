@@ -526,6 +526,33 @@ buttons and the mouse pointer, and keep the game note, the source line, the leve
 page without this requirement. The mode changes display only; no engine input or output.
 23.7 THE SUBMISSION VIDEO SHALL carry burned-in captions that do not cover the game note and
 the source line, and a separate SRT file SHALL be uploaded with it.
+### R24 Gate clarity and real input in the takes (revision e)
+User story: as a player at a gate, I want to see at once what my presses changed and what the
+game counts, so that I can choose without the game choosing for me. R6.5 and R17.3 still hold:
+no cost preview, no recommended choice, no ranking of lanes.
+24.1 WHILE the player can change the settings (a gate, the start, a pause), THE COCKPIT VIEW SHALL
+show the settings in words, "Your settings: lane N, A ft, anti-ice on/off", and a target that
+differs from the aircraft value as "now -> target". The bottom-bar altitude and the HUD lane show
+the same arrow. The line updates on every press.
+24.2 IN THE SAME PLACE, THE GATE PANEL SHALL name the evidence at the target, "Next K km at the
+target: <level>", using the rule of the sky gate frames (worst of the next three cells, Not
+assessed above Not indicated), so the text and the frames always agree.
+24.3 THE GATE BUTTONS SHALL have a key line in words (arrows, A, Space) under them.
+24.4 A "How costs work (game model, illustrative)" card, closed until the player opens it, SHALL
+state the cost rules of the engine in words: fuel per km and head-wind, anti-ice fuel, ice
+index rise and drag, climb fuel, the longer path of a lane change, and the ice gate at 50 and
+the forced diversion at 100. It SHALL carry no dollar value and no number from the flight.
+24.5 THE ICE INDEX METER SHALL show a tick at 50 and the words "50: ice gate, 100: forced
+diversion".
+24.6 IN THE COCKPIT VIEW each value SHALL show once: the bottom bar carries fuel, ice index,
+anti-ice and altitude; the HUD keeps lane and distance. The 2D view keeps the full HUD.
+24.7 ON A SCREEN 760 px wide or narrower, the gate buttons SHALL follow the windshield directly,
+and when a gate opens THE PAGE SHALL scroll, once, so that "Continue" and the settings line are
+on screen (390 x 844: windshield, buttons and settings line together).
+24.8 THE TAKE RECORDER SHALL press the game's own keys and click with mouse events, as a player
+does, at a human pace, and SHALL mark each press, so the edit can show the key on screen.
+24.9 Revision e changes display and tooling only. The engine, the cost model, the evidence
+levels, the sky gates and every case file stay unchanged (R22.11).
 ## 5. Decision log (2026-11-13)
 
 Sections 1-4 above predate these decisions. Where they conflict, this log
@@ -650,6 +677,7 @@ Not verified: the real anti-ice fuel penalty (no source found; the anti-ice fact
 | G14 | **Owner: optional cost pop-up.** After 16, a short "+$N this segment" pop-up shows the actual cost since the previous stop. It is shown after the cost is incurred, never as a preview (R18.5, R6.5). |
 | G15 | **Owner approved visual polish group 21 (revision c, R22).** Defaults: the gate frame level is the worst level of the next 3 cells in that lane at the target altitude; frost is about 0.5 opacity at ice index 25 and 1.0 at 50 or more; the report reads "$N more than / less than Straight-ahead" with "$N above Best" below it. Engine, cost model, case files and evidence values stay unchanged. |
 | G16 | **Owner approved revision d (R23), 2026-11-16.** (1) Cloud look: deterministic, display-only noise (hash of lane, step, puff index) replaces the "no noise" sentence of design 14.4 for drawing only; the engine, solver and evidence path still use no random number. (2) Capture mode `?video=1` (R23.6). (3) Burned-in captions plus a separate SRT (R23.7). Not decided: synthesized sound effects (P-23). Spike result: a headed kiosk window at 1920 x 1080, device scale 1, recorded with ffmpeg `ddagrab` and NVENC, gives about 58 captured frames per second on the measured laptop (`tools/video/capture_pattern_check.mjs`). |
+| G17 | **Owner approved revision e (R24), 2026-11-18.** After a real-phone check the owner found the bottom data hard to read and the choice unclear, and asked for the takes to look like real play. Approved: settings line with "now -> target", evidence at the target, key line, a "How costs work" card in words (no dollar values; unit prices were not chosen, so R6.5 and R17.3 stay as they are), ice-index marks, each value once in the cockpit view, the phone gate layout, and real key and mouse input in the take recorder. Kept: no cost preview, no recommended choice. |
 
 ## 6. Official rules digest (read in full on 2026-11-13)
 

@@ -354,7 +354,8 @@ function renderHud(s) {
   $("hud-ice-text").textContent = `${st.ice} / ${engine.ICE_MAX}`;
   $("hud-anti-ice").textContent = st.antiIce ? "On" : "Off";
   $("hud-alt").textContent = formatFt(c.altsFt[st.alt]);
-  $("hud-lane").textContent = formatLane(c, st.lane);
+  // A changed target lane shows as "now -> target" (revision e, R24.1).
+  $("hud-lane").textContent = formatLane(c, st.lane) + (st.targetLane !== st.lane ? ` \u2192 ${st.targetLane + 1}` : "");
   const flown = Math.min(engine.stateDistanceKm(st), c.distanceKm);
   $("hud-dist").textContent = `${Math.round(flown)} of ${Math.round(c.distanceKm)} km`;
 }

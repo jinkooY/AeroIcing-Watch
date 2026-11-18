@@ -22,6 +22,7 @@ const TEXT = Object.freeze({
   fuel: "Fuel cost so far (illustrative)",
   fuelWithDeparture: "Fuel cost so far (illustrative), including Departure climb",
   iceHelp: "Game value from 0 to 100. Not a weather statement.",
+  iceMarks: "50: ice gate \u00b7 100: forced diversion",
   antiIce: "Anti-ice",
   lampOn: "Wing-heat lamp on",
   lampOff: "Wing-heat lamp off",
@@ -78,6 +79,17 @@ export function altitudeTape(altFt, rangeFt = TAPE_RANGE_FT, tickFt = TAPE_TICK_
     ticks.push({ ft, frac: (ft - (alt - rangeFt)) / (2 * rangeFt) });
   }
   return { altFt: alt, readout: formatFeet(alt), ticks };
+}
+
+// Altitude readout of the bottom bar. In cruise a target that differs from the aircraft altitude shows as
+// "now -> target" (revision e, R24.1). Before cruise (runway, climb) it is the pose altitude only.
+export function altitudeReadout(altFt, phase, view) {
+  const base = `${TEXT.altitude}: ${formatFeet(altFt)}`;
+  const lead = phase === "ready" || phase === "takeoff" || phase === "climb";
+  const c = view && view.engineCase;
+  const st = view && view.state;
+  if (lead || !c || !st || st.targetAlt === st.alt) return base;
+  return `${base} \u2192 ${formatFeet(c.altsFt[st.targetAlt])}`;
 }
 
 // Legend strip: the four exact level names in engine order, each with its pattern word (R16.8, R10.1).
@@ -269,8 +281,12 @@ export function createPanel(root, deps = {}) {
   const iceValue = el("span", { class: "cp-ice-value" }, `0 of ${engine.ICE_MAX}`);
   ice.setAttribute("title", TEXT.iceHelp); // the help sentence moves into the tooltip (design 15.1)
   const iceRow = el("div", { class: "cp-ice-row" });
-  iceRow.append(iceMeter, iceValue);
-  ice.append(iceLabel, iceRow);
+  // Revision e (R24.5): a tick at 50 on the meter and the two game marks in words (ice gate, forced diversion).
+  const iceScale = el("span", { class: "cp-ice-scale" });
+  iceScale.append(iceMeter);
+  iceRow.append(iceScale, iceValue);
+  const iceMarks = el("span", { class: "cp-ice-marks" }, TEXT.iceMarks);
+  ice.append(iceLabel, iceRow, iceMarks);
 
   const sw = el("div", { class: "cp-switch" });
   const swBtn = el("button", { type: "button", role: "switch", "aria-checked": "false", class: "cp-antiice" }, `${TEXT.antiIce}: off`);
@@ -345,7 +361,7 @@ export function createPanel(root, deps = {}) {
     const l = antiIceView(scene.effects ? scene.effects.wingLamp : p.antiIce);
     lamp.className = l.on ? "cp-lamp cp-lamp-on" : "cp-lamp";
     lampText.textContent = l.lamp;
-    tapeValue.textContent = `${TEXT.altitude}: ${formatFeet(p.altFt)}`;
+    tapeValue.textContent = altitudeReadout(p.altFt, scene.phase, view);
 
     const key = (p.legend || []).join("|");
     if (key !== legendKey) {

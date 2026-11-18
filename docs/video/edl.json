@@ -14,9 +14,9 @@
         "text": [{ "text": "Cloud Dive", "at": 0.8, "dur": 4.2, "pos": "center", "size": 120 }] }
     ],
     "p1": [
-      { "take": "T1-list", "from": 0.6, "to": "case open click", "dur": 4.0 },
+      { "take": "T1-list", "from": 0.6, "to": "case open click+0.3", "dur": 4.0 },
       { "take": "T1-ready", "from": 0.7,
-        "text": [{ "text": "JFK to Nashville  |  1,232 km  |  5 lanes  |  real satellite and forecast", "at": 0.3, "dur": 4.0, "pos": "lower-left", "size": 38 }] }
+        "text": [{ "text": "JFK to Nashville  |  1,232 km  |  5 lanes  |  real satellite and forecast", "at": 0.3, "dur": 4.0, "pos": "top-center", "size": 38 }] }
     ],
     "p2": [
       { "clip": "data/video/assets/route-anim.mp4", "from": 0.0, "to": 8.0 }
@@ -30,10 +30,10 @@
       { "take": "T2", "from": "gate 1+9.6", "zoom": "#gate-panel", "pad": 60 }
     ],
     "g4": [
-      { "take": "T2", "from": "gate 1+13.7", "box": [{ "rect": "#gate-choices", "at": 0.2, "dur": 2.8 }] }
+      { "take": "T2", "from": "cost rules open+0.3", "zoom": "#gate-choices", "pad": 30 }
     ],
     "n2": [
-      { "take": "T2", "from": "gate 1+17.6", "zoom": ["#hud-alt", "#hud-anti-ice"], "pad": 30 }
+      { "take": "T2", "from": "climb-0.6", "zoom": "#gate-panel", "pad": 40 }
     ],
     "n3": [
       { "take": "T2", "from": "continue 1", "to": "gate 4", "dur": 1.2 },
@@ -42,7 +42,7 @@
       { "take": "T2", "from": "gate 5+0.2", "text": [{ "text": "Observed", "at": 0.1, "dur": 1.2, "pos": "top-left", "size": 48, "color": "orange" }] }
     ],
     "g3": [
-      { "take": "T2", "from": "gate 5+1.4", "dur": 3.6, "zoom": [600, 440, 700, 150], "pad": 40 },
+      { "take": "T2", "from": "gate 5+1.45", "dur": 3.0, "zoom": [600, 440, 700, 150], "pad": 40 },
       { "take": "T2", "from": "2D view on+0.3" }
     ],
     "n4": [

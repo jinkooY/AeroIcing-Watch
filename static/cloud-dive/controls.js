@@ -4,7 +4,8 @@
 // Space = continue or pause. Buttons are at least 44 px high for pointer and touch.
 
 import { createController } from "./controller.js";
-import { keyAction, dispatchAction, GATE_LABELS } from "./gate-controls.js";
+import { keyAction, dispatchAction, GATE_LABELS, pathSummary, pathLines } from "./gate-controls.js";
+import { levelNames } from "./render.js";
 
 // The one label of the button that starts or resumes the flight; the status text names the same constant.
 const goLabel = GATE_LABELS.continue;
@@ -41,7 +42,10 @@ export function initControls(deps) {
   const gatePanel = el("div", { id: "gate-panel", class: "gate-panel", role: "group", tabindex: "0" });
   const gateTitle = el("h3", { id: "gate-title", tabindex: "-1", text: "Decision gate" });
   const gateText = el("p", { id: "gate-text" });
-  gatePanel.append(gateTitle, gateText);
+  // Revision e (R24.1, R24.2): the settings and the evidence at the target, updated on every press. Cockpit view only
+  // (CSS); the 2D view shows the same targets in its own controls.
+  const gatePath = el("p", { id: "gate-path", class: "gate-path", role: "status", "aria-live": "polite", "aria-atomic": "true" });
+  gatePanel.append(gateTitle, gateText, gatePath);
   gatePanel.setAttribute("aria-labelledby", "gate-title");
 
   const laneButtons = [];
@@ -90,18 +94,19 @@ export function initControls(deps) {
 
   // One sentence per reason that holds at the boundary (design sections 7 and 9). No costs, no advice.
   function reasonText(c, st, why) {
-    if (why === "ice") return "Ice index (game model) reached 50 of 100.";
+    if (why === "ice") return "Ice index (game model) reached 50 of 100. At 100 the flight ends in a forced diversion.";
     if (why === "exit") {
-      return "The aircraft is outside Possible and Observed cells with anti-ice on, and none follow within the next 5 segments.";
+      return "Anti-ice is on, and the next 5 segments at your settings have no Possible (forecast only) or Observed supercooled layer cell.";
     }
     const idx = st.announcedEntry;
     const km = idx == null ? null : Math.max(0, (idx - st.step) * c.stepKm);
     const where = km === null ? "ahead" : km === 0 ? "at the next segment" : `in about ${Math.round(km)} km`;
-    return `Cells at the Possible (forecast only) or Observed supercooled layer level begin ${where} on the current targets.`;
+    return `Possible (forecast only) or Observed cells begin ${where} at your settings.`;
   }
 
+  // Revision e (R24.1): shorter; the settings line below names what can be changed.
   function gateMessage(c, st, reasons) {
-    return `${reasons.map((why) => reasonText(c, st, why)).join(" ")} Set lane, altitude and anti-ice, then continue.`;
+    return `${reasons.map((why) => reasonText(c, st, why)).join(" ")} Keep or change the settings, then continue.`;
   }
 
   function gateHeading(reasons) {
@@ -163,6 +168,10 @@ export function initControls(deps) {
     gatePanel.classList.toggle("is-gate", mode === "gate");
     gateTitle.textContent = mode === "gate" ? gateHeading(reasons.length ? reasons : [why]) : "Flight status";
     gateText.textContent = message;
+    // Settings line while the player can change them (a gate, the start, a pause); hidden while fast-forwarding.
+    const lines = active && mode !== "running" ? pathLines(pathSummary(c, st), levelNames(s.caseData)) : [];
+    gatePath.hidden = !lines.length;
+    gatePath.replaceChildren(...lines.map((t) => el("span", { class: "gate-path-line", text: t })));
 
     // Live region: announce only when the situation changes, not on every step.
     const key = `${mode}|${reasons.join("+") || why}|${mode === "gate" || mode === "ended" ? st.step : ""}`;
@@ -183,8 +192,11 @@ export function initControls(deps) {
     return t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
   }
 
+  // A focused button that is not a game control keeps its own keys. The cockpit gate buttons and the cockpit panel
+  // switch are game controls too (revision e, found by the real-input take recorder: after a mouse click on "Fly
+  // through" the arrow keys, A and Space were ignored until focus moved).
   function outsideButton(t) {
-    return t && t.tagName === "BUTTON" && !root.contains(t);
+    return t && t.tagName === "BUTTON" && !root.contains(t) && !(t.closest && t.closest("#gate-choices, #cockpit-panel"));
   }
 
   document.addEventListener("keydown", (e) => {

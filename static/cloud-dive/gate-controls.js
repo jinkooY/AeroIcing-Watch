@@ -3,6 +3,7 @@
 // shows a cost and nothing picks a choice for the player (R6.5, R9.4, R17.3).
 
 import * as engine from "./engine.js";
+import { gateLevel, GATE_LOOKAHEAD_CELLS } from "./scene.js";
 
 export const TOUCH_MIN_PX = 44; // R17.4, R10.2
 export const ALT_STEP = 1; // altitude index step = 1,000 ft within the block (R17.2)
@@ -87,6 +88,43 @@ export function gateButtons(c, state, mode) {
   list.push({ action: "toggleRun", label: mode === "running" ? GATE_LABELS.pause : GATE_LABELS.continue, disabled: !active });
   return list;
 }
+
+// Revision e (R24.1, R24.2): the player's own settings in plain words, and the evidence at the target. The level
+// uses the same rule as the sky gate frames (scene.gateLevel: worst of the next three cells of the target lane at the
+// target altitude), so the text and the frames always agree. Settings and evidence only: no cost field and no
+// recommendation (R6.5, R17.3).
+export function pathSummary(c, state) {
+  if (!c || !state) return null;
+  return {
+    laneNow: state.lane + 1,
+    laneTarget: state.targetLane + 1,
+    altNowFt: c.altsFt[state.alt],
+    altTargetFt: c.altsFt[state.targetAlt],
+    antiIce: Boolean(state.antiIce),
+    aheadLevel: gateLevel(c, state.targetLane, state.step, state.targetAlt),
+    aheadKm: Math.round(GATE_LOOKAHEAD_CELLS * c.stepKm),
+  };
+}
+
+const fmtFt = (v) => `${Math.round(v).toLocaleString("en-US")} ft`;
+const ARROW = "\u2192";
+
+// Two lines for the gate panel. A changed target shows as "now -> target", so a press has a visible result at once.
+export function pathLines(summary, names) {
+  if (!summary) return [];
+  const s = summary;
+  const lane = s.laneTarget === s.laneNow ? `lane ${s.laneNow}` : `lane ${s.laneNow} ${ARROW} ${s.laneTarget}`;
+  const alt = s.altTargetFt === s.altNowFt ? fmtFt(s.altNowFt) : `${fmtFt(s.altNowFt)} ${ARROW} ${fmtFt(s.altTargetFt)}`;
+  // an unknown level never prints an empty name: it falls back to level 0, Not assessed
+  const name = (Array.isArray(names) && (names[s.aheadLevel] || names[0])) || "Not assessed";
+  return [
+    `Your settings: ${lane}, ${alt}, anti-ice ${s.antiIce ? "on" : "off"}.`,
+    `Next ${s.aheadKm} km at the target: ${name}.`,
+  ];
+}
+
+// Key line under the gate buttons (R17.4 keys, shown in words so a viewer of the video can follow them).
+export const KEY_HINT = "Keys: \u2191 \u2193 altitude, \u2190 \u2192 lane, A anti-ice, Space continue.";
 
 // The 2D side-view inset is shown at a gate only (R17.5).
 export const insetVisible = (mode) => mode === "gate";

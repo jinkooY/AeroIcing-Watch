@@ -18,6 +18,7 @@ Shot kinds (all times in seconds):
   "box": [{"rect": "#gate-choices", "at": 0, "dur": 2.5}] a highlight frame (rectangles in take pixels, before zoom)
   "push": 0.05  slow push-in over the shot (the EDL "push" is the default for takes at about real speed; 0 turns it off)
   "dim": 0.5    darkens the picture (for a large number laid over it)
+  "keys": false  no key chips or click rings on this take shot (the EDL "keys" is the default, true)
 
 Output: data/video/final-<voice>.mp4 and final-<voice>.srt (the separate caption file for YouTube). Captions sit above
 the game note and the source line at the bottom of the screen (R23.7). Without a narration WAV the video is silent and
@@ -82,10 +83,31 @@ def marker_rect(selector: str, markers: list[dict], at: float) -> list[int] | No
     return best
 
 
-def zoom_rect(z, markers: list[dict], at: float) -> list[float] | None:
-    """The rectangle to zoom on: [x, y, w, h] as given, one selector, or a list of selectors (their union)."""
+def scale_markers(markers: list[dict], scale: float) -> list[dict]:
+    """Markers with their rectangles and click points mapped from CSS pixels to take pixels (x `scale`).
+    A take recorded on a 4K screen is 3840x2160 for a 1920x1080 CSS layout (scale 2)."""
+    if abs(scale - 1.0) < 1e-6:
+        return markers
+    out = []
+    for m in markers:
+        n = dict(m)
+        rect = lambda v: isinstance(v, dict) and {"x", "y", "w", "h"} <= v.keys()
+        for k, v in m.items():
+            if rect(v):
+                n[k] = {kk: vv * scale for kk, vv in v.items()}
+            elif k == "rects" and isinstance(v, dict):
+                n[k] = {s: ({kk: vv * scale for kk, vv in r.items()} if rect(r) else r) for s, r in v.items()}
+        if m.get("event") == "click" and "x" in m:
+            n["x"], n["y"] = m["x"] * scale, m["y"] * scale
+        out.append(n)
+    return out
+
+
+def zoom_rect(z, markers: list[dict], at: float, scale: float = 1.0) -> list[float] | None:
+    """The rectangle to zoom on, in take pixels: [x, y, w, h] in CSS pixels (x `scale`), one selector, or a list of
+    selectors (their union; the markers are already in take pixels)."""
     if isinstance(z, list) and z and all(isinstance(v, (int, float)) for v in z):
-        return [float(v) for v in z]
+        return [float(v) * scale for v in z]
     rects = [marker_rect(s, markers, at) for s in ([z] if isinstance(z, str) else z)]
     rects = [r for r in rects if r]
     if not rects:
@@ -95,15 +117,17 @@ def zoom_rect(z, markers: list[dict], at: float) -> list[float] | None:
     return [x0, y0, x1 - x0, y1 - y0]
 
 
-def zoom_crop(rect: list[float], pad: float = 40.0, min_w: float = 480.0) -> tuple[int, int, int, int]:
-    """A 16:9 crop around `rect` (x, y, w, h) with padding, kept inside the 1920x1080 frame. Returns x, y, w, h (even)."""
+def zoom_crop(rect: list[float], pad: float = 40.0, min_w: float = 480.0, scale: float = 1.0) -> tuple[int, int, int, int]:
+    """A 16:9 crop around `rect` (x, y, w, h, take pixels) with padding, kept inside the take frame (1920x1080 x `scale`;
+    `pad` and `min_w` are CSS pixels). Returns x, y, w, h (even)."""
     x, y, w, h = rect
+    fw, fh, pad, min_w = W * scale, H * scale, pad * scale, min_w * scale
     cw = max(w + 2 * pad, (h + 2 * pad) * W / H, min_w)
-    cw = min(cw, W)
+    cw = min(cw, fw)
     ch = cw * H / W
     cx, cy = x + w / 2, y + h / 2
-    left = min(max(cx - cw / 2, 0), W - cw)
-    top = min(max(cy - ch / 2, 0), H - ch)
+    left = min(max(cx - cw / 2, 0), fw - cw)
+    top = min(max(cy - ch / 2, 0), fh - ch)
     ev = lambda v: int(round(v / 2) * 2)
     return ev(left), ev(top), ev(cw), ev(ch)
 
@@ -164,6 +188,38 @@ def plan_line(line: str, slot_len: float, shots: list[dict], markers_of) -> list
         else:
             raise ValueError(f"{line}: unknown shot {s}")
     return pieces
+
+
+CHIP_S = 1.1  # how long a key chip stays on screen (video seconds)
+
+
+def input_overlays(markers: list[dict], start: float, span: float, speed: float,
+                   crop: tuple[int, int, int, int] | None = None, scale: float = 1.0) -> tuple[list[dict], list[dict]]:
+    """Key chips and click rings for one take piece (revision e, R24.8), in video time from the piece start.
+    A chip lasts CHIP_S or until the next chip. A click point is mapped through the zoom crop to output pixels;
+    a click outside the crop gives no ring. Pieces played faster than 1.3x get none (they would only flash)."""
+    if speed > 1.3:
+        return [], []
+    events = [m for m in markers if m.get("event") in ("key", "click") and start - 1e-6 <= m["t"] <= start + span]
+    chips, rings = [], []
+    keys = [m for m in events if m["event"] == "key" and m.get("key")]
+    for i, m in enumerate(keys):
+        a = (m["t"] - start) / speed
+        nxt = (keys[i + 1]["t"] - start) / speed if i + 1 < len(keys) else a + CHIP_S
+        chips.append({"text": m["key"], "at": round(a, 3), "dur": round(max(0.25, min(CHIP_S, nxt - a)), 3)})
+    for m in events:
+        if m["event"] != "click" or "x" not in m:
+            continue
+        x, y = float(m["x"]), float(m["y"])
+        if crop:
+            cx, cy, cw, ch = crop
+            if not (cx <= x <= cx + cw and cy <= y <= cy + ch):
+                continue
+            x, y = (x - cx) * W / cw, (y - cy) * H / ch
+        else:  # take pixels to output pixels (the whole frame is scaled to 1920x1080)
+            x, y = x / scale, y / scale
+        rings.append({"x": round(x), "y": round(y), "at": round((m["t"] - start) / speed, 3), "label": m.get("label", "")})
+    return chips, rings
 
 
 def push_amount(p: "Piece", default: float) -> float:
@@ -248,9 +304,14 @@ def card_png(text: str, placeholder: bool, path: Path) -> Path:
     return path
 
 
-def render_piece(ffmpeg: str, p: Piece, idx: int, fps: int, markers_of, work: Path, default_push: float = 0.0) -> Path:
+def render_piece(ffmpeg: str, p: Piece, idx: int, fps: int, markers_of, work: Path, default_push: float = 0.0,
+                 default_keys: bool = True, scale: float = 1.0) -> Path:
+    """`scale` is take pixels per CSS pixel (the markers file's "scale"); EDL rectangles are in CSS pixels."""
     out = work / f"{idx:03d}-{p.line}.mp4"
     vf: list[str] = []
+    crop = None
+    chips: list[dict] = []
+    rings: list[dict] = []
     inp: list[str]
     if p.kind == "take":
         inp = ["-ss", f"{p.start:.3f}", "-t", f"{p.span:.3f}", "-i", str(TAKES / f"{p.source}.mp4")]
@@ -265,24 +326,30 @@ def render_piece(ffmpeg: str, p: Piece, idx: int, fps: int, markers_of, work: Pa
     if p.kind == "take":
         mk = markers_of(p.source)
         for b in p.shot.get("box", []):
-            r = b["rect"] if isinstance(b["rect"], list) else marker_rect(b["rect"], mk, p.start)
+            r = [v * scale for v in b["rect"]] if isinstance(b["rect"], list) else marker_rect(b["rect"], mk, p.start)
             if r:
                 a = float(b.get("at", 0)) * p.speed
                 e = a + float(b.get("dur", 2.5)) * p.speed
                 vf.append(f"drawbox=x={r[0] - 6}:y={r[1] - 6}:w={r[2] + 12}:h={r[3] + 12}:color=0xFFB454@0.95:t=6:enable='between(t,{a:.2f},{e:.2f})'")
         z = p.shot.get("zoom")
         if z:
-            r = zoom_rect(z, mk, p.start)
+            r = zoom_rect(z, mk, p.start, scale)
             if r is None:
                 raise KeyError(f"{p.line}: no rectangle recorded for {z}")
-            x, y, w, h = zoom_crop(r, float(p.shot.get("pad", 40)))
+            x, y, w, h = zoom_crop(r, float(p.shot.get("pad", 40)), scale=scale)
             vf.append(f"crop={w}:{h}:{x}:{y}")
+            crop = (x, y, w, h)
+        if p.shot.get("keys", default_keys):
+            chips, rings = input_overlays(mk, p.start, p.span, p.speed, crop, scale)
     if p.shot.get("dim"):  # takes and clips: darkens the picture under a large text
         vf.append(f"colorlevels=romax={1 - p.shot['dim']}:gomax={1 - p.shot['dim']}:bomax={1 - p.shot['dim']}")
     vf.append(f"scale={W}:{H}:force_original_aspect_ratio=decrease:flags=lanczos,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=0x0B1220")
     if abs(p.speed - 1.0) > 1e-3 and p.kind in ("take", "clip"):
         vf.append(f"setpts=PTS/{p.speed:.5f}")
     vf.append(f"fps={fps}")
+    for r in rings:  # click ring in output pixels, before the push-in so it moves with the picture
+        a, e = r["at"], r["at"] + 0.6
+        vf.append(f"drawbox=x={r['x'] - 30}:y={r['y'] - 30}:w=60:h=60:color=0xFFB454@0.95:t=5:enable='between(t,{a:.2f},{e:.2f})'")
     push = push_amount(p, default_push)
     if push > 0:
         # slow push-in toward the centre, so a held gate (the game is paused there) is not a frozen frame
@@ -290,6 +357,8 @@ def render_piece(ffmpeg: str, p: Piece, idx: int, fps: int, markers_of, work: Pa
         vf.append(f"zoompan=z='1+{push:.4f}*on/{n}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={fps}")
     for item in p.shot.get("text", []):
         vf.append(text_filter(item))
+    for c in chips:  # the key the player pressed, lower right (R24.8)
+        vf.append(text_filter({**c, "pos": "lower-right", "size": 40, "color": "orange"}))
     if p.shot.get("caption"):
         vf.append(text_filter({"text": p.shot["caption"], "pos": "top-left", "size": 30, "bold": False, "color": "grey",
                                "at": 0, "dur": p.dur}))
@@ -321,8 +390,16 @@ def main(argv: list[str] | None = None) -> int:
             f = TAKES / f"{take}.markers.json"
             if not f.exists():
                 sys.exit(f"{f.relative_to(ROOT)} is missing; run node tools/video/record_takes.mjs")
-            cache[take] = json.loads(f.read_text(encoding="utf-8"))["markers"]
+            data = json.loads(f.read_text(encoding="utf-8"))
+            scales[take] = float(data.get("scale", 1.0))
+            cache[take] = scale_markers(data["markers"], scales[take])
         return cache[take]
+
+    scales: dict[str, float] = {}
+
+    def scale_of(take: str) -> float:
+        markers_of(take)
+        return scales[take]
 
     sl = slots(timeline, float(edl.get("tail", TAIL_S)))
     pieces: list[Piece] = []
@@ -347,7 +424,8 @@ def main(argv: list[str] | None = None) -> int:
     for i, p in enumerate(pieces):
         if only and p.line not in only:
             continue
-        files.append(render_piece(ffmpeg, p, i, fps, markers_of, work, float(edl.get("push", 0.0))))
+        files.append(render_piece(ffmpeg, p, i, fps, markers_of, work, float(edl.get("push", 0.0)), bool(edl.get("keys", True)),
+                                  scale_of(p.source) if p.kind == "take" else 1.0))
     listing = work / "list.txt"
     listing.write_text("".join(f"file '{f.as_posix()}'\n" for f in files), encoding="utf-8")
     joined = work / "joined.mp4"

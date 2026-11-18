@@ -34,7 +34,7 @@
       "id": "g1",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "Cruise runs fast. When evidence of icing is ahead, the game stops. That is a gate."
+      "text": "Cruise runs fast. When the data flags a cloud ahead, the game stops. That is a gate."
     },
     {
       "id": "n1",

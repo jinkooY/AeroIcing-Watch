@@ -5,12 +5,14 @@
 
 import { renderScene } from "./render.js";
 import { fitCanvas } from "./view-helpers.js";
-import { gateButtons, dispatchAction, insetVisible, insetView } from "./gate-controls.js";
+import { gateButtons, dispatchAction, insetVisible, insetView, KEY_HINT } from "./gate-controls.js";
+import { COST_RULES_TITLE, COST_RULES } from "./cost-rules.js";
 
 // deps: { root, controller, getStore, subscribe }. Returns { setCockpit(on), dispose() }.
 export function initGatePanel(deps) {
   const { root, controller, getStore, subscribe } = deps;
   let cockpit = false;
+  let lastMode = "";
   let css = { w: 320, h: 180 };
 
   const group = document.createElement("div");
@@ -24,7 +26,23 @@ export function initGatePanel(deps) {
   inset.height = 180;
   inset.setAttribute("role", "img");
   inset.setAttribute("aria-label", "Side view of the selected lane ahead");
-  root.replaceChildren(inset, group);
+  // Revision e (R24.3, R24.4): the keys in words, and the rules of the cost model in a card the player opens.
+  const keysHint = document.createElement("p");
+  keysHint.className = "gate-keys";
+  keysHint.textContent = KEY_HINT;
+  const rules = document.createElement("details");
+  rules.className = "cost-rules";
+  rules.id = "cost-rules";
+  const rulesTitle = document.createElement("summary");
+  rulesTitle.textContent = COST_RULES_TITLE;
+  const rulesList = document.createElement("ul");
+  for (const r of COST_RULES) {
+    const li = document.createElement("li");
+    li.textContent = r;
+    rulesList.append(li);
+  }
+  rules.append(rulesTitle, rulesList);
+  root.replaceChildren(inset, group, keysHint, rules);
 
   function ensureButtons(list) {
     if (buttons.size) return;
@@ -66,6 +84,19 @@ export function initGatePanel(deps) {
     }
     inset.hidden = !insetVisible(mode);
     paint();
+    // Revision e (R24.7): on a narrow screen the buttons and the settings line can sit below the fold when a gate
+    // opens; scroll the page (only the page) once per gate so both show. No effect when they are already visible,
+    // as on a desktop screen.
+    if (mode === "gate" && lastMode !== "gate" && typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => {
+        if (typeof innerHeight !== "number" || typeof scrollBy !== "function") return;
+        const parts = [buttons.get("toggleRun"), document.getElementById("gate-path")].filter((e) => e && e.getClientRects().length);
+        if (!parts.length) return;
+        const bottom = Math.max(...parts.map((e) => e.getBoundingClientRect().bottom));
+        if (bottom > innerHeight) scrollBy(0, Math.ceil(bottom - innerHeight + 8));
+      });
+    }
+    lastMode = mode;
   }
 
   subscribe(() => { controller.sync(); render(); });

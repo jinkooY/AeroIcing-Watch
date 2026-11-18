@@ -822,3 +822,28 @@ Risks specific to this revision:
 | More geometry at a gate | About 300 triangles for gates plus 60 for guides, against the 40,000 cap; measured in the usual `?perf=1` check |
 | Gate frames read as advice | Evidence only, no colour ranking of lanes by cost, no cost field; R6.5 test CD-P33 and the wording scan |
 | Frost at full opacity hides the view | Opacity reaches 1 only through the edge-weighted texture; checked in the 25 and 50 screenshots; the clear centre stays |
+
+## 16. Gate clarity and real input (revision e, R24, decision G17)
+Display and tooling only; the engine, costs, evidence, sky gates and case files do not change (R24.9).
+
+| Part | Where | What |
+|---|---|---|
+| Settings line (R24.1, R24.2) | `gate-controls.js` `pathSummary`, `pathLines`; `controls.js` `#gate-path` | Two lines in the gate panel while the settings can change. The level is `scene.gateLevel` at the target lane and altitude, the same rule as the sky gate frames. Cockpit view only (CSS); the 2D view has its own target controls |
+| Arrows (R24.1) | `panel.js` `altitudeReadout`; `game.js` `renderHud` | Altitude "now -> target" in the bottom bar after the climb; HUD lane "3 of 5 (centre) -> 2" |
+| Key line (R24.3) | `gate-controls.js` `KEY_HINT`; `gate-panel.js` | One line under the buttons |
+| Cost rules card (R24.4) | `cost-rules.js`; `gate-panel.js` `<details id="cost-rules">` | Closed by default. Six sentences, each matching `engine.costComponents` and `engine.step`; no `$`, the only numbers are 1,000 ft, 50 and 100 |
+| Ice marks (R24.5) | `panel.js`, `cockpit.css` `.cp-ice-scale::after`, `game.css` `.ice-bar::after` | Tick at 50; "50: ice gate, 100: forced diversion" |
+| Each value once (R24.6) | `game.css` | `body.view-cockpit` hides the HUD fuel, ice, anti-ice and altitude items |
+| Phone layout (R24.7) | `game.css` (max-width 760 px), `gate-panel.js` | `#gate-choices` becomes `display: contents`, buttons order 1, gate text 2, key line 3, inset 4, card 5; the right column no longer scrolls on its own; one `scrollBy` when a gate opens if "Continue" or the settings line is below the fold |
+| Real input (R24.8) | `tools/video/record_takes.mjs`, `tools/video/make_final.py` | CDP `Input.dispatchKeyEvent` and `Input.dispatchMouseEvent`; a `key` marker per press; the edit draws a key chip from those markers |
+
+Tests: `tests/js/gate-clarity.test.mjs` (settings line, agreement with `gateLevel` over the whole case, no cost
+field, key line, the card has no dollar value or advice word and matches the engine on the ice index, altitude
+arrow). The wording scan covers the new strings. Checks: `tools/layout_check.mjs`, `tools/video/video_mode_check.mjs`,
+the Playwright MCP server at 390 x 844 (buttons, heading and settings line on screen at gate 1, 418 px of windshield).
+
+| Risk | Mitigation |
+|---|---|
+| The settings line reads as advice | It names the player's own settings and the evidence level only; no cost, no "better" word (test) |
+| The card reads as a cost preview | No dollar value and no number from the flight (test); the player opens it |
+| The two lines disagree with the sky frames | Same function (`gateLevel`), checked for every lane and altitude at every seventh step |

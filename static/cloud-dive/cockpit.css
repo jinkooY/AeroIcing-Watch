@@ -34,6 +34,11 @@
 .cp-label { color: var(--muted); font-size: 0.78rem; }
 .cp-fuel-value { font-size: 1.3rem; font-variant-numeric: tabular-nums; font-weight: 600; }
 .cp-ice-meter { flex: 1 1 auto; min-width: 90px; height: 14px; }
+/* Revision e (R24.5): tick at 50 (ice gate) over the meter, and the marks in words under it. */
+.cp-ice-scale { position: relative; flex: 1 1 auto; display: flex; min-width: 90px; }
+.cp-ice-scale .cp-ice-meter { width: 100%; }
+.cp-ice-scale::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: #e8edf3; pointer-events: none; }
+.cp-ice-marks { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
 .cp-ice-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cp-antiice { min-height: 44px; min-width: 44px; padding: 2px 14px; }
 .cp-antiice[aria-checked="true"] { border-color: var(--warn); border-width: 2px; font-weight: 600; }
@@ -97,3 +102,7 @@ body[data-video="1"] .cp-text-line { font-size: 1.15rem; }
 body[data-video="1"] .cp-legend { font-size: 1.05rem; }
 body[data-video="1"] .gate-panel, body[data-video="1"] #gate-panel { font-size: 1.15rem; }
 body[data-video="1"] #gate-choices button { font-size: 1.2rem; }
+body[data-video="1"] .cp-ice-marks { font-size: 0.95rem; }
+body[data-video="1"] .gate-keys { font-size: 1.05rem; }
+body[data-video="1"] .cost-rules summary { font-size: 1.1rem; }
+body[data-video="1"] .cost-rules ul { font-size: 1.05rem; }
