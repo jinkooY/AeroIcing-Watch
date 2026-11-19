@@ -70,7 +70,7 @@ online services while building, testing and recording.
 |---|---|---|
 | Blender 4.5.9 LTS | Renders the cloud shots of the submission video from the GOES case data (`tools/video/blender/`) | GPL-3.0 (the program); the rendered images are the author's work |
 | FFmpeg 9.0.2 (gyan.dev full build) | Records the takes and encodes the video (`tools/video/`) | GPL build, used as a separate program |
-| Google Gemini text-to-speech (paid API) | English narration of the final video only (`tools/video/make_narration.py`) | Used under the owner's paid Gemini API account and Google's terms for that API |
+| Google Gemini text-to-speech (paid API) | English narration of the final video only (`tools/video/make_narration.py`) | Used under the owner's paid Gemini API account. Gemini API Additional Terms (https://aistudio.google.com/docs/terms, read 2026-11-19), Use of Generated Content: "Google won't claim ownership over that content"; the user is responsible for its use. The video description names the voice as synthetic |
 | Noto Sans (Google) | Captions, cards, diagrams and route graphics of the video | SIL Open Font License 1.1 (free; https://openfontlicense.org); used from the installed font in `tools/video/make_final.py`, `make_route_graphics.py`, `make_animatic.py` and `docs/video/assets/diagram.html`, not redistributed here. The game itself ships no font: it uses the viewer's system font |
 | Pillow (MIT-CMU), Hypothesis (MPL-2.0) | Map images of the case files (`cases/*.png`, build time), video cards and stills; property-based tests | Python libraries, installed from PyPI, not modified |
 | Playwright MCP 0.0.85 (Apache-2.0), Microsoft Edge | Headless and phone-size layout checks | Tools only |
