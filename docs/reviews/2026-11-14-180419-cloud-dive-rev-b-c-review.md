@@ -1,6 +1,6 @@
 # Cloud Dive revisions b and c: 3D cockpit, phases, hot-seat, visual polish, browser guard
 
-Range reviewed: `git diff f78ee61..bacaf3b` (134 files; 10,498 insertions). Spec: `.kiro/specs/cloud-dive/` R15 to R22, design sections 14 and 15.
+Range reviewed: `git diff 0546218..e39d350` (134 files; 10,498 insertions). Spec: `.kiro/specs/cloud-dive/` R15 to R22, design sections 14 and 15.
 
 The change adds a three.js cockpit and chase view, a phase machine (ready, takeoff, climb, cruise, gate, arrival, diversion, report), display effects, a Departure climb constant, a cost pop-up, sky gates, hot-seat play and a report headline. Group 21 polishes the visuals and adds `tools/browser_guard.mjs` for the headless-browser check scripts. The engine, cost model, solver and case data are unchanged apart from three constants in the case files, and the layering holds: the 3D code reads state and never writes it. `node --test tests/js/*.test.mjs` passes (238 tests) and pytest passes (286 tests). I did not start a browser.
 
@@ -26,7 +26,7 @@ The browser guard is a clear improvement over ad hoc spawning and never targets 
 3. **No test for the guard** (medium, confirmed) — nothing under `tests/` covers lock takeover, stale PIDs, the timeout path, the profile-tag match or the kill filter. Add node tests that use a fake child process, and one that checks `killGuardedBrowsers` quotes and filters as intended.
 4. **Stale skip flag skips the next takeoff** (low to medium, likely) — `static/cloud-dive/game.js:952-957,982,1058-1059`: `skipRequested` is cleared only by a frame that runs the lead-in or ending. If Skip is pressed and the view changes to 2D, or the phase ends, before that frame, the flag stays true and the first takeoff frame of the next flight (hot-seat or Play again) is skipped. Clear the flag in `resetCockpitFlight` and in `syncLeadToView`.
 5. **Wiring claims are tested by regex on source** (medium, confirmed) — `tests/js/skip.test.mjs:79-86` and `tests/js/cinematics.test.mjs:99-106` assert that strings exist in `game.js`. "The engine does not step during the lead-in" and "the report waits for the cinematic" are not exercised. Extract the lead and ending decisions into a DOM-free module, or run `game.js` against a small DOM stub.
-6. **Invariant test starts at group 21** (low, confirmed) — `tests/test_wording.py` (`GROUP21_BASE = "1565153"`) checks that engine, cost, solver and case files are unchanged only since group 21, and skips when the commit is missing. Groups 13 to 20 are unguarded; I verified them by hand against `f78ee61`. Pin the base to the commit before group 13 and fail instead of skipping in CI.
+6. **Invariant test starts at group 21** (low, confirmed) — `tests/test_wording.py` (`GROUP21_BASE = "9994314"`) checks that engine, cost, solver and case files are unchanged only since group 21, and skips when the commit is missing. Groups 13 to 20 are unguarded; I verified them by hand against `0546218`. Pin the base to the commit before group 13 and fail instead of skipping in CI.
 7. **Hot-seat session lost without a prompt** (low, confirmed) — `static/cloud-dive/game.js:327-330`: `backToCases` sets `store.hot = null` at any point, including mid-session, with no confirmation. A second silent loss: `openCase` returns when `store.loading` is true, which drops the session from `submitHotseat`. Ask before leaving, and re-enable the form while loading.
 8. **Later hot-seat players can read Best before they fly** (low, possible) — `static/cloud-dive/report-view.js` shows the references in every report. The first player's report therefore shows the Best and Straight-ahead costs to everyone still waiting. This follows the letter of `referencesVisibleTo` (own flight only) but not its aim of keeping the references back until after each flight. Confirm the intent of R20.4; if the aim is as stated, hide the reference table in hot-seat reports until the results table.
 9. **Gate label summarizes three cells** (low, possible) — `static/cloud-dive/scene.js:259-276`: each gate shows the worst of the next three cells (30 km at `stepKm` 10) but is drawn 18 km ahead. The ordering is safe (Not assessed outranks Not indicated). Check whether a reader can tell a gate label covers a 30 km window; a tooltip or Why-card line would fix it.
@@ -85,7 +85,7 @@ CD-P23 purity (`purity21.test.mjs`) freezes inputs only for the cruise and gate 
 <details>
 <summary>File map</summary>
 
-Full diff: `git diff f78ee61..bacaf3b`.
+Full diff: `git diff 0546218..e39d350`.
 
 - `tools/browser_guard.mjs`: lock, single browser, timeout and cleanup for headless checks.
 - `tools/layout_check.mjs`, `chase_check.mjs`, `hotseat_check.mjs`, `shots_21.mjs`: use the guard.

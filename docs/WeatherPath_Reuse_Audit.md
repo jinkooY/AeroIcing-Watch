@@ -53,18 +53,18 @@ Line overlap of 7 percent or less and no same-name function above 40 percent:
 
 ## Authorship evidence from git
 
-- The Claude branch's first commit `10298ce` ("wip: import uncommitted global
+- The Claude branch's first commit `4710dc2` ("wip: import uncommitted global
   satellite draft") contains `goes_cloud.py`, `meteosat_cloud.py`,
   `satellite_router.py`, `tools/build_airports.py` and `icing_profile.py`
   identical, line for line, to the draft written in the Kiro session
   (preserved in `stash@{0}`). Claude then corrected and extended them in
-  `b9f3d82` to `908210e`. Origin: Kiro draft, then Claude.
-- The backend that existed before the Kiro commit `257f7d8`
+  `420e78f` to `a1b5966`. Origin: Kiro draft, then Claude.
+- The backend that existed before the Kiro commit `4c0eea6`
   (`gk2a_cloud.py`, `cloud_base.py`, `route_sampler.py`, `route_weather.py`,
   `aircraft_performance.py`, `route_review.py`, `flight_lookup.py`,
   `ifs_grid.py`, original `icing.py`, tests, tools) was written by another
   agent. Git does not say which; the owner states that it was Claude (2026-11-13).
-- Codex branch `codex/kiroween-route-demo` (`6df6f98`, `32c93f5`) holds the
+- Codex branch `codex/kiroween-route-demo` (`5814426`, `cf08eef`) holds the
   route comparison demo, which leaves the submission scope (decision W2).
 - The WeatherPath repository has no license file at its HEAD (earlier
   inventory). The owner is the author and confirms that the copied parts can

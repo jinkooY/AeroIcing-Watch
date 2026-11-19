@@ -33,7 +33,7 @@ minified build.
 | Built by | `tools/build_airports.py`, which keeps `large_airport` and `medium_airport` rows with a 4-letter `ident` and writes `airports.json` at the repository root |
 | Licence | Public domain. The OurAirports data page says all data is released to the Public Domain, with no guarantee of accuracy or fitness for use (checked 2026-11-13 through a web search of that page; the page itself could not be fetched because its TLS certificate had expired, and `tools/build_airports.py` turns certificate checks off for the same reason) |
 | Attribution | Not required by the licence; given here as a courtesy |
-| Snapshot | `airports.json` is committed (first in commit `10298ce`); the download date is not recorded in the file, so the elevations are those of that snapshot |
+| Snapshot | `airports.json` is committed (first in commit `4710dc2`); the download date is not recorded in the file, so the elevations are those of that snapshot |
 | Values used | KDEN 5431 ft, KLAX 125 ft, KBUF 728 ft, KPWM 76 ft, KJFK 13 ft, KBNA 599 ft |
 
 Elevations are used only to price the illustrative departure climb constant (`params.departureClimbUsd`,
@@ -57,7 +57,7 @@ game note and source line in the game screens name both sources.
 
 | Item | Value |
 |---|---|
-| Used for | Screening candidate case days and routes on 2026-11-13 (counts of icing PIREPs near each route, requirements 5.4 and 5.5). Proposed and run by Kiro (owner statement, 2026-11-19; the commit `12140c4` does not record the tool), not asked for by the owner. No PIREP data is in the case files or shown in the game |
+| Used for | Screening candidate case days and routes on 2026-11-13 (counts of icing PIREPs near each route, requirements 5.4 and 5.5). Proposed and run by Kiro (owner statement, 2026-11-19; the commit `297d706` does not record the tool), not asked for by the owner. No PIREP data is in the case files or shown in the game |
 | Source | Iowa Environmental Mesonet (IEM), Iowa State University, PIREP archive of NWS reports |
 | Terms | "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose. Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated." (https://mesonet.agron.iastate.edu/disclaimer.php, read 2026-11-19). Attribution: Iowa Environmental Mesonet, Iowa State University. PIREPs are reports, used only to choose cases, never as validation (guardrail rule 2) |
 

@@ -16,11 +16,11 @@ E2 유료 API로 최종 합성만, E3 무료 글꼴 (Noto Sans) 로 교체.
 
 | 번호 | 결정할 내용 | 현재 초안 | 권장 | 답 |
 |---|---|---|---|---|
-| A1 | 3절의 "Claude (owner-stated)" 표기. 커밋 표시가 없는 초기 백엔드 파일과 viewer 커밋 `610e383`을 Claude가 썼다는 11월 13일 진술을 유지하는가 | 유지 | 유지 | |
+| A1 | 3절의 "Claude (owner-stated)" 표기. 커밋 표시가 없는 초기 백엔드 파일과 viewer 커밋 `66134df`을 Claude가 썼다는 11월 13일 진술을 유지하는가 | 유지 | 유지 | |
 | A2 | 6절 파일별 표 (2026-11-13 이전 파일 72개의 출처: Claude, Codex, Kiro, GitHub) 를 읽고 확정 | 초안 | 확정 | |
 | A3 | 7절 (revision a, b의 Cloud Dive 파일 전부 Kiro) 확정. P-17 | 초안 | 확정 | |
 | A4 | `docs/video/kiro-instructions-review-1.md`, `kiro-instructions-video-quality.md` ("Kiro 지시서" 두 문서) 를 누가 썼는가 | 미정 | 사실대로. Claude가 검토하고 Kiro에게 지시서를 쓴 것이라면 "Claude (reviewer), carried out by Kiro"로 적는 것이 오히려 Kiro 활용 설명에 도움이 됩니다 | |
-| A5 | `docs/reviews/2026-11-14-...-review.md` (커밋 `d800e54`) 와 `docs/pending-items.md` (`c87553e`) 를 누가 썼는가. 둘 다 `claude/...` 이름의 브랜치에서 병합됨 | 미정 | 사실대로. Kiro semantic reviewer 결과라면 Kiro, Claude Code라면 Claude | |
+| A5 | `docs/reviews/2026-11-14-...-review.md` (커밋 `8f0049e`) 와 `docs/pending-items.md` (`a05b283`) 를 누가 썼는가. 둘 다 `claude/...` 이름의 브랜치에서 병합됨 | 미정 | 사실대로. Kiro semantic reviewer 결과라면 Kiro, Claude Code라면 Claude | |
 
 ## B. 이전 작업물 재사용
 
@@ -28,7 +28,7 @@ E2 유료 API로 최종 합성만, E3 무료 글꼴 (Noto Sans) 로 교체.
 |---|---|---|---|---|
 | B1 | WeatherPath 코드 (복사·변형한 함수들) 를 이 저장소의 Apache-2.0으로 공개한다는 11월 13일 진술 유지 | 유지 | 유지 | |
 | B2 | Blender 구름 스크립트가 이전 도구 (다른 프로젝트의 이전 Blender 스크립트, 이 저장소에 없음) 의 방식을 따름. 비교 결과 198줄 중 23줄이 같고 모두 Blender 기본 설정 호출, 전체 유사도 0.04, 장면·모델·텍스처 복사 없음. (1) 본인 저작물인지, (2) 이 재사용분을 Apache-2.0으로 공개해도 되는지 | 미정 | 둘 다 "예"라면 그대로 공개 | |
-| B3 | 공개 문서에 이전 도구의 폴더 이름을 써도 되는가 | 8절에서는 이름을 빼고 "the owner's earlier, unpublished Blender scripts from another project"로 적음 (2026-11-19). 단 `docs/video/blender-assessment.md` 2행에는 경로가 그대로 있고, 이미 공개 저장소에 푸시됨 (`dcc5630`) | 이름을 써도 되면 그대로 두고, 민감하면 blender-assessment.md도 같은 문구로 바꿈. 과거 커밋에는 남음 | |
+| B3 | 공개 문서에 이전 도구의 폴더 이름을 써도 되는가 | 8절에서는 이름을 빼고 "the owner's earlier, unpublished Blender scripts from another project"로 적음 (2026-11-19). 단 `docs/video/blender-assessment.md` 2행에는 경로가 그대로 있고, 이미 공개 저장소에 푸시됨 (`8db399a`) | 이름을 써도 되면 그대로 두고, 민감하면 blender-assessment.md도 같은 문구로 바꿈. 과거 커밋에는 남음 | |
 
 ## C. 다른 AI 도구 사용을 어떻게 밝힐지
 

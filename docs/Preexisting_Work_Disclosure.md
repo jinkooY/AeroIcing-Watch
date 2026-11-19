@@ -9,10 +9,10 @@ work incorporated." Written by Kiro from git, the usage log and the owner's stat
 
 - Submission period: 2026-10-30 9:00 am PT to 2026-12-04 2:00 pm PT (official rules, section 1, read
   2026-11-19). The owner joined the hackathon on Devpost and started this project on 2026-11-11 (owner
-  statement, 2026-11-19). The first commit in this repository is `c426a64` on 2026-11-11 23:13 (KST),
+  statement, 2026-11-19). The first commit in this repository is `8c66bff` on 2026-11-11 23:13 (KST),
   inside the submission period.
-- The viewer commit `610e383` (2026-11-11 23:19) and the backend files first
-  committed in `257f7d8` existed before the Kiro commits. Git does not record
+- The viewer commit `66134df` (2026-11-11 23:19) and the backend files first
+  committed in `4c0eea6` existed before the Kiro commits. Git does not record
   which tool wrote them; the owner states that Claude wrote them (section 3).
 
 ## 2. WeatherPath code (the owner's earlier project)
@@ -40,18 +40,18 @@ How the labels were derived:
 - **Codex**: the commit is on branch `codex/kiroween-route-demo`; the
   submission notes name Codex. Codex commits have no trailer, so this label
   rests on the branch and the notes.
-- **Kiro**: commits made in the Kiro session. In `257f7d8` only the files the
+- **Kiro**: commits made in the Kiro session. In `4c0eea6` only the files the
   Kiro session wrote or edited are labelled Kiro.
 - **Claude (owner-stated)**: files that carry no `Co-Authored-By` trailer because they
-  were committed by the owner or by the Kiro commit `257f7d8` (backend files that
-  existed uncommitted, and the viewer commit `610e383`), or were imported by Claude's
-  commit `10298ce`. Git cannot tell which tool wrote them. **The owner states
+  were committed by the owner or by the Kiro commit `4c0eea6` (backend files that
+  existed uncommitted, and the viewer commit `66134df`), or were imported by Claude's
+  commit `4710dc2`. Git cannot tell which tool wrote them. **The owner states
   that all of them were written by Claude (2026-11-13).**
 - **GitHub repository creation**: `LICENSE` (Apache-2.0 template) and the one-line
-  `README.md` of the initial commit `c426a64`.
-- **Kiro draft, committed by Claude**: `10298ce` contains five files identical
+  `README.md` of the initial commit `8c66bff`.
+- **Kiro draft, committed by Claude**: `4710dc2` contains five files identical
   to the Kiro draft; Claude then corrected and extended them
-  (`b9f3d82` to `908210e`).
+  (`420e78f` to `a1b5966`).
 - Branches that are not merged and not part of this entry are listed in section 8.4 (four, among them the
   3D replay `claude/aeroicing-watch-3d-review-340178` and the research review
   `claude/kiro-research-direction-review-b971c3`).
@@ -71,7 +71,7 @@ and humidity screen may be re-implemented for the ECMWF background.
 ECMWF Open Data IFS (CC BY 4.0); NOAA GOES-R ABI Level-2 on AWS (public);
 Himawari-9 AHI Level-2 (NOAA mirror, legacy); Iowa Environmental Mesonet PIREP
 archive (NWS reports; used only to screen candidate case days on 2026-11-13, requirements 5.4 and 5.5;
-the screening was proposed and run by Kiro (owner statement, 2026-11-19; the commit `12140c4` does not record the tool), not asked for by the owner; no PIREP is in the case files or the game); Noh et al. (2017) cloud-base method; CIRA aviation
+the screening was proposed and run by Kiro (owner statement, 2026-11-19; the commit `297d706` does not record the tool), not asked for by the owner; no PIREP is in the case files or the game); Noh et al. (2017) cloud-base method; CIRA aviation
 cross-section product as a referenced prior work (no code or images used);
 OpenAP (LGPL-3.0; a build-time dependency of the game's cost tables in `src/analysis/cost_model.py`, not
 shipped to the browser; its use in the old fuel route review is legacy); FastAPI, uvicorn, numpy, netCDF4, pyproj, requests.
@@ -253,7 +253,7 @@ row in [`kiro-usage-log.md`](kiro-usage-log.md).
 |---|---|
 | `tools/video/*` (take recorder, narration tool, edit, animatic, route graphics, checks; the narration audio itself is synthesized by Google Gemini text-to-speech under the owner's paid API account), `docs/video/edl.json`, `docs/video/script.json`, `docs/video/script-ko.md`, `docs/video/storyboard.md`, `docs/video/assets/diagram.html`, `docs/video-guide.md`, `docs/video/blender-assessment.md` | Kiro IDE |
 | `tools/video/blender/cloud_dive_clouds.py` | Kiro IDE. The approach (Cycles volume cloud, Nishita sky, camera on a path) follows the owner's earlier, unpublished Blender scripts from another project (local, not in this repository, read only). Comparison of 2026-11-19, recorded in the usage log: 23 of 198 code lines are identical, all of them standard Blender setup calls (factory reset, Cycles device choice, volume shader node); whole-file similarity 0.04; no scene, model, texture or other asset was copied. The owner states (2026-11-19) that the earlier scripts are the owner's own work and releases this reuse under the Apache-2.0 licence of this repository |
-| `docs/video/kiro-instructions-review-1.md`, `docs/video/kiro-instructions-video-quality.md` (Korean instruction documents addressed to Kiro, first committed in `dcc5630`) | Claude (reviewer), carried out by Kiro (owner statement, 2026-11-19). Claude reviewed the video plan and wrote the instructions; Kiro implemented them |
+| `docs/video/kiro-instructions-review-1.md`, `docs/video/kiro-instructions-video-quality.md` (Korean instruction documents addressed to Kiro, first committed in `8db399a`) | Claude (reviewer), carried out by Kiro (owner statement, 2026-11-19). Claude reviewed the video plan and wrote the instructions; Kiro implemented them |
 
 ### 8.3 Kiro configuration and review documents
 
@@ -262,8 +262,8 @@ row in [`kiro-usage-log.md`](kiro-usage-log.md).
 | `.kiro/agents/wording-guardian.md` (IDE) and `.kiro/agents/wording-guardian-cli.json` (Kiro CLI, same prompt) | Kiro IDE (custom agent), CLI form converted by `kiro-cli agent upgrade` |
 | `.kiro/settings/mcp.json` (Playwright MCP) | Owner (2026-11-17); the agent may not write `.kiro/settings/` |
 | `.kiro/specs/cloud-dive/tasks.meta.json` | Kiro IDE |
-| Commit `ec32a01` (wording review of the script, Korean copy and guide) | Kiro CLI session run by the owner |
-| `docs/reviews/2026-11-14-180419-cloud-dive-rev-b-c-review.md` (commit `d800e54`) and `docs/pending-items.md` (commit `c87553e`), both on the merged branches `claude/aeroicing-video-quality-1550d9` and `claude/video-production-review-48bea6` | Claude (owner statement, 2026-11-19). Later status updates in `pending-items.md` are by Kiro |
+| Commit `51eb00b` (wording review of the script, Korean copy and guide) | Kiro CLI session run by the owner |
+| `docs/reviews/2026-11-14-180419-cloud-dive-rev-b-c-review.md` (commit `8f0049e`) and `docs/pending-items.md` (commit `a05b283`), both on the merged branches `claude/aeroicing-video-quality-1550d9` and `claude/video-production-review-48bea6` | Claude (owner statement, 2026-11-19). Later status updates in `pending-items.md` are by Kiro |
 | `docs/blog-draft.md`, `docs/social-draft.md`, `docs/devpost-draft.md`, `docs/disclosure-decisions-ko.md` | Kiro IDE drafts, reviewed by the wording-guardian agent in Kiro CLI; the owner publishes them |
 
 ### 8.4 Branches
@@ -273,7 +273,7 @@ Merged into `main`: `claude/3d-flight-game-review-f603f4`, `claude/aeroicing-vid
 `codex/kiroween-route-demo`. Not merged and not part of the entry: `claude/aeroicing-watch-3d-review-340178`,
 `claude/kiro-research-direction-review-b971c3`, `claude/replay-2d-link-b44af5`, `claude/replay-3d-page-e099a0`
 (the last two are a CesiumJS 3D replay of the legacy route demo). The last commit with a
-`Co-Authored-By: Claude` trailer is `908210e` (2026-11-12, legacy satellite sources).
+`Co-Authored-By: Claude` trailer is `a1b5966` (2026-11-12, legacy satellite sources).
 
 Owner decisions of 2026-11-19: the use of Claude and Codex is stated in the Devpost write-up; the legacy
 files stay in the repository, marked legacy; the unmerged branches stay as they are.

@@ -1,12 +1,12 @@
 # AeroIcing Watch — WeatherPath port inventory
 
-Reviewed on 2026-11-12 (KST). AeroIcing Watch baseline: `71514ac` in `C:/Users/I7-JIN/PycharmProjects/aeroicing-watch`. WeatherPath source: `4d3c907a` in `C:/Users/I7-JIN/PycharmProjects/hackerton_2026`.
+Reviewed on 2026-11-12 (KST). AeroIcing Watch baseline: `c9d0068` in `C:/Users/I7-JIN/PycharmProjects/aeroicing-watch`. WeatherPath source: `4d3c907a` in `C:/Users/I7-JIN/PycharmProjects/hackerton_2026`.
 
 Use the [Kiro requirements](../.kiro/specs/aeroicing-watch/requirements.md), [design](../.kiro/specs/aeroicing-watch/design.md), [implementation scope](../.kiro/specs/aeroicing-watch/implementation-scope.md), and [tasks](../.kiro/specs/aeroicing-watch/tasks.md) for implementation. This inventory records source findings and decisions still needed.
 
 ## Baseline before Phase 1
 
-- `aeroicing-watch` contains the Kiro spec and steering files. `Kiro_aeroicing_watch` points to the same origin and is at `610e383`, the earlier standalone viewer commit.
+- `aeroicing-watch` contains the Kiro spec and steering files. `Kiro_aeroicing_watch` points to the same origin and is at `66134df`, the earlier standalone viewer commit.
 - The existing HTML/Canvas viewer ships with a simulated profile and supports local JSON import, schema validation, a sample selector, and separate markers for missing tops and bases. `node --check` passed for `viewer.js` and `sample.js`. Browser interaction was reviewed in source.
 - Phase 1 is partially started. `.gitignore` is already present and covers the Phase 1 ignore list. The FastAPI entry point, dependency manifest, `.env.example`, and target directory layout are pending. Phases 2–6 remain pending.
 - The named WeatherPath conda environment has all seven requested distributions. NumPy is 1.26.4 and pyproj is 3.6.1. An AeroIcing Watch server smoke test remains pending.

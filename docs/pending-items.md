@@ -1,7 +1,7 @@
 # 보류 항목 (소유자 지시 대기)
 
 - 날짜: 2026-11-14
-- 마지막 커밋: `bacaf3b` (origin/main에 push 완료)
+- 마지막 커밋: `e39d350` (origin/main에 push 완료)
 - 테스트 상태: pytest 286 통과, node 238 통과, layout check ok, headless Edge 0개
 - 규칙: **각 항목은 소유자 지시 후에만 착수.** 이 문서의 항목은 아직 task가 아니며, `tasks.md`에 체크박스로 넣지 않았다.
 - 출처: `docs/reviews/2026-11-14-180419-cloud-dive-rev-b-c-review.md` (판정 NEEDS_CHANGES, 이슈 12건), `docs/kiro-usage-log.md` (그룹 13-21, 21.10), `.kiro/specs/cloud-dive/tasks.md` Notes, `.kiro/specs/cloud-dive/submission-checklist.md`.
@@ -18,7 +18,7 @@
 | P-03 | Guard 테스트가 없다 (lock 인수, stale PID, timeout, profile tag 일치, kill 필터) | 리뷰 #3, `tests/` | 중 | fake child process를 쓰는 node 테스트와 `killGuardedBrowsers` 인용·필터 테스트 추가 | 테스트, tools | 없음 | 대기 |
 | P-04 | `game.js` wiring 테스트가 소스 텍스트 regex에 의존한다. "lead-in 동안 engine이 step하지 않는다", "report가 cinematic을 기다린다"는 동작 테스트가 없다 | 리뷰 #5, `tests/js/skip.test.mjs:79-86`, `tests/js/cinematics.test.mjs:99-106` | 중 | lead/ending 판단을 DOM 없는 모듈로 분리하거나 작은 DOM stub으로 `game.js` 실행 | 표시(`game.js` 분리), 테스트 | 표시 코드 분리를 허용할지, DOM stub만 쓸지 | 대기 |
 | P-05 | `skipRequested` 플래그가 남아 다음 이륙의 첫 프레임을 건너뛸 수 있다 | 리뷰 #4, `static/cloud-dive/game.js:952-957,982,1058-1059` | 하~중 | `resetCockpitFlight`와 `syncLeadToView`에서 플래그 초기화 | 표시 | 없음 | **완료 2026-11-19** |
-| P-06 | Invariant 테스트가 그룹 21 base(`GROUP21_BASE = "1565153"`)부터만 검사하고, 커밋이 없으면 skip한다. 그룹 13-20은 무방비 | 리뷰 #6, `tests/test_wording.py` | 하 | base를 그룹 13 직전 커밋(`f78ee61`)으로 고정하고 CI에서 skip 대신 fail | 테스트 | base 커밋 `f78ee61` 확정 여부 | 대기 |
+| P-06 | Invariant 테스트가 그룹 21 base(`GROUP21_BASE = "9994314"`)부터만 검사하고, 커밋이 없으면 skip한다. 그룹 13-20은 무방비 | 리뷰 #6, `tests/test_wording.py` | 하 | base를 그룹 13 직전 커밋(`0546218`)으로 고정하고 CI에서 skip 대신 fail | 테스트 | base 커밋 `0546218` 확정 여부 | 대기 |
 | P-07 | Hot-seat 세션이 Change case에서 확인 없이 사라진다. `store.loading` 중 `openCase`가 반환되어 `submitHotseat` 세션도 조용히 버려진다 | 리뷰 #7, `static/cloud-dive/game.js:327-330` | 하 | 나가기 전 확인 대화상자, 로딩 중 폼 재활성화 | 표시 | 확인 문구 허용 여부 | 대기 |
 | P-08 | Hot-seat에서 첫 플레이어의 report가 Best와 Straight-ahead를 뒤 순서 플레이어에게 보여줄 수 있다 | 리뷰 #8, `static/cloud-dive/report-view.js` | 하 (가능성) | 의도가 "각 비행 후에만 공개"라면 results table 전까지 hot-seat report의 reference 표를 숨김 | 표시 | **R20.4의 의도 확인 필요** (5절 질문 Q-1) | 대기 |
 | P-09 | Gate 라벨이 앞쪽 3개 셀(`stepKm` 10에서 30 km)의 최악 레벨을 요약하는데, 프레임은 18 km 앞에 그려진다 | 리뷰 #9, `static/cloud-dive/scene.js:259-276` | 하 (가능성) | tooltip 또는 Why-card에 "30 km 구간 요약" 한 줄 추가 | 표시 | 문구 허용 여부 (R9.1 단어 목록 준수) | 대기 |
@@ -73,7 +73,7 @@ C11 외에도 checklist에는 Kiro가 하는 열린 항목(C7, C8, C9, C10, C12,
 
 코드와 산출물로 다시 확인했다.
 
-- P-01~P-12, P-14: 그대로 열림. `browser_guard.mjs`에 SIGHUP 처리 없음, 포트는 여전히 `9300 + random(600)`, guard 테스트 0개, `skipRequested`는 takeoff 경로에서만 초기화, `GROUP21_BASE = "1565153"`, `backToCases`에 `renderLeadUi` 없음, `BANNED_R91`에 risk와 probability 없음, KJFK-KBNA parity 테스트 없음.
+- P-01~P-12, P-14: 그대로 열림. `browser_guard.mjs`에 SIGHUP 처리 없음, 포트는 여전히 `9300 + random(600)`, guard 테스트 0개, `skipRequested`는 takeoff 경로에서만 초기화, `GROUP21_BASE = "9994314"`, `backToCases`에 `renderLeadUi` 없음, `BANNED_R91`에 risk와 probability 없음, KJFK-KBNA parity 테스트 없음.
 - P-13: (a)는 해결. `docs/screens/22.7-gate5.png`와 2026-11-17 T2 테이크에 Observed, Not indicated, Not assessed gate 패턴이 모두 찍혔다. (b) climb 후 "Continue" 문구, (c) layout check 재실행, (d) 390x844 gate 열은 남음.
 - P-13 (d) 확인 (C11, Playwright MCP, 390x844, 공개 사이트): gate 버튼 7개는 모두 44 px이지만 y 900부터 시작해 화면(844 px) 밖에 있고, 게임이 그쪽으로 스크롤하지 않는다. 180 px 스크롤하면 3D 뷰가 보이는 채로 버튼이 모두 보인다. 스크롤 뒤 3D 뷰가 gate 제목 위쪽 5 px를 가린다. 고칠지(게이트가 열릴 때 패널로 스크롤, 표시 코드) 소유자 결정 대기.
 - P-15, P-17: 소유자 입력 대기 그대로.
@@ -90,7 +90,7 @@ C11 외에도 checklist에는 Kiro가 하는 열린 항목(C7, C8, C9, C10, C12,
 - P-03 승인/보류
 - P-04 승인/보류 (표시 코드 분리 허용 / DOM stub만)
 - P-05 승인/보류
-- P-06 승인/보류 (base `f78ee61` 맞는지)
+- P-06 승인/보류 (base `0546218` 맞는지)
 - P-07 승인/보류
 - P-08 승인/보류 (Q-1 먼저)
 - P-09 승인/보류
