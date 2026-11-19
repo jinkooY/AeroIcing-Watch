@@ -108,7 +108,7 @@ The recorder now starts the browser at device scale 2, so the layout is always 1
 ## Limits
 
 Game model. Not a flight procedure, not an icing severity. The ground is flat. The ice index is a game state,
-not an icing model. Costs are illustrative. The frame rate was measured on one laptop. Cloud Dive reuses code
+not an icing model. Costs are illustrative. The frame rate was measured on one desktop PC. Cloud Dive reuses code
 from my earlier WeatherPath project; every file's origin is listed in `docs/Preexisting_Work_Disclosure.md`.
 
 ## What changed in how I work

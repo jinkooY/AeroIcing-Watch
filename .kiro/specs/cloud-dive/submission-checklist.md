@@ -29,6 +29,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       section 7 (revision a and b files by origin, all Kiro). Still the owner's: read the
       table and section 7, confirm the ECMWF and NOAA attribution wording, check the three.js
       SHA-256 with `Get-FileHash`, and confirm the final commit of each file.
+      Status 2026-11-19: `THIRD_PARTY_NOTICES.md` exists and now also lists the IEM PIREP archive and the tools and services used to test and make the video; disclosure section 8 covers revisions c to f. Open: the owner answers `docs/disclosure-decisions-ko.md` (A1 to E3).
 - [x] C5 Legacy components marked in the README and the disclosure (nothing deleted).
 
 ## Data (runs, not coding)
@@ -100,7 +101,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       anti-ice, the report). KDEN-KLAX is not used in the video: it keeps the flat-ground
       Why card and its altitude block is unchanged, so it is a playable case, not the demo.
       The game note stays visible in the shot. Say that the ground is flat and frame rates
-      were measured on one laptop only.
+      were measured on one desktop PC only (corrected 2026-11-19; earlier notes said laptop).
       0:00-0:25 problem: icing decisions cost fuel - 0:25-1:30 a flight through a
       real icing day: cruise, gate, lane, climb, anti-ice, the dollar total -
       1:30-2:30 how Kiro built it (spec, properties, counterexample, hooks,
@@ -110,9 +111,11 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       question in the rules (surfaces, custom agents, hooks, specs, steering, MCP,
       property-based testing, powers), written only from the usage log; state
       which code came from Codex, Claude and WeatherPath. Kiro drafts.
+      Status 2026-11-19: rewritten as the Kiro write-up (sections 1 to 9) and reviewed by wording-guardian in Kiro CLI (FAIL, then fixed). Open: owner decisions A4, A5 and C1 of `docs/disclosure-decisions-ko.md` before it is final.
 - [ ] C17 Fill the English Devpost form: category Frankenstein, demo URL,
       repository URL, testing instructions, disclosure link. Save a draft early.
 
+      Status 2026-11-19: full form text in `docs/devpost-draft.md`; the owner's old Devpost draft described the prototype and is replaced field by field.
 ## Bonuses (optional)
 
 - [ ] C18 Blog post on a third-party platform, published before the deadline,

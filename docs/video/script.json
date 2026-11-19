@@ -137,9 +137,9 @@
     {
       "id": "c1",
       "scene": "7 close",
-      "pause_after": 0.5,
+      "pause_after": 0.4,
       "style": "calm, honest, slower",
-      "text": "The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one laptop."
+      "text": "The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one desktop PC."
     },
     {
       "id": "c2",

@@ -22,7 +22,7 @@ Check, for every sentence a viewer or reader sees:
    - "Not assessed" described as clear or as "Not indicated"; a forecast-only result called observed;
    - detail finer than one satellite pixel; a cloud base called observed (it is an estimate, Noh et al. 2017);
    - costs or the index not labelled illustrative or game model where a number is shown;
-   - frame rates stated as targets met instead of "measured on one laptop".
+   - frame rates stated as targets met instead of "measured on one desktop PC" (corrected 2026-11-19: the machine is a desktop).
 3. Every number against its source: `.kiro/specs/cloud-dive/`, `docs/video/storyboard.md` (Best 3,274,
    Straight-ahead 3,502, demo flight 3,312) and the usage log. Flag a number you cannot trace.
 4. Kiro claims against `docs/kiro-usage-log.md`: a feature is claimed only if the log has a row for it.

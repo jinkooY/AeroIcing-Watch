@@ -26,6 +26,7 @@ CASES = UI / "cases"
 BANNED_R91 = [
     "no icing", "ice-free", "safe", "clear of ice", "light",
     "moderate", "severe", "likely", "unlikely",
+    "risk", "probability",  # P-12 (2026-11-19): guardrail rule 1, no icing risk or probability statements
 ]
 # R9.2: absence is "Not indicated", missing data is "Not assessed". Other phrasings are banned
 # in user-facing text. "Phase unknown" (GOES phase code 5, a satellite category, not evidence

@@ -1,3 +1,5 @@
+> **Superseded (2026-11-19).** This text describes the earlier FastAPI prototype (risk badge, altitude suggestions), which is legacy and not the Kiroween entry. Its wording does not follow the science guardrails. The entry's Devpost text is [devpost-draft.md](devpost-draft.md).
+
 ### Inspiration
 
 Airline dispatchers reviewing possible icing along a proposed flight segment face a gap: satellite viewers show *where* clouds are, but not *how they sit vertically* along the exact route. AeroIcing Watch closes that gap by turning GK-2A geostationary satellite Level-2 observations into a vertical cross-section tied to the actual segment.

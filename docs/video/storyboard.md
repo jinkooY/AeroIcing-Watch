@@ -152,7 +152,7 @@ their first run, and the gaps were found while stating the properties), so line 
 rules", not "found a counterexample". Show:
 
 1. `.kiro/specs/cloud-dive/requirements.md`: scroll 2 s over the EARS lines (R2 evidence rule).
-2. `tasks.md`: the checked list (111 of 111 coding subtasks).
+2. `tasks.md`: the checked list (131 of 132 subtasks on 2026-11-19; the last one is the final recording).
 3. The Kiro hooks panel: the six hooks in `.kiro/hooks/`.
 4. A real hook run: save a file under `static/cloud-dive/` and let `wording-on-cloud-dive-save` run `tests/test_wording.py`; capture the passing result.
 5. `.kiro/steering/science-guardrails.md` open on the banned wording list.
@@ -176,7 +176,7 @@ Review 1 (2026-11-15):
 - A3: Best is $3,274 and the always anti-ice reference is $3,441 (both were off by $1).
 - A4: g5 says "Anti-ice off, flying on?" so it is not confused with the report's Straight-ahead reference
   (centre lane, start altitude, anti-ice on in icing cells). The failure take stops at the ice gate (index 50).
-- A5: c1 ends "Frame rate measured on one laptop." (C15 asks for the frame rate, not all tests).
+- A5: c1 ends "Frame rate measured on one desktop PC." (was "laptop"; the machine is a desktop, corrected 2026-11-19) (C15 asks for the frame rate, not all tests).
 - A6: T8 points to the Cloud Dive README section, not "Known Limitations" (that is the FastAPI app).
 
 ## 8. Open questions

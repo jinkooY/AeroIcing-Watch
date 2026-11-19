@@ -523,7 +523,7 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - [x] 22.2 Cloud puffs (design 14.4, revision d)
   - `scene.js`: pure `buildPuffs(volume)` with the integer hash; `cockpit-geometry.js` plan entries; `cockpit3d.js` puff slot with a
     start-up layered noise texture and the old soft quad as fallback; puffs counted in the triangle caps
-  - Tests: CD-P27 (same input, same puffs; every puff inside its volume and between base and top; Observed never dropped);
+  - Tests: CD-P36 (same input, same puffs; every puff inside its volume and between base and top; Observed never dropped);
     scene purity test still passes; no `Math.random` in `static/cloud-dive/` (a grep test)
   - Done: `cloudPuffs`, `puffAtlasData` in `cockpit-geometry.js` (not `scene.js`); `cockpit3d.js` camera-facing puff slot; the old volume boxes stay at 14 percent opacity; `tests/js/cloud-puffs.test.mjs`. The Observed glow now uses ordinary blending with a soft edge (additive blending turned the stacked bands into hard white blocks); meaning, level and drawing rule are unchanged
   - _Requirements: R23.1, R23.2, R23.5_

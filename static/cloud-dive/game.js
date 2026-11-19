@@ -334,7 +334,11 @@ function backToCases() {
   store.prev = null;
   store.engineCase = null;
   store.state = null;
+  store.flown = [];
+  cockpit.phase = null; // P-11: no flight, no lead-in; without this body.lead-active stayed on in the picker
+  skipRequested = false;
   renderPicker();
+  renderLeadUi();
   notify();
 }
 
@@ -895,6 +899,7 @@ function resetCockpitFlight() {
   cockpit.leadLast = null;
   cockpit.leadKey = "";
   if (cockpit.panel && cockpit.panel.hideCost) cockpit.panel.hideCost();
+  skipRequested = false; // P-05: a Skip pressed in the last flight must not skip the next takeoff's first frame
   renderLeadUi();
 }
 
@@ -1031,6 +1036,7 @@ function syncLeadToView() {
   if (!isCockpitView() || started) {
     cockpit.phase = finishLead(cockpit.phase);
     cockpit.sceneFor = null;
+    skipRequested = false; // P-05: the lead-in is finished here; a pending Skip has nothing left to skip
   }
 }
 

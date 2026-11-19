@@ -27,7 +27,7 @@
 | k1 | 6 Kiro | In Kiro, a spec defined the requirements and correctness properties. | Kiro에서 스펙이 요구사항과 정확성 속성을 정의했습니다. |
 | k2b | 6 Kiro | Writing those properties exposed gaps in our own rules. | 그 속성을 쓰는 과정에서 우리 규칙의 빈틈이 드러났습니다. |
 | k3b | 6 Kiro | Steering holds the wording rules, and a hook runs the wording test on each game-file save. | 스티어링에 표현 규칙이 있고, 게임 파일을 저장할 때마다 훅이 표현 테스트를 실행합니다. |
-| c1 | 7 마무리 | The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one laptop. | 한계입니다. 지면은 평평합니다. 얼음 지수는 게임 상태값이지 결빙 모델이 아닙니다. 비용은 예시용입니다. 프레임 속도는 노트북 한 대에서만 측정했습니다. |
+| c1 | 7 마무리 | The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one desktop PC. | 한계입니다. 지면은 평평합니다. 얼음 지수는 게임 상태값이지 결빙 모델이 아닙니다. 비용은 예시용입니다. 프레임 속도는 데스크톱 PC 한 대에서만 측정했습니다. |
 | c2 | 7 마무리 | Cloud Dive. Real data, honestly labeled. Play it free, in your browser. | 클라우드 다이브. 실제 데이터를 정직하게 표시했습니다. 브라우저에서 무료로 해 보세요. |
 
 ## 이전 버전에서 바뀐 점

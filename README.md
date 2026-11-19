@@ -253,16 +253,21 @@ Limits:
   Lane spacing and vertical scale are exaggerated in the 3D view (Why cards explain).
 - Satellite sees cloud tops only. Cloud base is an estimate.
 
-Measured on this laptop only (Edge 157, Intel UHD 770, 60 Hz display, headless runs recorded in
+Measured on this desktop PC only (Edge 157, Intel UHD 770, 60 Hz display, headless runs recorded in
 [`docs/screens/15.6-perf.json`](docs/screens/15.6-perf.json) and
 `docs/screens/19.2-chase-*.json`): the cockpit view ran at about 60 frames per second at
 1280x720, 1366x768 and 390x844, and 58.7 at 1920x1080. The chase view ran at about 60 (hardware GL and
 software GL, both in `19.2-chase-*.json`). 60 is the display refresh cap, so these are not a measure of headroom.
 Other devices were not measured.
 
-Not verified: the game was not checked by a human on a phone or in a non-Edge browser. The
-390x844 and 800x1000 layouts were checked by a headless Edge script only; they scroll by design.
-The MCP browser check of the cockpit on a narrow viewport (checklist C11) is not done yet.
+Phone checks: the 390x844 and 800x1000 layouts were checked by a headless Edge script and by the
+Playwright MCP server at 390x844 (2026-11-17 and 11-18); they scroll by design. On a real Samsung
+Galaxy S25 Ultra (Chrome, Android 15, through BrowserStack, 2026-11-18) a scripted session reached
+the first gate with the windshield, buttons and gate panel on screen; a bug found there (Continue
+below the fold after the climb) is fixed.
+
+Not verified: no person has played the game on a phone, and it was not run in a desktop browser other
+than Edge. Frame rates on phones were not measured.
 
 Third-party code and data: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Origin of every
 file, by tool: [`docs/Preexisting_Work_Disclosure.md`](docs/Preexisting_Work_Disclosure.md).

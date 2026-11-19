@@ -52,3 +52,26 @@ formula in `params.departureClimbNote`). They are not used for any icing evidenc
 
 Owner to confirm the exact wording of the ECMWF and NOAA attribution lines before submission
 (checklist C4). The game note and source line in the game screens already name both sources.
+
+## Iowa Environmental Mesonet PIREP archive
+
+| Item | Value |
+|---|---|
+| Used for | Choosing the case dates and routes (PIREP icing clusters, decision P1). No PIREP data is in the case files or shown in the game |
+| Source | Iowa Environmental Mesonet (IEM), Iowa State University, PIREP archive of NWS reports |
+| Terms | Owner to supply the IEM terms wording (pending item P-15). PIREPs are reports, used only to choose cases, never as validation (guardrail rule 2) |
+
+## Tools and services used to test and to make the video (not shipped)
+
+None of these is part of the published game or loaded by it. They were used on the author's machine or as
+online services while building, testing and recording.
+
+| Item | Use | Terms |
+|---|---|---|
+| Blender 4.5.9 LTS | Renders the cloud shots of the submission video from the GOES case data (`tools/video/blender/`) | GPL-3.0 (the program); the rendered images are the author's work |
+| FFmpeg 9.0.2 (gyan.dev full build) | Records the takes and encodes the video (`tools/video/`) | GPL build, used as a separate program |
+| Google Gemini text-to-speech (paid API) | English narration of the video (`tools/video/make_narration.py`) | Owner to confirm the public-use terms of generated audio (pending item P-20) |
+| Segoe UI (Windows system font) | Captions and cards burned into the video | Windows font, used to render text in the author's own video; owner to confirm |
+| Pillow (MIT-CMU), Hypothesis (MPL-2.0) | Map images of the case files (`cases/*.png`, build time), video cards and stills; property-based tests | Python libraries, installed from PyPI, not modified |
+| Playwright MCP 0.0.85 (Apache-2.0), Microsoft Edge | Headless and phone-size layout checks | Tools only |
+| BrowserStack (service) | Real-device check on a Samsung Galaxy S25 Ultra | Online service, used under the author's account |

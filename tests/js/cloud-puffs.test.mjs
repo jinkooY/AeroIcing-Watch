@@ -1,4 +1,4 @@
-// Task 22.2 (revision d, R23.1 to R23.2, CD-P27): cloud puffs are deterministic, lie inside their volume, respect the cap,
+// Task 22.2 (revision d, R23.1 to R23.2, CD-P36; first numbered CD-P27 by mistake): cloud puffs are deterministic, lie inside their volume, respect the cap,
 // and stay thin and faint for an estimated base. Hand-built scenes are labelled synthetic; the real-case test builds the
 // scene from the three case files.
 import test from "node:test";
@@ -30,7 +30,7 @@ function inside(p, boxes) {
     p.y - p.h / 2 >= b.y0 - EPS && p.y + p.h / 2 <= b.y1 + EPS);
 }
 
-test("puffs: same input gives the same puffs, input may be deep frozen (CD-P27, synthetic)", () => {
+test("puffs: same input gives the same puffs, input may be deep frozen (CD-P36, synthetic)", () => {
   const scene = synthSceneWith([cloud(0), cloud(1), cloud(2, { baseFt: null, bottomFt: 13650, baseEstimated: true })]);
   const a = G.cloudPuffs(scene);
   const b = G.cloudPuffs(scene);
@@ -38,7 +38,7 @@ test("puffs: same input gives the same puffs, input may be deep frozen (CD-P27, 
   assert.deepEqual(a, b);
 });
 
-test("puffs: every puff lies inside its volume and all numbers are finite (CD-P27, synthetic)", () => {
+test("puffs: every puff lies inside its volume and all numbers are finite (CD-P36, synthetic)", () => {
   const scene = synthSceneWith([cloud(0), cloud(1, { topFt: 30000, baseFt: 6000, bottomFt: 6000 }), cloud(2, { x1Km: 60 })]);
   const boxes = G.cloudBoxes(scene);
   const puffs = G.cloudPuffs(scene);
