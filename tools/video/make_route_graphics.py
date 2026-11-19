@@ -40,7 +40,7 @@ PHASE_KEY = [("Supercooled liquid", (200, 0, 0)), ("Liquid", (255, 170, 30)), ("
 
 
 def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
-    for name in (("segoeuib.ttf", "arialbd.ttf") if bold else ("segoeui.ttf", "arial.ttf")):
+    for name in (("NotoSans-Bold.ttf",) if bold else ("NotoSans-Regular.ttf",)):  # Noto Sans, SIL Open Font License
         try:
             return ImageFont.truetype(str(Path("C:/Windows/Fonts") / name), size)
         except OSError:

@@ -1,7 +1,7 @@
 # Blender for the Cloud Dive video: what the earlier tools give us (assessment, 2026-11-16)
 
-Earlier tools (read only, not changed): `the owner's earlier, unpublished Blender scripts (another project, local)` - `(earlier script)` (still cuts), `(earlier script)`
-(motion and frames), `(earlier script)` (rain, fog drift, HUD, seamless loop), `(earlier script)` (PNG frames to H.264).
+Earlier tools (read only, not changed): the owner's earlier, unpublished Blender scripts (another project, local, not in this repository): a still-cut script, a motion and
+frames script, a compositing script (rain, fog drift, HUD, seamless loop) and an encoder script.
 Blender 4.5.9 is installed for this user at `%USERPROFILE%\.cache\weatherpath-blender\blender-4.5.9-windows-x64\blender.exe`
 (Cycles on the RTX 3060 Ti through OptiX works). System ffmpeg is now available too, so the Blender encoder script is not needed.
 

@@ -1,6 +1,6 @@
 # Cloud Dive: how Kiro was used (Kiroween 2026 write-up)
 
-Draft of 2026-11-19 (checklist C16). Every statement comes from [`kiro-usage-log.md`](kiro-usage-log.md)
+Written on 2026-11-19 (checklist C16). Every statement comes from [`kiro-usage-log.md`](kiro-usage-log.md)
 (one row per task, 2026-11-11 to 2026-11-19), the spec in [`.kiro/specs/cloud-dive/`](../.kiro/specs/cloud-dive/)
 or the git history. This text is pasted into the Devpost "How Kiro was used" field
 ([`devpost-draft.md`](devpost-draft.md)).
@@ -61,7 +61,7 @@ Six hooks in [`.kiro/hooks/`](../.kiro/hooks/):
 
 | Hook | Trigger | What it did |
 |---|---|---|
-| Wording test | save under `static/cloud-dive/` | Runs `tests/test_wording.py`. When the test was written it found real violations: missing data shown with a banned word (now *Not assessed*) and a card that said evidence was absent (rewritten). The save hook is configured; a run inside the IDE is not logged |
+| Wording test | save under `static/cloud-dive/` | Runs `tests/test_wording.py`. When the test was written it found real violations: a banned wording for cells without data (now *Not assessed*) and a card that wrongly implied the cloud had been checked and found clear (rewritten to describe the cloud top the satellite sees). The save hook is configured; a run inside the IDE is not logged |
 | `pytest` on Python save, `node --check` on JavaScript save | file save | Syntax and test feedback without asking |
 | Protect `.env` and `data/` | before any agent write, rename or delete | Blocks agent writes to secrets and the satellite cache (tested by piping sample payloads, 6 of 6) |
 | Session-start status | session start | Prints progress, days to the deadline and open owner items |
@@ -75,8 +75,8 @@ The progress hook reminds us to add a usage-log row after each task; some rows c
 the wording test cannot scan: the video script, the README, the blog and the Devpost text. Its first run, on
 the video script, failed with 14 findings, none of them a banned word: every finding was a claim a word list
 cannot catch. Two were about Kiro itself ("We built it all in Kiro" contradicted the disclosure; a hook claim
-was more than the log showed). Later runs caught a line we had written, "when evidence of icing is ahead",
-which presents forecast-only cells as icing evidence. The agent runs in the IDE and, in its JSON form, in the
+was more than the log showed). Later runs caught a script line we had written that presented forecast-only cells as icing evidence; it now
+says "Possible or Observed evidence". The agent runs in the IDE and, in its JSON form, in the
 CLI (section 1).
 
 ## 6. MCP
@@ -108,8 +108,12 @@ On 2026-11-19: 323 pytest tests and 265 Node tests pass (re-run on the frozen bu
 
 ## 9. What Kiro did not do
 
-- Claude wrote the first backend files and corrected Kiro's satellite drafts (2026-11-11 to 11-12); Codex wrote
-  the legacy Incheon-Haneda route demo. Those files stay in the repository, most of them marked legacy.
+- **Other AI tools.** Claude wrote the first backend files and corrected Kiro's satellite drafts (2026-11-11 to
+  11-12). Later it reviewed the video plan and a code revision, wrote instructions that Kiro carried out, and
+  wrote a list of pending items. The science guardrails steering file was imported from a Claude-assisted
+  research review and amended by Kiro.
+  Codex wrote the legacy Incheon-Haneda route demo. Those files stay in the repository, most of them marked
+  legacy.
 - Kiro wrote the Cloud Dive game, engine, exporter and video tools. They reuse a few modules of Claude or
   WeatherPath origin (for example `cloud_base.py`, `ifs_grid.py`, `collect_ifs.py`), listed per file in
   [`Preexisting_Work_Disclosure.md`](https://github.com/jinkooY/AeroIcing-Watch/blob/main/docs/Preexisting_Work_Disclosure.md).

@@ -44,8 +44,8 @@ OUT = ROOT / "data" / "video"
 TAKES = OUT / "takes"
 EDL = ROOT / "docs" / "video" / "edl.json"
 W, H = 1920, 1080
-FONT = "C\\:/Windows/Fonts/segoeui.ttf"
-FONT_BOLD = "C\\:/Windows/Fonts/segoeuib.ttf"
+FONT = "C\\:/Windows/Fonts/NotoSans-Regular.ttf"  # Noto Sans, SIL Open Font License (free); E3 2026-11-19
+FONT_BOLD = "C\\:/Windows/Fonts/NotoSans-Bold.ttf"
 COLORS = {"white": "white", "orange": "0xFFB454", "blue": "0x4F8CFF", "grey": "0xA9B8D6"}
 TAIL_S = 1.5  # picture after the last voice line
 REF = re.compile(r"^\s*(?P<name>.*?)\s*(?:(?P<sign>[+-])\s*(?P<off>\d+(?:\.\d+)?))?\s*$")
@@ -289,7 +289,7 @@ def card_png(text: str, placeholder: bool, path: Path) -> Path:
 
     def font(size, bold=False):
         try:
-            return ImageFont.truetype("C:/Windows/Fonts/" + ("segoeuib.ttf" if bold else "segoeui.ttf"), size)
+            return ImageFont.truetype("C:/Windows/Fonts/" + ("NotoSans-Bold.ttf" if bold else "NotoSans-Regular.ttf"), size)
         except OSError:
             return ImageFont.load_default()
     title, _, sub = text.partition("|")
@@ -440,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
     wav = OUT / f"narration-{suffix}.wav"
     # MarginV 48 of the 288-line subtitle canvas puts the captions about 180 px above the bottom edge, clear of the
     # game note and the source line (R23.7)
-    style = "FontName=Segoe UI,FontSize=17,Bold=1,Outline=2,Shadow=0,MarginV=48,PrimaryColour=&H00FFFFFF,OutlineColour=&H00101010"
+    style = "FontName=Noto Sans,FontSize=17,Bold=1,Outline=2,Shadow=0,MarginV=48,PrimaryColour=&H00FFFFFF,OutlineColour=&H00101010"
     vf = f"subtitles={srt.relative_to(ROOT).as_posix()}:force_style='{style}'" if not only else "null"
     if not args.voice:
         vf += ",drawtext=fontfile='" + FONT + "':text='ROUGH CUT - silent, estimated timing':fontsize=26:fontcolor=0xFFB454:x=w-tw-24:y=16:box=1:boxcolor=black@0.6:boxborderw=8"

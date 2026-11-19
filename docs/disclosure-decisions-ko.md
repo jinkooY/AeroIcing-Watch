@@ -7,7 +7,10 @@
 "must disclose any other pre-existing code or work incorporated", "Insufficient use of Kiro will result in
 disqualification at the Judges' sole discretion".
 
-각 항목의 "답" 칸에 적어 주시면 영문 문서에 반영합니다. 권장안을 그대로 쓰셔도 됩니다.
+**2026-11-19 소유자 답변을 받아 모두 반영함.** 답: A1-A3 확정, A4 Claude (reviewer), carried out by Kiro, A5 Claude,
+B1 유지, B2 본인 저작물·Apache-2.0 공개, B3 이름 쓰지 않음, C1 밝힘, C2 그대로, C3 두기, D1 2026-11-11 Devpost 가입 후
+작업 시작, D2 확정, E1 소유자가 요청한 적 없음 (AI 도구가 찾아 넣음; 사례 선정에 실제로 쓰였으므로 IEM 공개 조건과 함께 기록),
+E2 유료 API로 최종 합성만, E3 무료 글꼴 (Noto Sans) 로 교체.
 
 ## A. 출처 확인 (git으로는 판단할 수 없는 것)
 
@@ -24,8 +27,8 @@ disqualification at the Judges' sole discretion".
 | 번호 | 결정할 내용 | 현재 초안 | 권장 | 답 |
 |---|---|---|---|---|
 | B1 | WeatherPath 코드 (복사·변형한 함수들) 를 이 저장소의 Apache-2.0으로 공개한다는 11월 13일 진술 유지 | 유지 | 유지 | |
-| B2 | Blender 구름 스크립트가 이전 도구 (`the owner's earlier, unpublished Blender scripts (another project, local)(earlier script)` 등) 의 방식을 따름. 비교 결과 198줄 중 23줄이 같고 모두 Blender 기본 설정 호출, 전체 유사도 0.04, 장면·모델·텍스처 복사 없음. (1) 본인 저작물인지, (2) 이 재사용분을 Apache-2.0으로 공개해도 되는지 | 미정 | 둘 다 "예"라면 그대로 공개 | |
-| B3 | 공개 문서에 이전 도구의 폴더 이름 "(another project)"를 써도 되는가 | 8절에서는 이름을 빼고 "the owner's earlier, unpublished Blender scripts from another project"로 적음 (2026-11-19). 단 `docs/video/blender-assessment.md` 2행에는 경로가 그대로 있고, 이미 공개 저장소에 푸시됨 (`dcc5630`) | 이름을 써도 되면 그대로 두고, 민감하면 blender-assessment.md도 같은 문구로 바꿈. 과거 커밋에는 남음 | |
+| B2 | Blender 구름 스크립트가 이전 도구 (다른 프로젝트의 이전 Blender 스크립트, 이 저장소에 없음) 의 방식을 따름. 비교 결과 198줄 중 23줄이 같고 모두 Blender 기본 설정 호출, 전체 유사도 0.04, 장면·모델·텍스처 복사 없음. (1) 본인 저작물인지, (2) 이 재사용분을 Apache-2.0으로 공개해도 되는지 | 미정 | 둘 다 "예"라면 그대로 공개 | |
+| B3 | 공개 문서에 이전 도구의 폴더 이름을 써도 되는가 | 8절에서는 이름을 빼고 "the owner's earlier, unpublished Blender scripts from another project"로 적음 (2026-11-19). 단 `docs/video/blender-assessment.md` 2행에는 경로가 그대로 있고, 이미 공개 저장소에 푸시됨 (`dcc5630`) | 이름을 써도 되면 그대로 두고, 민감하면 blender-assessment.md도 같은 문구로 바꿈. 과거 커밋에는 남음 | |
 
 ## C. 다른 AI 도구 사용을 어떻게 밝힐지
 

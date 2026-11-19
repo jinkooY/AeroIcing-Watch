@@ -50,16 +50,16 @@ formula in `params.departureClimbNote`). They are not used for any icing evidenc
 | OpenAP (LGPL-3.0) | Build-time cost tables for the cost model; not shipped to the browser | Used as a library, not modified |
 | CIRA aviation cross-section product | Referenced prior work only; no code or images used | Not applicable |
 
-Owner to confirm the exact wording of the ECMWF and NOAA attribution lines before submission
-(checklist C4). The game note and source line in the game screens already name both sources.
+The ECMWF and NOAA attribution lines above were confirmed by the owner on 2026-11-19 (checklist C4). The
+game note and source line in the game screens name both sources.
 
 ## Iowa Environmental Mesonet PIREP archive
 
 | Item | Value |
 |---|---|
-| Used for | Choosing the case dates and routes (PIREP icing clusters, decision P1). No PIREP data is in the case files or shown in the game |
+| Used for | Screening candidate case days and routes on 2026-11-13 (counts of icing PIREPs near each route, requirements 5.4 and 5.5). Proposed and run by Kiro (owner statement, 2026-11-19; the commit `12140c4` does not record the tool), not asked for by the owner. No PIREP data is in the case files or shown in the game |
 | Source | Iowa Environmental Mesonet (IEM), Iowa State University, PIREP archive of NWS reports |
-| Terms | Owner to supply the IEM terms wording (pending item P-15). PIREPs are reports, used only to choose cases, never as validation (guardrail rule 2) |
+| Terms | "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose. Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated." (https://mesonet.agron.iastate.edu/disclaimer.php, read 2026-11-19). Attribution: Iowa Environmental Mesonet, Iowa State University. PIREPs are reports, used only to choose cases, never as validation (guardrail rule 2) |
 
 ## Tools and services used to test and to make the video (not shipped)
 
@@ -70,8 +70,8 @@ online services while building, testing and recording.
 |---|---|---|
 | Blender 4.5.9 LTS | Renders the cloud shots of the submission video from the GOES case data (`tools/video/blender/`) | GPL-3.0 (the program); the rendered images are the author's work |
 | FFmpeg 9.0.2 (gyan.dev full build) | Records the takes and encodes the video (`tools/video/`) | GPL build, used as a separate program |
-| Google Gemini text-to-speech (paid API) | English narration of the video (`tools/video/make_narration.py`) | Owner to confirm the public-use terms of generated audio (pending item P-20) |
-| Segoe UI (Windows system font) | Captions and cards burned into the video | Windows font, used to render text in the author's own video; owner to confirm |
+| Google Gemini text-to-speech (paid API) | English narration of the final video only (`tools/video/make_narration.py`) | Used under the owner's paid Gemini API account and Google's terms for that API |
+| Noto Sans (Google) | Captions, cards, diagrams and route graphics of the video | SIL Open Font License 1.1 (free; https://openfontlicense.org); used from the installed font in `tools/video/make_final.py`, `make_route_graphics.py`, `make_animatic.py` and `docs/video/assets/diagram.html`, not redistributed here. The game itself ships no font: it uses the viewer's system font |
 | Pillow (MIT-CMU), Hypothesis (MPL-2.0) | Map images of the case files (`cases/*.png`, build time), video cards and stills; property-based tests | Python libraries, installed from PyPI, not modified |
 | Playwright MCP 0.0.85 (Apache-2.0), Microsoft Edge | Headless and phone-size layout checks | Tools only |
 | BrowserStack (service) | Real-device check on a Samsung Galaxy S25 Ultra | Online service, used under the author's account |

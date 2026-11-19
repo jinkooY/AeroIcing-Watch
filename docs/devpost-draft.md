@@ -1,8 +1,7 @@
-<!-- Devpost form text for Kiroween 2026 (checklist C17). Draft of 2026-11-19, written by Kiro.
-     The old Devpost draft described the earlier prototype (icing risk badge, altitude suggestions, GK-2A,
-     Incheon-Haneda). Replace every field with the text below; do not keep the old "What it does".
-     Fill [VIDEO], [BLOG], [SOCIAL] after publishing. Re-check the 38-dollar figure on the frozen build.
-     Run the wording-guardian agent on this file after any edit. -->
+<!-- Devpost form text for Kiroween 2026 (checklist C17), written by Kiro on 2026-11-19. Delete this comment
+     before pasting. The owner's older Devpost draft described a legacy prototype; replace every field with the
+     text below. Fill [VIDEO], [BLOG] and [SOCIAL] after publishing. Run the wording-guardian agent after any
+     edit. -->
 
 # Devpost submission: Cloud Dive
 
@@ -77,8 +76,8 @@ dispatcher cross-section view in the repository.
 
 ### Challenges we ran into
 
-- **Saying only what the data supports.** A word list catches "safe" or "severe", but not "evidence of icing"
-  on a forecast-only cell. A custom agent now reviews the prose files the word test does not scan.
+- **Saying only what the data supports.** A word list catches the banned terms, but not a sentence that presents
+  a forecast-only cell as icing evidence. A custom agent now reviews the prose files the word test does not scan.
 - **Gates that re-fired.** Stating a correctness property showed that a gate fired at every step while
   approaching a cloud; the spec now announces each entry once.
 - **Phones.** The gate buttons sat below the fold on a phone, and on a real Galaxy S25 Ultra the Continue
@@ -133,11 +132,24 @@ Paste [`AeroIcing_Watch_Submission_Package.md`](AeroIcing_Watch_Submission_Packa
 
 ## Pre-existing work and third-party data
 
-The repository was created on 2026-11-11, inside the submission period. Earlier code by the author
-(WeatherPath) and code written by other AI tools (Claude, Codex) is listed per file in
+The author joined the hackathon and started this project on 2026-11-11; the repository was created that day.
+
+Other AI tools: Claude wrote the first backend files of an earlier prototype and corrected Kiro's satellite
+drafts (2026-11-11 to 11-12). Later it reviewed the video plan and a code revision, wrote instructions that Kiro
+carried out and a list of pending items; the science guardrails steering file was imported from a Claude-assisted
+research review and amended by Kiro. Codex wrote a legacy route-comparison demo. The English narration of the
+final video is synthesized with Google Gemini text-to-speech (the owner's paid API account). That prototype code stays in the repository,
+marked legacy, and is not part of the entry. The Cloud Dive game, engine, exporter and video tools were built
+with Kiro; they reuse a few modules of Claude or WeatherPath origin. Parts of the cloud-base code come from the
+author's earlier WeatherPath project, and the Blender cloud script follows the author's earlier, unpublished
+Blender scripts; both are the author's own work, released here under Apache-2.0.
+
+Every file is listed with its origin in
 https://github.com/jinkooY/AeroIcing-Watch/blob/main/docs/Preexisting_Work_Disclosure.md. Third-party data,
 code and tools: https://github.com/jinkooY/AeroIcing-Watch/blob/main/THIRD_PARTY_NOTICES.md. Data: NOAA
-GOES-R (NOAA Open Data), ECMWF Open Data (CC BY 4.0), Natural Earth and OurAirports (public domain).
+GOES-R (NOAA Open Data), ECMWF Open Data (CC BY 4.0), Natural Earth and OurAirports (public domain). Kiro screened
+the case days with icing PIREPs from the Iowa Environmental Mesonet, Iowa State University (public domain); no
+PIREP is in the game.
 
 ## Bonus prizes
 

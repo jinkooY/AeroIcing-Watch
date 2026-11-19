@@ -54,7 +54,7 @@ def find_ffmpeg() -> str:
 
 
 def font(size: int) -> ImageFont.FreeTypeFont:
-    for name in ("segoeui.ttf", "arial.ttf"):
+    for name in ("NotoSans-Regular.ttf",):  # Noto Sans, SIL Open Font License
         try:
             return ImageFont.truetype(str(Path("C:/Windows/Fonts") / name), size)
         except OSError:
@@ -135,7 +135,7 @@ def main() -> int:
 
     total = sum(d for _, d in entries)
     out = OUT / f"animatic-{suffix}.mp4"
-    style = "FontName=Segoe UI,FontSize=22,Outline=2,Shadow=0,MarginV=48,PrimaryColour=&H00FFFFFF"
+    style = "FontName=Noto Sans,FontSize=22,Outline=2,Shadow=0,MarginV=48,PrimaryColour=&H00FFFFFF"
     vf = f"subtitles={srt.relative_to(ROOT).as_posix()}:force_style='{style}',format=yuv420p"
     cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing),
            "-vf", vf, "-r", str(FPS), "-t", f"{total:.3f}", "-c:v", "libx264", "-crf", "20", "-preset", "medium", str(out)]

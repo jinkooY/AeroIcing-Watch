@@ -18,7 +18,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
 - [x] C3 Submit the Kiro Credit Request Form by **Tue Dec 1, 12:00 pm PT
       (Dec 2 05:00 KST)**; redeem the code by Dec 4. Owner.
       Done: the owner reports the credits are received (2026-11-17).
-- [ ] C4 Disclosure: attribution settled (files git cannot attribute = Claude, owner
+- [x] C4 Disclosure: attribution settled (files git cannot attribute = Claude, owner
       statement 2026-11-13). Remaining: add `THIRD_PARTY_NOTICES.md` (ECMWF CC BY 4.0, NOAA
       GOES, IEM PIREP, Noh et al. 2017, CIRA as referenced work, OpenAP LGPL build-time
       only), link the disclosure and audit from the README, owner reads the final table.
@@ -29,7 +29,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       section 7 (revision a and b files by origin, all Kiro). Still the owner's: read the
       table and section 7, confirm the ECMWF and NOAA attribution wording, check the three.js
       SHA-256 with `Get-FileHash`, and confirm the final commit of each file.
-      Status 2026-11-19: `THIRD_PARTY_NOTICES.md` exists and now also lists the IEM PIREP archive and the tools and services used to test and make the video; disclosure section 8 covers revisions c to f. Open: the owner answers `docs/disclosure-decisions-ko.md` (A1 to E3).
+      Status 2026-11-19: `THIRD_PARTY_NOTICES.md` exists and now also lists the IEM PIREP archive and the tools and services used to test and make the video; disclosure section 8 covers revisions c to f. Done 2026-11-19: the owner answered all items of `docs/disclosure-decisions-ko.md`; applied to the disclosure, the notices, the Kiro write-up and the Devpost text, and checked by wording-guardian in Kiro CLI.
 - [x] C5 Legacy components marked in the README and the disclosure (nothing deleted).
 
 ## Data (runs, not coding)
@@ -111,7 +111,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       question in the rules (surfaces, custom agents, hooks, specs, steering, MCP,
       property-based testing, powers), written only from the usage log; state
       which code came from Codex, Claude and WeatherPath. Kiro drafts.
-      Status 2026-11-19: rewritten as the Kiro write-up (sections 1 to 9) and reviewed by wording-guardian in Kiro CLI (FAIL, then fixed). Open: owner decisions A4, A5 and C1 of `docs/disclosure-decisions-ko.md` before it is final.
+      Status 2026-11-19: rewritten as the Kiro write-up (sections 1 to 9) and reviewed by wording-guardian in Kiro CLI (FAIL, then fixed). Owner decisions A4, A5 and C1 applied 2026-11-19; the test counts are re-run on the frozen build.
 - [ ] C17 Fill the English Devpost form: category Frankenstein, demo URL,
       repository URL, testing instructions, disclosure link. Save a draft early.
 
