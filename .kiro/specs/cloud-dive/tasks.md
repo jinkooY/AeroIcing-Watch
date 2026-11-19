@@ -551,7 +551,7 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
     `tools/layout_check.mjs`; add a row to `docs/kiro-usage-log.md`
   - Done: `docs/screens/22.7-*.png`; `pytest -q` 297 passed; `node --test` 249 passed; `node --check` on every JS file; `layout_check` rows as before (390x844 scrolls as before, output sent to a temp folder so the 15.6 evidence files stay untouched)
   - _Requirements: R23.1 to R23.6_
-- [ ] 23. (j) Video production tools (no game code)
+- [x] 23. (j) Video production tools (no game code)
 - [x] 23.1 Capture spike: headed kiosk window, ffmpeg `ddagrab` and NVENC
   - `tools/browser_guard.mjs` option `headed`; `tools/video/capture_spike.mjs`, `tools/video/capture_pattern_check.mjs`; result about
     58 captured frames per second, window 1920x1080 at device scale 1, no black frames (G16)
@@ -606,7 +606,9 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - [x] 25.5 Video: g4, r2, d5 lines; Best replay shot; new takes and rough cut
   - `script.json`, `script-ko.md`, `edl.json` r2, `record_takes.mjs` `best replay` marker
   - _Requirements: R25.6_
-- [ ] 23.4 Final recording and edit on the frozen build (owner, after 2026-11-28)
+- [x] 23.4 Final recording and edit (done 2026-11-19, ahead of the freeze at the owner's request)
+  - Final takes, Blender shots at 1280 x 720, Gemini TTS (Charon), `make_final.py --voice Charon`: 2:54, SRT;
+    the owner uploads
   - _Requirements: R12.1, R23.7_
 ## Notes
 

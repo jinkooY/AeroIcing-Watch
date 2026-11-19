@@ -112,6 +112,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       property-based testing, powers), written only from the usage log; state
       which code came from Codex, Claude and WeatherPath. Kiro drafts.
       Status 2026-11-19: rewritten as the Kiro write-up (sections 1 to 9) and reviewed by wording-guardian in Kiro CLI (FAIL, then fixed). Owner decisions A4, A5 and C1 applied 2026-11-19; the test counts are re-run on the frozen build.
+      Status 2026-11-19: final video built (2:54, 1920 x 1080, English AI voice, burned-in captions and `data/video/final-Charon.srt`); no third-party logo or music; the code URL was removed from the end card. Open: the owner uploads it to YouTube as Public (`docs/youtube-description.md`).
 - [ ] C17 Fill the English Devpost form: category Frankenstein, demo URL,
       repository URL, testing instructions, disclosure link. Save a draft early.
 
@@ -138,3 +139,4 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       Status 2026-11-17: Pages serves Cloud Dive (workflow run 44061570151, checked in a browser:
       ready screen, 3D canvas, no script errors); repository public, Apache-2.0 detected by
       GitHub; `/.kiro` tracked. Still open: tests on the final commit, the draft, the submit.
+      Status 2026-11-19: Pages game and /viewer/ answer 200; repository public, Apache-2.0 in About; 24 `.kiro` files tracked and `.kiro` not ignored; pytest 324 and node --test 265 pass; layout_check, video_mode_check and review_check pass. Repeat after the Devpost submission and before 2027-01-29.

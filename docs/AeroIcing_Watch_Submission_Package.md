@@ -11,8 +11,7 @@ or the git history. This text is pasted into the Devpost "How Kiro was used" fie
 
 ## 1. Kiro IDE and Kiro CLI: how they differed
 
-Almost all of Cloud Dive was built in **Kiro IDE**: spec task execution for 131 of 132 sub-tasks in 25 groups
-(23.4, the final recording, waits for the frozen build), and chat for playtest fixes and the video tools. **Kiro CLI 3.4.0** ran the wording review headless:
+Almost all of Cloud Dive was built in **Kiro IDE**: spec task execution for all 132 sub-tasks in 25 groups, and chat for playtest fixes and the video tools. **Kiro CLI 3.4.0** ran the wording review headless:
 
 ```
 kiro-cli chat --no-interactive --agent wording-guardian-cli --trust-tools=fs_read "<what to review>"
