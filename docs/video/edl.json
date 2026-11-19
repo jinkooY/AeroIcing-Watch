@@ -58,7 +58,9 @@
         "take": "T1-list",
         "from": 0.6,
         "to": "case open click+0.3",
-        "dur": 4.0
+        "dur": 4.0,
+        "zoom": "#case-list",
+        "pad": 60
       },
       {
         "take": "T1-ready",

@@ -141,7 +141,7 @@ def k3b() -> Image.Image:
 
 
 def k4(cli_review: Path | None) -> Image.Image:
-    img, d = base("KIRO  ·  CUSTOM AGENT IN THE IDE AND THE CLI", "A read-only agent reviews every script line",
+    img, d = base("KIRO  ·  CUSTOM AGENT IN THE IDE AND THE CLI", "A read-only agent reviews the script",
                   ".kiro/agents/wording-guardian.md, .kiro/agents/wording-guardian-cli.json")
     agent = json.loads(read(".kiro/agents/wording-guardian-cli.json"))
     panel(d, (96, 200, 900, SAFE_BOTTOM), "wording-guardian-cli.json", [

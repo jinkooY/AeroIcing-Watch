@@ -446,7 +446,7 @@ def main(argv: list[str] | None = None) -> int:
         vf += ",drawtext=fontfile='" + FONT + "':text='ROUGH CUT - silent, estimated timing':fontsize=26:fontcolor=0xFFB454:x=w-tw-24:y=16:box=1:boxcolor=black@0.6:boxborderw=8"
     cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(joined)]
     if wav.exists():
-        cmd += ["-i", str(wav), "-filter_complex", f"[0:v]{vf}[v];[1:a]loudnorm=I=-14:TP=-1.0:LRA=11,aresample=48000[a]",
+        cmd += ["-i", str(wav), "-filter_complex", f"[0:v]{vf}[v];[1:a]loudnorm=I=-14:TP=-1.0:LRA=11,aresample=48000,apad[a]",
                 "-map", "[v]", "-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-shortest"]
     else:
         cmd += ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-filter_complex", f"[0:v]{vf}[v]",
