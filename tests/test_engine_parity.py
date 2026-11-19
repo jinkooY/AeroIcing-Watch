@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ENGINE = ROOT / "static" / "cloud-dive" / "engine.js"
 RUNNER = ROOT / "tests" / "js" / "parity_runner.mjs"
 CASES = ROOT / "static" / "cloud-dive" / "cases"
-CASE_FILES = ["20261107-kbuf-kpwm-1900z.json", "20261101-kden-klax-2100z.json"]
+CASE_FILES = ["20261107-kbuf-kpwm-1900z.json", "20261101-kden-klax-2100z.json",
+              "20261112-kjfk-kbna-1930z.json"]  # P-14 (2026-11-19): the video and Devpost case
 
 NODE = shutil.which("node")
 pytestmark = pytest.mark.skipif(NODE is None, reason="node is not installed")

@@ -174,7 +174,9 @@ export function initReport(deps) {
     root.setAttribute("aria-labelledby", "report-title");
     kids.push(h);
 
-    const headline = reportHeadline(report);
+    // P-08: in hot-seat play the next players have not flown yet, so no reference result is shown in a player's
+    // report; the results table after the last flight shows them to everyone (R20.4).
+    const headline = hot ? null : reportHeadline(report);
     if (headline) {
       const lead = el("p", null, "report-lead");
       lead.appendChild(el("span", headline.vsStraight ? headline.vsStraight.text : "Straight-ahead: not available",
@@ -185,13 +187,16 @@ export function initReport(deps) {
       kids.push(lead);
     }
 
-    if (report.ranked) {
+    if (report.ranked && !hot) {
       kids.push(el("p", report.savingSharePercent === null
         ? "Saving share from Straight-ahead to Best: not available for this case."
         : `Saving share from Straight-ahead to Best: ${Math.round(report.savingSharePercent)} percent ` +
           `(0 percent = Straight-ahead cost, 100 percent = Best cost; a negative value means ` +
           `a higher cost than Straight-ahead). The Wasteful extreme is shown as a reference only.`));
       kids.push(el("p", `Total fuel cost: ${formatUsdWhole(report.totalUsd)}`, "report-total"));
+    } else if (report.ranked) {
+      kids.push(el("p", `Total fuel cost: ${formatUsdWhole(report.totalUsd)}`, "report-total"));
+      kids.push(el("p", "Hot-seat: the game references and the Best replay are shown in the results table after the last flight.", "small"));
     } else {
       kids.push(el("p", `Not ranked. The ice index reached 100 and the flight ended in a diversion. ` +
         `Cost up to the diversion: ${formatUsdWhole(report.costUpToDiversionUsd)}. ` +
@@ -215,10 +220,12 @@ export function initReport(deps) {
       report.references[key] === null ? "Not available" : formatUsdWhole(report.references[key]),
       note,
     ]);
-    kids.push(table("Game references for this case (shown after play, not procedures)",
-      ["Reference", "Cost", "Definition"], refRows));
-    const review = reviewSection(store, st);
-    if (review) kids.push(review);
+    if (!hot) {
+      kids.push(table("Game references for this case (shown after play, not procedures)",
+        ["Reference", "Cost", "Definition"], refRows));
+      const review = reviewSection(store, st);
+      if (review) kids.push(review);
+    }
 
     let bestText;
     if (hot) bestText = "Hot-seat flight: the personal best is not updated.";

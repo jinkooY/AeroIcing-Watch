@@ -95,6 +95,10 @@ try {
 
   note("player 1 flight reaches report", await flyOne());
   await sleep(500);
+  // P-08 (2026-11-19): the next player has not flown, so the report shows no reference result and no Best replay
+  const refs = JSON.parse(await evaluate(`JSON.stringify({ table: /Game references for this case/.test(document.getElementById("report").innerText),
+    review: Boolean(document.getElementById("report-review")), best: /above Best|Saving share/.test(document.getElementById("report").innerText) })`));
+  note("player 1 report shows no reference result (P-08)", !refs.table && !refs.review && !refs.best, JSON.stringify(refs));
   await shot("18.4-hotseat-report1-1280x720.png");
   await evaluate(`document.querySelector("#dlg-report .dlg-close").click()`);
   await waitFor(`document.getElementById("dlg-handover").open`, 5000);

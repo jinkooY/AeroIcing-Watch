@@ -687,10 +687,22 @@ function submitHotseat(e) {
   const entry = hotPending;
   if (!entry) return;
   const names = [...$("hotseat-names").querySelectorAll("input")].map((i) => i.value);
+  // P-07: while a case is still loading, openCase would return at once and drop the new session silently;
+  // keep the form open and say why instead.
+  if (store.loading) {
+    $("picker-status").textContent = "A case is still loading. Start hot-seat again in a moment.";
+    return;
+  }
   const session = hotseat.start(hotseat.setupNames(names, Number($("hotseat-count").value)));
   hotPending = null;
   closeDialog(false);
   openCase(entry, session);
+}
+// P-07: Change case during a hot-seat session asks first, because the session and its results are not kept.
+export const HOTSEAT_LEAVE_TEXT = "Leave the hot-seat session? The players' results are not kept.";
+function confirmLeave() {
+  if (!store.hot) return true;
+  return typeof window.confirm !== "function" || window.confirm(HOTSEAT_LEAVE_TEXT);
 }
 
 function openHandOver() {
@@ -1365,7 +1377,7 @@ function boot() {
   document.addEventListener("keydown", onLegendKey);
   $("map-kind-toggle").addEventListener("click", toggleImageKind);
   document.addEventListener("keydown", onMapKey);
-  $("back-to-cases").addEventListener("click", backToCases);
+  $("back-to-cases").addEventListener("click", () => { if (confirmLeave()) backToCases(); });
   $("error-retry").addEventListener("click", loadIndex);
   $("flight-title").tabIndex = -1;
   $("view-toggle").addEventListener("click", toggleView);

@@ -13,7 +13,8 @@ export const CARD_NOTE =
   "references. The cruise level is the game's altitude block, below airline cruise level, and is not an " +
   "ATC assignment.";
 
-export const formatCardUsd = (usd) => `$${(Math.round(usd * 100) / 100).toFixed(2)}`;
+// P-10 (2026-11-19): whole dollars, like the HUD, the report and the totals, so the parts add up on screen.
+export const formatCardUsd = (usd) => `$${fmtInt(usd)}`;
 
 // Start altitude in feet MSL from the engine case (altsFt[startAlt]); null when unknown.
 export function startAltitudeFt(engineCase) {

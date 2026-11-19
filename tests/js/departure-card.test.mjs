@@ -18,7 +18,7 @@ test("card text shows cost, airports and cruise level for every real case", () =
     const c = E.loadCase(file);
     const t = C.departureCardText(file, c);
     assert.equal(t.title, "Departure climb");
-    assert.equal(t.cost, `$${file.params.departureClimbUsd.toFixed(2)} (illustrative)`);
+    assert.equal(t.cost, `$${Math.round(file.params.departureClimbUsd).toLocaleString("en-US")} (illustrative)`);
     assert.equal(t.route, `${file.airports.from.icao} to ${file.airports.to.icao}`);
     assert.ok(t.level.includes(C.startAltitudeFt(c).toLocaleString("en-US")), n);
     assert.ok(t.level.includes("game altitude block"));
@@ -30,7 +30,7 @@ test("card text shows cost, airports and cruise level for every real case", () =
 
 test("card text falls back when airports and altitude are missing", () => {
   const t = C.departureCardText({ params: { departureClimbUsd: 10 } }, null);
-  assert.equal(t.cost, "$10.00 (illustrative)");
+  assert.equal(t.cost, "$10 (illustrative)");
   assert.match(t.route, /not listed/);
   assert.match(t.level, /not listed/);
 });
