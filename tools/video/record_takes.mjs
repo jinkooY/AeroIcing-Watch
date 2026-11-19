@@ -365,6 +365,44 @@ async function takeDemo(t) {
   return total;
 }
 
+// T5 (revision f, R25.6, scene d5): the dispatcher cross-section view with the real KJFK-KBNA profile (the case
+// file's `viewerProfile`: top, estimated base, phase, supercooled flag; no risk label), opened through the page's
+// own file input, then the sample selector stepped with the arrow keys, as a dispatcher would read it.
+async function takeViewer(t) {
+  const file = JSON.parse(readFileSync(path.join(root, "static/cloud-dive/cases", `${cfg.case}.json`), "utf8"));
+  const profile = path.join(outDir, `${t.id}-profile.json`);
+  writeFileSync(profile, JSON.stringify(file.viewerProfile));
+  await send("Page.navigate", { url: `${base}/static/viewer-standalone.html` });
+  for (let i = 0; i < 100 && !(await evaluate(`Boolean(document.getElementById("profile-file"))`)); i++) await sleep(150);
+  await sleep(600);
+  const { root: doc } = await send("DOM.getDocument", {});
+  const { nodeId } = await send("DOM.querySelector", { nodeId: doc.nodeId, selector: "#profile-file" });
+  await send("DOM.setFileInputFiles", { nodeId, files: [profile] });
+  for (let i = 0; i < 50 && !/JFK to Nashville/.test(await evaluate(`document.getElementById("profile-title")?.textContent || ""`)); i++) await sleep(150);
+  // start the selector at the first sample with a supercooled flag, so the readout shows what the evidence is
+  // (the flagged sample nearest to t.nearKm, mid-route, so the steps pass flagged cells)
+  const samples = file.viewerProfile.samples;
+  const nearKm = t.nearKm ?? 500;
+  let flagged = samples.findIndex((s) => s.supercooled === true);
+  samples.forEach((s, i) => {
+    if (s.supercooled === true && Math.abs(s.distanceKm - nearKm) < Math.abs(samples[flagged].distanceKm - nearKm)) flagged = i;
+  });
+  const start = Math.max(0, flagged - (t.leadSamples ?? 6));
+  await evaluate(`(() => { const r = document.getElementById("sample"); r.value = ${start}; r.dispatchEvent(new Event("input", { bubbles: true })); r.focus(); })()`);
+  await sleep(400);
+  await startRecording(t.id);
+  await sleep(600);
+  await mark("viewer", { rects: await rects("#chart", "#readout", "#profile-title") });
+  await sleep((t.hold ?? 2) * 1000);
+  for (let i = 0; i < (t.steps ?? 12); i++) {
+    await pressKey("ArrowRight", "\u2192  next sample");
+    await sleep((t.stepPause ?? 0.45) * 1000);
+  }
+  await mark("viewer end");
+  await sleep((t.endHold ?? 2) * 1000);
+  await stopRecording();
+}
+
 async function takeFailure(t) {
   await openCase();
   await startRecording(t.id);
@@ -404,6 +442,7 @@ try {
     if (t.kind === "start") await takeStart(t);
     else if (t.kind === "demo") results.T2 = await takeDemo(t);
     else if (t.kind === "failure") await takeFailure(t);
+    else if (t.kind === "viewer") await takeViewer(t);
   }
 } finally {
   if (rec) { try { rec.proc.stdin.write("q"); await rec.done; } catch { /* ignore */ } }

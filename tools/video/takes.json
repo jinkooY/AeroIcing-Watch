@@ -10,6 +10,7 @@
       "gate1": { "read": 11, "cardOpen": 5, "afterCard": 1.5 },
       "gate5": { "hold": 4.5, "view2d": 3.0, "imageKind": 2.5, "goLeft": 2.5, "flyThrough": 2.0, "after": 1.5 },
       "reportHold": 8, "reportScroll": 8, "reportScrollPx": 5, "reportEndHold": 1.5, "reviewHold": 6 },
-    { "id": "T3", "kind": "failure", "what": "Anti-ice off, Space at every gate, stop at the ice gate (ice index 50)", "gateHold": 0.6, "iceHold": 4 }
+    { "id": "T3", "kind": "failure", "what": "Anti-ice off, Space at every gate, stop at the ice gate (ice index 50)", "gateHold": 0.6, "iceHold": 4 },
+    { "id": "T5", "kind": "viewer", "what": "Dispatcher cross-section view with the real KJFK-KBNA profile; arrow keys step the sample selector (scene d5)", "hold": 2.5, "steps": 14, "stepPause": 0.5, "endHold": 2.5, "leadSamples": 4, "nearKm": 500 }
   ]
 }
