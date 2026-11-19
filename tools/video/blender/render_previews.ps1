@@ -23,11 +23,13 @@ $shots = @(
     # the in-cloud fill light is on only while the camera is inside the deck (see cloud_dive_clouds.py --ambient-keys)
     @{ name = "${Tag}_B_dip"; from = 468; to = 486; extra = @("--ambient", "5", "--ambient-keys", "468:0,471.5:1") },
     @{ name = "${Tag}_C_establish"; from = 500; to = 530; extra = @("--alt-ft", "18000", "--pitch", "-14") },
-    @{ name = "${Tag}_D_close"; from = 515; to = 540; extra = @("--alt-ft", "15500", "--pitch", "-4") }
+    # D: 515-535 km over 9 s (the end card uses it at normal speed; a tower fills the frame after about 535 km)
+    @{ name = "${Tag}_D_close"; from = 515; to = 535; seconds = 9; extra = @("--alt-ft", "15500", "--pitch", "-4") }
 )
 foreach ($s in $shots) {
     if (-not ($Pick.Split(",") | Where-Object { $s.name -like "*_$($_)_*" })) { continue }
     $onlyArgs = @(); if ($Only) { $onlyArgs = @("--only", $Only) }
+    $frames = $Fps * $(if ($s.seconds) { $s.seconds } else { $Seconds })
     $sw = [Diagnostics.Stopwatch]::StartNew()
     & $blender --background --factory-startup --python-exit-code 1 --python "$root\tools\video\blender\cloud_dive_clouds.py" -- `
         --maps $maps --out $out --mode anim --s-from $s.from --s-to $s.to --frames $frames --fps $Fps `

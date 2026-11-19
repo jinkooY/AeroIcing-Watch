@@ -88,10 +88,10 @@ dispatcher cross-section view in the repository.
 ### Accomplishments that we're proud of
 
 - The Best reference replays to its stored cost on every case, and the JavaScript engine matches the Python
-  reference on two of the three cases over 60 random scripts each (dollars to 1e-9 relative).
+  reference on all three cases over 60 random scripts each (dollars to 1e-9 relative).
 - A property test found a real counterexample (a caption splitter that broke its two-line promise) before the
   final video.
-- 323 Python tests and 265 Node tests pass (2026-11-19; re-run on the frozen build). The cockpit view held about
+- 324 Python tests and 265 Node tests pass (2026-11-19). The cockpit view held about
   60 frames per second, the limit of the 60 Hz display, measured on one desktop PC.
 
 ### What we learned

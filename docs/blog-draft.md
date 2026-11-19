@@ -57,7 +57,7 @@ smoke test found 5 of 27 checks failing, the spec gave each change a requirement
 to break.
 
 Property tests (Hypothesis in Python) and seeded random tests (`node --test` in JavaScript) cover containment,
-ordering, determinism and Python-JavaScript parity on two of the three real cases. One property did find a
+ordering, determinism and Python-JavaScript parity on all three real cases. One property did find a
 real counterexample. The video caption splitter wrapped at 42 characters, but nothing capped the lines at two.
 Hypothesis shrank a failing input to a one-letter sentence followed by a long one; the merge rule joined them,
 giving three lines. The real script failed the same way.

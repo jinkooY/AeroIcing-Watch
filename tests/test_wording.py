@@ -385,7 +385,7 @@ def test_group21_strings_scanned_task_21_8():
 
 
 # Commit before group 21 (task 21.1 "before" screenshots). Engine, cost model, solver and case files must not differ.
-GROUP21_BASE = "1565153"
+GROUP21_BASE = "9994314"  # was 1565153 before the history rewrite of 2026-11-19
 UNCHANGED = ["static/cloud-dive/engine.js", "src/analysis/game_core.py", "src/analysis/cost_model.py",
              "src/analysis/solver.py", "static/cloud-dive/cases/"]
 

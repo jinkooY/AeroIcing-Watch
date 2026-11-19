@@ -10,13 +10,13 @@
       "scene": "1 hook",
       "pause_after": 0.5,
       "style": "low, quiet, curious",
-      "text": "November twelfth. A real day. <short pause> Real clouds over the eastern United States."
+      "text": "November twelfth. A real day. <short pause> Real data over the eastern United States."
     },
     {
       "id": "h2",
       "scene": "1 hook",
       "pause_after": 0.7,
-      "text": "This is Cloud Dive, a game for students and aviation fans. You fly. <short pause> Fuel cost is your score."
+      "text": "Cloud Dive is a fuel game for students and aviation fans. <short pause> Lowest fuel cost wins."
     },
     {
       "id": "p1",
@@ -28,25 +28,25 @@
       "id": "p2",
       "scene": "2 problem",
       "pause_after": 0.8,
-      "text": "Today: New York to Nashville."
+      "text": "This flight: New York to Nashville."
     },
     {
       "id": "g1",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "Cruise runs fast. When Possible or Observed evidence is ahead, the game stops. That is a gate."
+      "text": "When Possible or Observed evidence is ahead, the game stops. That is a gate."
     },
     {
       "id": "n1",
       "scene": "3 play",
       "pause_after": 0.4,
-      "text": "First gate. Here only the forecast rule is met, so the label says: possible, forecast only."
+      "text": "Here the label reads: possible, forecast only."
     },
     {
       "id": "g4",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "Each choice shows the evidence ahead. The costs stay hidden."
+      "text": "Lanes and altitudes show the evidence ahead. No cost preview."
     },
     {
       "id": "n2",
@@ -58,7 +58,7 @@
       "id": "n3",
       "scene": "3 play",
       "pause_after": 3.3,
-      "text": "At the fifth gate. This cloud comes from satellite data: its top, its phase, an estimated base.",
+      "text": "At the fifth gate. This cloud is drawn from satellite data: its top, its phase, an estimated base.",
       "picture": "game ramp, then the Blender shots A and B (storyboard section 9); the pause holds the picture"
     },
     {
@@ -71,7 +71,7 @@
       "id": "n4",
       "scene": "3 play",
       "pause_after": 0.3,
-      "text": "I could go around, but a detour costs too. I stay in lane, anti-ice on."
+      "text": "A detour costs too. I stay in lane, anti-ice on."
     },
     {
       "id": "g5",
@@ -86,12 +86,6 @@
       "text": "The report compares my cost with three game references."
     },
     {
-      "id": "n5",
-      "scene": "4 report",
-      "pause_after": 0.5,
-      "text": "The costs are itemized: cruise, climb, detour, anti-ice, ice drag."
-    },
-    {
       "id": "r2",
       "scene": "4 report",
       "pause_after": 0.5,
@@ -102,7 +96,7 @@
       "id": "d2",
       "scene": "5 real data",
       "pause_after": 0.3,
-      "text": "It reads GOES cloud data and an ECMWF forecast, estimates the cloud base with a published method, and corrects for parallax."
+      "text": "It reads GOES satellite data and an ECMWF forecast, and estimates the cloud base with a published method."
     },
     {
       "id": "d3",
@@ -114,7 +108,7 @@
       "id": "d5",
       "scene": "5 real data",
       "pause_after": 0.5,
-      "text": "In real operations, dispatchers and crews decide, with official icing forecasts and pilot reports. This engine, not yet evaluated, could add where the evidence lies along the route."
+      "text": "In real operations, dispatchers and crews decide, with official forecasts and pilot reports. Not yet evaluated, this engine only shows where the evidence lies."
     },
     {
       "id": "k1",
@@ -131,15 +125,27 @@
     {
       "id": "k3b",
       "scene": "6 kiro",
+      "pause_after": 0.3,
+      "text": "Steering holds the wording rules, and a save hook is set to run the wording test."
+    },
+    {
+      "id": "k4",
+      "scene": "6 kiro",
+      "pause_after": 0.3,
+      "text": "A custom agent reviewed the script lines, in the Kiro IDE and headless in the Kiro CLI."
+    },
+    {
+      "id": "k5",
+      "scene": "6 kiro",
       "pause_after": 0.8,
-      "text": "Steering holds the wording rules, and a hook runs the wording test on each game-file save."
+      "text": "An MCP browser server and a Kiro power found phone layout bugs."
     },
     {
       "id": "c1",
       "scene": "7 close",
       "pause_after": 0.4,
       "style": "calm, honest, slower",
-      "text": "The limits. The ground is flat. The ice index is a game state, not an icing model. Costs are illustrative. Frame rate measured on one desktop PC."
+      "text": "The limits: flat ground, an ice index that is a game state, illustrative costs, and a frame rate measured on one desktop PC."
     },
     {
       "id": "c2",

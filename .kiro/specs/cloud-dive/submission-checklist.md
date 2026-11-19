@@ -107,7 +107,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       1:30-2:30 how Kiro built it (spec, properties, counterexample, hooks,
       steering catching banned wording, custom agent, MCP check, surfaces) -
       2:30-3:00 references, what is new, what the satellite cannot see.
-- [ ] C16 Rewrite `docs/AeroIcing_Watch_Submission_Package.md`: one section per
+- [x] C16 Rewrite `docs/AeroIcing_Watch_Submission_Package.md`: one section per
       question in the rules (surfaces, custom agents, hooks, specs, steering, MCP,
       property-based testing, powers), written only from the usage log; state
       which code came from Codex, Claude and WeatherPath. Kiro drafts.
@@ -122,7 +122,7 @@ M2 Nov 28 (C9-C14, tasks 7-8) - M3 Dec 2 (C15-C17, task 9) - submit Dec 3.
       stating that it is written as part of the Kiroween 2026 hackathon. Owner.
 - [ ] C19 Social post that starts with `#KiroweenHackathon26`, with your favourite
       thing about Kiro and how it changed your approach; add the link in the form. Owner.
-- [ ] C20 Kiro Crew app in a separate GitHub repo, newly created in the period.
+- [ ] C20 (not entered, owner decision 2026-11-19) Kiro Crew app in a separate GitHub repo, newly created in the period.
       Only after tasks 1-9 are done.
       Note (2026-11-17, official rules): this bonus needs a Kiro Crew app, its own public GitHub
       repo and a write-up of its features. This repository (first commit 2026-11-11) meets the

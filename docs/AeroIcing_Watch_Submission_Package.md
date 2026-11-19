@@ -97,14 +97,15 @@ session passed. The power was kept because it changed the game.
 
 Hypothesis (Python) properties and seeded random tests (`node --test`, JavaScript) cover containment,
 ordering, determinism, conservation, *Not assessed never becomes Not indicated*, and Python-JavaScript
-parity on two of the three cases (the full engine state after every one of 60 random scripts). The parity
+parity on all three cases (the full engine state after every one of 60 random scripts per case; the
+KJFK-KBNA case was added on 2026-11-19 and passed on its first run). The parity
 test passed on its first run, so its power was checked with two deliberate mutations in `engine.js`; both
 made it fail. One property found a real counterexample: the video caption splitter wrapped at 42 characters
 but nothing capped the lines at two. Hypothesis shrank a failing input to a one-letter sentence followed by a
 long one; the merge rule joined them into three lines. The real script failed the same way, and the fix
 went in before the final video.
 
-On 2026-11-19: 323 pytest tests and 265 Node tests pass (re-run on the frozen build before submission).
+On 2026-11-19: 324 pytest tests and 265 Node tests pass.
 
 ## 9. What Kiro did not do
 
