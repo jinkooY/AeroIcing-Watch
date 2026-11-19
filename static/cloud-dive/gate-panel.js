@@ -3,9 +3,12 @@
 // Evidence only: no cost preview and no recommended choice (R6.5, R9.4, R17.3).
 // Keyboard handling stays in controls.js (it uses keyAction from gate-controls.js).
 
-import { renderScene } from "./render.js";
+import { renderScene, levelNames } from "./render.js";
 import { fitCanvas } from "./view-helpers.js";
-import { gateButtons, dispatchAction, insetVisible, insetView, KEY_HINT } from "./gate-controls.js";
+import { GATE_LOOKAHEAD_CELLS } from "./scene.js";
+import {
+  gateButtons, dispatchAction, insetVisible, insetView, KEY_HINT, choiceLevels, choiceAriaLabel, LEVEL_SHORT,
+} from "./gate-controls.js";
 import { COST_RULES_TITLE, COST_RULES } from "./cost-rules.js";
 
 // deps: { root, controller, getStore, subscribe }. Returns { setCockpit(on), dispose() }.
@@ -76,9 +79,30 @@ export function initGatePanel(deps) {
     const mode = controller.getMode();
     const list = gateButtons(s.engineCase, s.state, mode);
     ensureButtons(list);
+    // Revision f (R25.1): the evidence ahead at the settings each lane or altitude button would set, while the
+    // settings can change (not while the flight runs). Same look on every button apart from the level (R25.2).
+    const levels = mode === "running" ? {} : choiceLevels(s.engineCase, s.state, mode);
+    const names = levelNames(s.caseData);
+    const aheadKm = Math.round(GATE_LOOKAHEAD_CELLS * s.engineCase.stepKm);
     for (const b of list) {
       const n = buttons.get(b.action);
-      n.textContent = b.label;
+      const lv = levels[b.action];
+      if (lv === undefined) {
+        n.textContent = b.label;
+        n.removeAttribute("aria-label");
+      } else {
+        const label = document.createElement("span");
+        label.className = "gate-btn-label";
+        label.textContent = b.label;
+        const level = document.createElement("span");
+        level.className = `gate-btn-level cp-level-${lv}`;
+        level.setAttribute("aria-hidden", "true");
+        const sw = document.createElement("span");
+        sw.className = "cp-swatch";
+        level.append(sw, document.createTextNode(LEVEL_SHORT[lv] || LEVEL_SHORT[0]));
+        n.replaceChildren(label, level);
+        n.setAttribute("aria-label", choiceAriaLabel(b.label, lv, names, aheadKm));
+      }
       n.disabled = b.disabled;
       if (b.action === "toggleAntiIce") n.setAttribute("aria-pressed", String(s.state.antiIce));
     }

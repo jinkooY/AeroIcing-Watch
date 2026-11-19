@@ -106,6 +106,29 @@ export function pathSummary(c, state) {
   };
 }
 
+// Revision f (R25.1, R25.2): the evidence level of the next K km at the settings each lane or altitude button
+// would set, by the same rule as R24.2 (`gateLevel`). Disabled buttons and anti-ice get no level (anti-ice does not
+// change the evidence). Evidence only: no cost, no order, no preferred choice.
+export const LEVEL_SHORT = Object.freeze(["Not assessed", "Not indicated", "Possible (forecast)", "Observed (satellite)"]);
+export const CHOICE_ACTIONS = Object.freeze(["flyThrough", "climbOver", "descend", "goLeft", "goRight"]);
+export function choiceLevels(c, state, mode) {
+  const out = {};
+  if (!c || !state) return out;
+  const enabled = new Map(gateButtons(c, state, mode).map((b) => [b.action, !b.disabled]));
+  for (const a of CHOICE_ACTIONS) {
+    if (!enabled.get(a)) continue;
+    const next = applyGateAction(c, state, a);
+    out[a] = gateLevel(c, next.targetLane, state.step, next.targetAlt);
+  }
+  return out;
+}
+// Accessible name of a choice button: the label and the full level name (R25.1).
+export function choiceAriaLabel(label, level, names, aheadKm) {
+  if (level === undefined || level === null) return label;
+  const name = (Array.isArray(names) && (names[level] || names[0])) || LEVEL_SHORT[level] || "Not assessed";
+  return `${label}. Next ${aheadKm} km at that setting: ${name}.`;
+}
+
 const fmtFt = (v) => `${Math.round(v).toLocaleString("en-US")} ft`;
 const ARROW = "\u2192";
 

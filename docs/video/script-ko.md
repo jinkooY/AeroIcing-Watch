@@ -12,7 +12,7 @@
 | p2 | 2 문제 | Today: New York to Nashville. | 오늘의 비행: 뉴욕에서 내슈빌까지. |
 | g1 | 3 플레이 | Cruise runs fast. When Possible or Observed evidence is ahead, the game stops. That is a gate. | 순항은 빠르게 진행됩니다. 앞에 Possible 또는 Observed 근거가 있으면 게임이 멈춥니다. 이것이 게이트입니다. |
 | n1 | 3 플레이 | First gate. Here only the forecast rule is met, so the label says: possible, forecast only. | 첫 번째 게이트. 여기서는 예보 규칙만 충족되므로, 라벨은 "Possible, 예보만"이라고 나옵니다. |
-| g4 | 3 플레이 | So I choose: lane, altitude, anti-ice. | 그래서 선택합니다. 차선, 고도, 방빙 장치. |
+| g4 | 3 플레이 | Each choice shows the evidence ahead. The costs stay hidden. | 선택마다 앞쪽의 근거가 보입니다. 비용은 숨겨져 있습니다. |
 | n2 | 3 플레이 | I climb to twelve thousand feet, switch anti-ice on, and continue. | 12,000피트까지 상승하고, 방빙을 켜고, 계속 갑니다. |
 | n3 | 3 플레이 | At the fifth gate. This cloud comes from satellite data: its top, its phase, an estimated base. | 다섯 번째 게이트. 이 구름은 위성 데이터로 만들어졌습니다. 구름 꼭대기, 상(phase), 추정한 구름 밑면입니다. |
 | g3 | 3 플레이 | The label reads: observed supercooled layer at planned altitude. The satellite sees the top. The base is estimated. | 라벨에는 "계획 고도에서 관측된 과냉각 층"이라고 나옵니다. 위성은 구름 꼭대기를 봅니다. 밑면은 추정값입니다. |
@@ -20,12 +20,10 @@
 | g5 | 3 플레이 | Anti-ice off, flying on? The game's ice index builds, drag grows, and the dollars climb. | 방빙을 끄고 계속 날면? 게임의 얼음 지수가 오르고, 항력이 커지고, 비용이 올라갑니다. (별도 녹화 장면. 리포트의 Straight-ahead 기준과 다른 비행입니다) |
 | r1 | 4 결과 | The report compares my cost with three game references. | 리포트는 제 비용을 게임 기준값 세 가지와 비교합니다. |
 | n5 | 4 결과 | The costs are itemized: cruise, climb, detour, anti-ice, ice drag. | 모든 비용이 항목별로 나옵니다: 순항, 상승, 우회, 방빙, 얼음 항력. |
-| r2 | 4 결과 | I finished 38 dollars above the best. Can you beat it? | 저는 최선보다 38달러 높게 끝냈습니다. 당신은 이길 수 있나요? |
-| d1 | 5 실제 데이터 | The game is the fun part. The evidence engine is the real part. | 게임은 재미를 위한 부분입니다. 증거 엔진이 진짜 부분입니다. |
+| r2 | 4 결과 | I finished 38 dollars above Best, the game reference. The report replays Best, gate by gate. | 저는 게임 기준값 Best보다 38달러 높게 끝냈습니다. 리포트는 Best를 게이트별로 다시 보여 줍니다. |
 | d2 | 5 실제 데이터 | It reads GOES cloud data and an ECMWF forecast, estimates the cloud base with a published method, and corrects for parallax. | GOES 구름 데이터와 ECMWF 예보를 읽고, 발표된 방법으로 구름 밑면을 추정하며, 시차(parallax)를 보정합니다. |
 | d3 | 5 실제 데이터 | No language model. No randomness. No network call in the decision. | 언어 모델도, 무작위성도, 판정 중 네트워크 호출도 없습니다. |
-| d4 | 5 실제 데이터 | Cases are pre-computed into static files. No backend. | 사례는 정적 파일로 미리 계산됩니다. 백엔드가 없습니다. |
-| d5 | 5 실제 데이터 | The same engine feeds a dispatcher view in the repository. | 같은 엔진이 저장소 안의 디스패처용 화면에도 쓰입니다. |
+| d5 | 5 실제 데이터 | In real operations, dispatchers and crews decide, with official icing forecasts and pilot reports. This engine, not yet evaluated, could add where the evidence lies along the route. | 실제 운항에서는 디스패처와 승무원이 공식 결빙 예보와 조종사 보고를 바탕으로 결정합니다. 아직 평가되지 않은 이 엔진은 경로를 따라 근거가 어디에 있는지를 더할 수 있습니다. |
 | k1 | 6 Kiro | In Kiro, a spec defined the requirements and correctness properties. | Kiro에서 스펙이 요구사항과 정확성 속성을 정의했습니다. |
 | k2b | 6 Kiro | Writing those properties exposed gaps in our own rules. | 그 속성을 쓰는 과정에서 우리 규칙의 빈틈이 드러났습니다. |
 | k3b | 6 Kiro | Steering holds the wording rules, and a hook runs the wording test on each game-file save. | 스티어링에 표현 규칙이 있고, 게임 파일을 저장할 때마다 훅이 표현 테스트를 실행합니다. |

@@ -354,6 +354,13 @@ async function takeDemo(t) {
   }
   await mark("report scroll end");
   await sleep((t.reportEndHold ?? 1.5) * 1000);
+  // revision f (R25.3, R25.4): the Best replay, scrolled to its top and held for the edit (scene r2)
+  if (await evaluate(`Boolean(document.getElementById("report-review"))`)) {
+    await evaluate(`document.getElementById("report-review").scrollIntoView({ block: "start", behavior: "smooth" })`);
+    await sleep(900);
+    await mark("best replay", { rects: await rects("#report-review", ".review-chart", "#dlg-report") });
+    await sleep((t.reviewHold ?? 6) * 1000);
+  }
   await stopRecording({ reportTotal: total ? Number(total.replace(/,/g, "")) : null, planTotalUsd: Math.round(plan.demoTotalUsd) });
   return total;
 }

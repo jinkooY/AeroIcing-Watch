@@ -58,14 +58,16 @@
       { "take": "T2", "from": "report scroll start", "to": "report scroll end", "zoom": "#dlg-report", "pad": 20 }
     ],
     "r2": [
-      { "take": "T2", "from": "report open+1.0", "zoom": "#dlg-report", "pad": 20, "dim": 0.55,
-        "text": [{ "text": "$38 above Best", "at": 0.3, "dur": 5.5, "pos": "center", "size": 110, "color": "orange" }, { "text": "illustrative game cost", "at": 0.3, "dur": 5.5, "pos": "lower-right", "size": 34, "color": "grey", "bold": false }] }
+      { "take": "T2", "from": "report open+1.0", "dur": 3.0, "zoom": "#dlg-report", "pad": 20, "dim": 0.55,
+        "text": [{ "text": "$38 above Best", "at": 0.3, "dur": 2.7, "pos": "center", "size": 110, "color": "orange" }, { "text": "illustrative game cost", "at": 0.3, "dur": 2.7, "pos": "lower-right", "size": 34, "color": "grey", "bold": false }] },
+      { "take": "T2", "from": "best replay+0.2", "zoom": "#report-review", "pad": 20,
+        "text": [{ "text": "Best: a game reference, not a procedure", "at": 0.2, "dur": 4.5, "pos": "top-right", "size": 32, "color": "grey", "bold": false }] }
     ],
     "d1": [{ "still": "data/video/assets/diagram-1.png" }],
     "d2": [{ "still": "data/video/assets/diagram-2.png" }],
-    "d3": [{ "still": "data/video/assets/diagram-3.png" }],
+    "d3": [{ "still": "data/video/assets/diagram-4.png" }],
     "d4": [{ "still": "data/video/assets/diagram-4.png" }],
-    "d5": [{ "still": "data/video/assets/diagram-5.png" }],
+    "d5": [{ "still": "data/video/assets/diagram-5.png", "push": 0 }],
     "k1": [{ "card": "Kiro IDE|spec files: requirements.md, design.md, tasks.md", "placeholder": true }],
     "k2b": [{ "card": "Kiro IDE|requirements and properties", "placeholder": true }],
     "k3b": [{ "card": "Kiro IDE|hooks panel, wording test run, steering", "placeholder": true }],

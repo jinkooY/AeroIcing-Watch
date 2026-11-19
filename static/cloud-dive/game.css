@@ -158,6 +158,12 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 .gate-inset[hidden] { display: none; }
 .gate-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .gate-btn { min-width: 44px; min-height: 44px; flex: 1 1 90px; }
+/* Revision f (R25.1): evidence ahead per choice, the legend pattern and the short level name. One look for all. */
+.gate-btn-label { display: block; }
+.gate-btn-level { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px;
+  font-size: 0.72rem; line-height: 1.15; color: var(--muted, #a9b8d6); flex-wrap: wrap; text-align: center; }
+.gate-btn-level .cp-swatch { width: 14px; height: 10px; }
+body[data-video="1"] .gate-btn-level { font-size: 0.85rem; }
 .ctl-toggle { width: 100%; font-weight: 600; }
 .ctl-go-field { border: 0; padding: 0; }
 .ctl-go { width: 100%; height: 100%; min-height: 44px; font-size: 1.05rem; font-weight: 700; background: #1f3a55; border-color: var(--accent); }
@@ -257,6 +263,15 @@ button[aria-pressed="true"] { border-color: var(--accent); background: #1f3a55; 
 .report-table caption { text-align: left; color: var(--muted); padding-bottom: 4px; }
 .report-table th, .report-table td { border-bottom: 1px solid var(--line); padding: 4px 8px; text-align: left; }
 .report-table td:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+/* Revision f (R25.3, R25.4): the Best replay. The chart keeps its 640 x 260 shape at any width; the gate table
+   scrolls sideways on a phone instead of squeezing. */
+.report-review { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; }
+.report-review h4 { margin: 0 0 4px; }
+.review-chart { display: block; width: 100%; max-width: 640px; height: auto; border: 1px solid var(--line); }
+.report-table-wrap { overflow-x: auto; }
+.report-review .report-table td:nth-child(5), .report-review .report-table td:nth-child(6) {
+  text-align: right; font-variant-numeric: tabular-nums; }
+.report-review .report-table td:nth-child(3), .report-review .report-table td:nth-child(4) { white-space: nowrap; }
 .share-text { display: block; width: 100%; box-sizing: border-box; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 8px 0; font: inherit; }
 
 /* Why? cards (8.5) */

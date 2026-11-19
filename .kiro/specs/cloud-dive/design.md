@@ -847,3 +847,22 @@ the Playwright MCP server at 390 x 844 (buttons, heading and settings line on sc
 | The settings line reads as advice | It names the player's own settings and the evidence level only; no cost, no "better" word (test) |
 | The card reads as a cost preview | No dollar value and no number from the flight (test); the player opens it |
 | The two lines disagree with the sky frames | Same function (`gateLevel`), checked for every lane and altitude at every seventh step |
+
+## 17. Evidence per choice, Best replay and the operations role (revision f, R25, decision G18)
+Display, report and video only; the engine, costs, evidence, solver and case files do not change (R25.7).
+| Part | Where | What |
+|---|---|---|
+| Evidence per choice (R25.1, R25.2) | `gate-controls.js` `choiceLevels`, `choiceAriaLabel`, `LEVEL_SHORT`; `gate-panel.js`; `game.css` `.gate-btn-level` | For each enabled lane or altitude button: `applyGateAction`, then `scene.gateLevel` at the new target, the same rule as R24.2. A second line on the button with the legend swatch and the short name; the full name in `aria-label`. Not while the flight runs; not on anti-ice or Continue |
+| Flight record (R25.4) | `flight-review.js` `recordFlight`; `game.js` `setState`, `store.flown` | One entry per engine step beside the engine state: lane and altitude after the segment, anti-ice used on it |
+| Replays (R25.4, R25.5) | `flight-review.js` `flyTargets`, `replayFlown`, `replayBest` | Engine `setTargets` + `step` per segment, gates announced as `controller.js` does. The player replay must end in the flight's final state (else no review). Best = `references.best.policy`; replayed cost = `references.best.costUsd` |
+| Review (R25.3, R25.4) | `flight-review.js` `buildReview`; `report-view.js` `reviewSection`, `drawReview` | Canvas 640 x 300: altitude, lane, two anti-ice strips, gate numbers, legend. Table: gate, km, settings flown next (you, Best), cost to the next gate (engine game values). Placed after the references table |
+| Video (R25.6) | `docs/video/script.json` g4, r2, d5; `edl.json` r2; `record_takes.mjs` marker `best replay` | d5 names who decides and what the engine could add; no procedure |
+Tests: `tests/js/flight-review.test.mjs` (Best replay equals the stored cost on every case; a controller flight with a
+fake clock is reproduced by the recorder and the replay, same gates; gate costs add up; a broken record gives no review;
+per-choice level equals `gateLevel` at the target each button sets; accessible name; chart stays inside its canvas).
+Check: `tools/review_check.mjs` (headless, 1280 x 720 and 390 x 844).
+| Risk | Mitigation |
+|---|---|
+| A level on each button reads as a recommendation | Fixed order, same look apart from the level, no cost, no mark (R25.2); the cost stays hidden until the report |
+| The Best replay reads as a procedure | After the flight only; "Best (game reference, not a procedure)"; the section text says it is not a route to fly |
+| The record and the flight disagree | The review is shown only when the replay ends in the flight's final state |

@@ -9,7 +9,7 @@
       "gateHold": 0.9, "stepPause": 1.1,
       "gate1": { "read": 11, "cardOpen": 5, "afterCard": 1.5 },
       "gate5": { "hold": 4.5, "view2d": 3.0, "imageKind": 2.5, "goLeft": 2.5, "flyThrough": 2.0, "after": 1.5 },
-      "reportHold": 8, "reportScroll": 8, "reportScrollPx": 5, "reportEndHold": 6 },
+      "reportHold": 8, "reportScroll": 8, "reportScrollPx": 5, "reportEndHold": 1.5, "reviewHold": 6 },
     { "id": "T3", "kind": "failure", "what": "Anti-ice off, Space at every gate, stop at the ice gate (ice index 50)", "gateHold": 0.6, "iceHold": 4 }
   ]
 }

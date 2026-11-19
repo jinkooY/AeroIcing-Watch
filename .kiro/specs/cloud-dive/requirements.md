@@ -226,8 +226,9 @@ ice", "light", "moderate", "severe", "likely" or "unlikely" in reference to icin
 9.3 THE GAME SHALL state on every flight screen: "Game model. Not a flight
 procedure, not an icing severity. Evidence from satellite cloud tops and an
 ECMWF forecast."
-9.4 THE SYSTEM SHALL NOT suggest an action to the player (R6.5, R8.2 are the
-only places that show reference results, after play).
+9.4 THE SYSTEM SHALL NOT suggest an action to the player (R6.5, R8.2, and from
+revision f R25.3 and R25.4, are the only places that show reference results, after
+play; the per-choice evidence of R25.1 is evidence, not a suggestion).
 9.5 PIREPs SHALL be used only to choose and label cases and SHALL be shown as
 reports, never as validation.
 
@@ -553,6 +554,36 @@ on screen (390 x 844: windshield, buttons and settings line together).
 does, at a human pace, and SHALL mark each press, so the edit can show the key on screen.
 24.9 Revision e changes display and tooling only. The engine, the cost model, the evidence
 levels, the sky gates and every case file stay unchanged (R22.11).
+
+### R25 Evidence per choice, the Best replay and the operations role (revision f)
+User story: as a player at a gate, I want to see what the data shows ahead for each choice, and
+after the flight how the Best game reference flew, so that I learn to read the evidence. As a
+viewer of the video, I want to know what part this engine could play in real operations. R6.5,
+R17.3 and guardrail rule 4 still hold: no cost preview, no recommended choice, no ranking at a
+gate, and no operational advice anywhere.
+25.1 WHILE the player can change the settings (R24.1: a gate, the start, a pause), EACH ENABLED lane or altitude button (Fly through, Climb over, Descend, Go left,
+Go right) SHALL show the evidence level of the next K km at the settings that button would set,
+by the rule of R24.2 (`gateLevel`), with the level's short name, which keeps its source
+("Possible (forecast)", "Observed (satellite)"), and its legend pattern; the full
+level name SHALL be in the button's accessible name. A disabled button shows no level. The
+anti-ice button shows no level (anti-ice does not change the evidence).
+25.2 The per-choice levels SHALL carry no cost, no order and no mark of a preferred choice; all
+buttons look the same apart from the level.
+25.3 THE REPORT SHALL show, after the flight only, a chart of the player's flight and the Best game
+reference over distance: altitude, lane and anti-ice, on the same axes, labelled "Best (game
+reference, not a procedure)".
+25.4 THE REPORT SHALL list each gate of the flight with the player's settings after the gate, the
+Best reference's settings at the same step, and the cost of each between that gate and the next
+(game values, illustrative). A diverted flight shows the list up to the diversion.
+25.5 The Best path SHALL be the stored `references.best.policy` replayed by the game engine, and
+its replayed cost SHALL equal `references.best.costUsd` (test on every case). Nothing is solved
+in the browser.
+25.6 THE VIDEO SHALL describe the real-operations role as an input to people who decide, never as
+a procedure: dispatchers and crews decide with official icing forecasts and pilot reports; the
+engine, not yet evaluated, could add where the satellite and forecast evidence lies along the
+route. It SHALL NOT say how to plan a route in real operations.
+25.7 Revision f changes display, the report and the video only. The engine, the cost model, the
+evidence levels, the solver and every case file stay unchanged (R22.11).
 ## 5. Decision log (2026-11-13)
 
 Sections 1-4 above predate these decisions. Where they conflict, this log
@@ -678,6 +709,7 @@ Not verified: the real anti-ice fuel penalty (no source found; the anti-ice fact
 | G15 | **Owner approved visual polish group 21 (revision c, R22).** Defaults: the gate frame level is the worst level of the next 3 cells in that lane at the target altitude; frost is about 0.5 opacity at ice index 25 and 1.0 at 50 or more; the report reads "$N more than / less than Straight-ahead" with "$N above Best" below it. Engine, cost model, case files and evidence values stay unchanged. |
 | G16 | **Owner approved revision d (R23), 2026-11-16.** (1) Cloud look: deterministic, display-only noise (hash of lane, step, puff index) replaces the "no noise" sentence of design 14.4 for drawing only; the engine, solver and evidence path still use no random number. (2) Capture mode `?video=1` (R23.6). (3) Burned-in captions plus a separate SRT (R23.7). Not decided: synthesized sound effects (P-23). Spike result: a headed kiosk window at 1920 x 1080, device scale 1, recorded with ffmpeg `ddagrab` and NVENC, gives about 58 captured frames per second on the measured laptop (`tools/video/capture_pattern_check.mjs`). |
 | G17 | **Owner approved revision e (R24), 2026-11-18.** After a real-phone check the owner found the bottom data hard to read and the choice unclear, and asked for the takes to look like real play. Approved: settings line with "now -> target", evidence at the target, key line, a "How costs work" card in words (no dollar values; unit prices were not chosen, so R6.5 and R17.3 stay as they are), ice-index marks, each value once in the cockpit view, the phone gate layout, and real key and mouse input in the take recorder. Kept: no cost preview, no recommended choice. |
+| G18 | **Owner approved revision f (R25), 2026-11-18.** The owner asked that the player be shown how to judge, that an answer key be shown, and that the video end with how real operations would do it. Approved: (1) the evidence level per gate choice, no cost; (2) a Best replay in the report (chart and gate list), after the flight only, labelled a game reference; (3) the video's operations line rewritten as the engine's role as one input for dispatchers and crews. Not adopted: an operational procedure in the video, because guardrail rule 4 and the game note forbid it and accuracy has not been evaluated. |
 
 ## 6. Official rules digest (read in full on 2026-11-13)
 

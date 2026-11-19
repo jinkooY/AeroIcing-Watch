@@ -22,6 +22,7 @@ import { updateTrack, motionFrac, describeMap, imageNames, fitCanvas, routeKey, 
 import { TICK_MS } from "./controller.js";
 import { initControls } from "./controls.js";
 import { initGatePanel } from "./gate-panel.js";
+import { recordFlight } from "./flight-review.js";
 import { webglAvailable } from "./webgl-test.js";
 import { buildScene } from "./scene.js";
 import { createPanel, sourceLine } from "./panel.js";
@@ -66,6 +67,7 @@ const store = {
   images: { ir: null, phase: null }, // HTMLImageElement or null per image kind
   imageKind: "ir",      // "ir" | "phase"
   track: [],            // flown positions [{lane, step}], reset with every flight
+  flown: [],            // flown segments [{step, lane, alt, antiIce}] for the report review (flight-review.js)
   prev: null,           // previous track entry, for display-only smooth motion
   changeAt: 0,          // performance.now() of the last step change
   hot: null,            // hot-seat session (hotseat.js), or null for the single-player flow; in memory only (R20.3)
@@ -82,6 +84,7 @@ export function subscribe(fn) {
 }
 
 export function setState(next) {
+  store.flown = recordFlight(store.flown, store.state, next); // revision f: the report's Best replay (R25.4)
   store.state = next;
   notify();
 }

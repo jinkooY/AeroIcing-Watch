@@ -16,14 +16,14 @@
   .box small { display: block; font-size: 28px; color: #a9b8d6; }
   .show { opacity: 1; }
   .in { width: 520px; height: 210px; }
-  #goes { left: 190px; top: 190px; }
-  #ifs { left: 1210px; top: 190px; }
-  #build { left: 460px; top: 480px; width: 1000px; height: 200px; border-color: #ffb454; }
-  #file { left: 330px; top: 790px; width: 520px; height: 190px; border-color: #7bd88f; }
-  #game { left: 940px; top: 790px; width: 520px; height: 190px; border-color: #7bd88f; }
-  #disp { left: 1550px; top: 790px; width: 340px; height: 190px; border-style: dashed; border-color: #8a94a8; font-size: 28px; }
+  #goes { left: 190px; top: 150px; }
+  #ifs { left: 1210px; top: 150px; }
+  #build { left: 460px; top: 380px; width: 1000px; height: 200px; border-color: #ffb454; }
+  #file { left: 330px; top: 625px; width: 520px; height: 130px; border-color: #7bd88f; }
+  #game { left: 940px; top: 625px; width: 520px; height: 130px; border-color: #7bd88f; }
+  #disp { left: 1550px; top: 625px; width: 340px; height: 130px; border-style: dashed; border-color: #8a94a8; font-size: 28px; }
   #disp b { font-size: 34px; }
-  #badge { position: absolute; left: 680px; top: 716px; font-size: 28px; color: #ffb454; opacity: 0; white-space: nowrap; }
+  #badge { position: absolute; left: 680px; top: 588px; font-size: 28px; color: #ffb454; opacity: 0; white-space: nowrap; }
   svg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
   svg line { stroke: #6b7a99; stroke-width: 5; opacity: 0; marker-end: url(#arrow); }
   footer { position: absolute; left: 96px; bottom: 22px; font-size: 22px; color: #7f8ba3; }
@@ -32,11 +32,11 @@
 <body>
 <h1>Real data in, one static file out</h1>
 <svg><defs><marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="20" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#6b7a99"/></marker></defs>
-  <line id="a1" x1="450" y1="404" x2="720" y2="474"/>
-  <line id="a2" x1="1470" y1="404" x2="1200" y2="474"/>
-  <line id="a3" x1="590" y1="684" x2="590" y2="786"/>
-  <line id="a4" x1="854" y1="885" x2="936" y2="885"/>
-  <line id="a5" x1="1464" y1="885" x2="1546" y2="885"/>
+  <line id="a1" x1="450" y1="364" x2="720" y2="374"/>
+  <line id="a2" x1="1470" y1="364" x2="1200" y2="374"/>
+  <line id="a3" x1="590" y1="584" x2="590" y2="621"/>
+  <line id="a4" x1="854" y1="690" x2="936" y2="690"/>
+  <line id="a5" x1="1464" y1="690" x2="1546" y2="690"/>
 </svg>
 <div id="goes" class="box in"><b>GOES-19 satellite</b>cloud-top height, phase,<br>optical depth, particle size</div>
 <div id="ifs" class="box in"><b>ECMWF forecast</b>temperature, humidity,<br>wind</div>

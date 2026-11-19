@@ -590,6 +590,22 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
   - Layout fixed at 1920x1080 CSS pixels on any 16:9 screen (`browser_guard` `deviceScale`; a 4K screen gives
     3840x2160 takes, `scale` 2 in the markers file, mapped in `make_final.py`)
   - _Requirements: R24.8_
+- [x] 25. (l) Evidence per choice, Best replay, operations role (revision f, decision G18)
+- [x] 25.1 Evidence level on each lane and altitude button (design 17)
+  - `gate-controls.js` `choiceLevels`, `choiceAriaLabel`, `LEVEL_SHORT`; `gate-panel.js`; `game.css`
+  - _Requirements: R25.1, R25.2_
+- [x] 25.2 Flight record and replays
+  - `flight-review.js` `recordFlight`, `flyTargets`, `replayFlown`, `replayBest`; `game.js` `store.flown`
+  - _Requirements: R25.4, R25.5, R25.7_
+- [x] 25.3 Best replay in the report: chart and gate list
+  - `flight-review.js` `buildReview`; `report-view.js` `reviewSection`, `drawReview`; `game.css`
+  - _Requirements: R25.3, R25.4_
+- [x] 25.4 Tests and checks
+  - `tests/js/flight-review.test.mjs`; `tools/review_check.mjs`; wording-guardian (CLI); `layout_check`; `video_mode_check`
+  - _Requirements: R25.1 to R25.5_
+- [x] 25.5 Video: g4, r2, d5 lines; Best replay shot; new takes and rough cut
+  - `script.json`, `script-ko.md`, `edl.json` r2, `record_takes.mjs` `best replay` marker
+  - _Requirements: R25.6_
 - [ ] 23.4 Final recording and edit on the frozen build (owner, after 2026-11-28)
   - _Requirements: R12.1, R23.7_
 ## Notes
@@ -603,6 +619,7 @@ cost model, the solver, B1 to B5 and CD-P1 to CD-P22 stay as they are.
 - Revision b (decisions G1 to G14): groups 13 to 20. Cuttable: 17.5, 16.2, 16.4, 19; optional: 16.7.
   Required: the rest, including 17.1 to 17.4 (departure constant, phases, runway, climb) and 18.
   If 17.5 is cut, the report opens directly at arrival or diversion.
+- Revision f (decision G18): group 25. Display, report and video only (R25.7).
 - Revision d (decision G16): groups 22 and 23. Group 22 changes drawing only (R23); group 23 is tooling. Feature freeze 2026-11-28: 22.7 must be done before it; 23.4 runs after it.
 - Revision c (decision G15): group 21, presentation only. Engine, cost model, case files and evidence
   values stay unchanged (R22.11). Task 21.1 must run before any other task of the group changes code.
@@ -672,7 +689,10 @@ Tasks in the same wave can run in parallel. Each wave depends on the waves befor
     { "wave": 54, "tasks": ["24.1", "24.2"] },
     { "wave": 55, "tasks": ["24.3", "24.4"] },
     { "wave": 56, "tasks": ["24.5"] },
-    { "wave": 57, "tasks": ["23.4"] }
+    { "wave": 57, "tasks": ["25.1", "25.2"] },
+    { "wave": 58, "tasks": ["25.3", "25.4"] },
+    { "wave": 59, "tasks": ["25.5"] },
+    { "wave": 60, "tasks": ["23.4"] }
   ]
 }
 ```
